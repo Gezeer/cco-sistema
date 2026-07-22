@@ -1,0 +1,2068 @@
+/*
+========================================================
+INTRANET EXECUTIVA KPI CCO • SLU
+STYLE.CSS
+========================================================
+*/
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --verde-escuro: #063f24;
+  --verde: #0c6b3f;
+  --verde-claro: #18a058;
+  --azul: #1565c0;
+  --laranja: #f57c00;
+  --vermelho: #c62828;
+  --fundo: #f4f8f6;
+  --card: #ffffff;
+  --texto: #10231a;
+  --muted: #6b7c72;
+  --borda: #dfe9e3;
+  --sombra: 0 18px 45px rgba(5, 45, 25, .10);
+}
+
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: var(--fundo);
+  color: var(--texto);
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 290px;
+  background: linear-gradient(180deg, #052d1a, #0c6b3f, #18a058);
+  color: #fff;
+  padding: 24px;
+  position: fixed;
+  inset: 0 auto 0 0;
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.brand-icon {
+  min-width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,.18);
+  font-weight: 900;
+}
+
+.brand h2 {
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.brand p,
+.sidebar-text {
+  color: rgba(255,255,255,.78);
+  font-size: 13px;
+}
+
+.sidebar-text {
+  margin: 18px 0 24px;
+  line-height: 1.55;
+}
+
+.menu {
+  display: grid;
+  gap: 10px;
+}
+
+.menu button {
+  border: 0;
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.10);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  transition: .2s;
+}
+
+.menu button:hover,
+.menu button.active {
+  background: #fff;
+  color: var(--verde);
+  transform: translateX(3px);
+}
+
+.menu .logout {
+  margin-top: 16px;
+  background: rgba(198,40,40,.85);
+}
+
+.content {
+  flex: 1;
+  margin-left: 290px;
+  padding: 28px;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #ffffff, #edf7f1);
+  border: 1px solid var(--borda);
+  box-shadow: var(--sombra);
+  border-radius: 26px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.eyebrow,
+.section-title span,
+.page-header span {
+  color: var(--verde);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.topbar h1,
+.page-header h1 {
+  margin: 8px 0;
+  font-size: clamp(24px, 3vw, 38px);
+  color: var(--verde-escuro);
+}
+
+.topbar p,
+.page-header p,
+.section-description {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  min-width: 280px;
+}
+
+.date-box,
+.file-status {
+  width: 100%;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: right;
+}
+
+.file-label,
+.btn,
+.btn-limpar-filtro,
+.btn-mini {
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--verde);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-label input {
+  display: none;
+}
+
+.btn.secondary {
+  background: var(--azul);
+}
+
+.btn.danger {
+  background: var(--vermelho);
+}
+
+.btn-limpar-filtro {
+  background: #edf4f0;
+  color: var(--verde);
+  border: 1px solid var(--borda);
+}
+
+.tela {
+  display: none;
+}
+
+.tela.ativa {
+  display: block;
+}
+
+.section,
+.chart-card,
+.filter-panel,
+.page-header {
+  background: var(--card);
+  border: 1px solid var(--borda);
+  border-radius: 24px;
+  box-shadow: var(--sombra);
+  padding: 24px;
+  margin-bottom: 22px;
+}
+
+.section-title {
+  margin-bottom: 18px;
+}
+
+.section-title h2 {
+  color: var(--verde-escuro);
+  margin-top: 5px;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.filter-grid,
+.filtros {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.filter-group {
+  display: grid;
+  gap: 8px;
+}
+
+label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+  outline: none;
+}
+
+.cards,
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.card,
+.kpi-card {
+  background: linear-gradient(135deg, #fff, #f0fbf5);
+  border: 1px solid var(--borda);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: var(--sombra);
+}
+
+.card span,
+.kpi-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.card strong,
+.kpi-card strong {
+  font-size: 28px;
+  color: var(--verde-escuro);
+}
+
+.card small,
+.kpi-card small {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.grid-2,
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.chart-card {
+  min-height: 380px;
+}
+
+.chart-card canvas {
+  width: 100% !important;
+  height: 300px !important;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 18px;
+  border: 1px solid var(--borda);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  min-width: 900px;
+}
+
+#tela-executivo .table-wrap{scrollbar-color:#8fc4b2 #edf7f3;scrollbar-width:thin}
+#tela-executivo .table-wrap table{min-width:980px;table-layout:fixed}
+#tela-executivo .table-wrap th:nth-child(1){width:8%}
+#tela-executivo .table-wrap th:nth-child(2){width:14%}
+#tela-executivo .table-wrap th:nth-child(3){width:11%}
+#tela-executivo .table-wrap th:nth-child(4){width:12%}
+#tela-executivo .table-wrap th:nth-child(5){width:11%}
+#tela-executivo .table-wrap th:nth-child(6){width:11%}
+#tela-executivo .table-wrap th:nth-child(7){width:10%}
+#tela-executivo .table-wrap th:nth-child(8){width:15%}
+#tela-executivo .table-wrap th:nth-child(9){width:8%}
+
+th {
+  background: #edf7f1;
+  color: var(--verde-escuro);
+  text-align: left;
+  padding: 14px;
+  font-size: 13px;
+}
+
+td {
+  border-top: 1px solid var(--borda);
+  padding: 13px 14px;
+  font-size: 14px;
+}
+
+tbody tr:hover {
+  background: #f8fcfa;
+}
+
+.badge {
+  display: inline-block;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.badge.ok {
+  background: #e2f5ea;
+  color: var(--verde);
+}
+
+.badge.info {
+  background: #e8f1fb;
+  color: var(--azul);
+}
+
+.badge.critico {
+  background: #fde8e8;
+  color: var(--vermelho);
+}
+
+.metric-list,
+.resumo-ia,
+#analiseComparativoMensal,
+#analiseExecutivoDiario,
+#analiseExecutivoMensal {
+  color: var(--texto);
+  line-height: 1.75;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: 70px 1fr 100px;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.bar-bg {
+  background: #e6eee9;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar {
+  background: linear-gradient(90deg, var(--verde), var(--verde-claro));
+  height: 100%;
+  border-radius: 999px;
+}
+
+.ranking-list,
+#rankingMensal {
+  display: grid;
+  gap: 12px;
+}
+
+.ranking-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  background: #f7fbf8;
+  border: 1px solid var(--borda);
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.ranking-left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.ranking-medalha {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(0,0,0,.06);
+  font-size: 22px;
+}
+
+.ranking-item small,
+.ranking-right span {
+  display: block;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.ranking-right {
+  text-align: right;
+}
+
+.tabs-servicos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 18px 0 22px;
+}
+
+.servico-btn {
+  border: 1px solid var(--borda);
+  background: #fff;
+  padding: 12px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 900;
+  color: var(--verde-escuro);
+}
+
+.servico-btn.active,
+.servico-btn:hover {
+  background: var(--verde);
+  color: #fff;
+}
+
+.servico-btn small {
+  opacity: .8;
+  font-weight: 600;
+}
+
+.servico-painel {
+  display: none;
+}
+
+.servico-painel.ativa {
+  display: block;
+}
+
+.filtro-execucao-p12 {
+  background: linear-gradient(135deg, #ffffff, #eef8f2);
+  border-left: 6px solid var(--verde);
+}
+
+.not-found {
+  padding: 18px;
+  border-radius: 18px;
+  background: #fff3e0;
+  color: #8a4b00;
+  font-weight: 800;
+}
+
+.loading-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 30, 18, .55);
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-overlay.ativo {
+  display: flex;
+}
+
+.loading-box {
+  background: #fff;
+  border-radius: 24px;
+  padding: 26px;
+  width: min(360px, 90vw);
+  text-align: center;
+  box-shadow: var(--sombra);
+}
+
+.spinner {
+  width: 46px;
+  height: 46px;
+  border: 5px solid #dfe9e3;
+  border-top-color: var(--verde);
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+footer {
+  color: var(--muted);
+  text-align: center;
+  padding: 24px;
+}
+
+@media (max-width: 1100px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+  }
+
+  .layout {
+    display: block;
+  }
+
+  .content {
+    margin-left: 0;
+  }
+
+  .topbar {
+    display: block;
+  }
+
+  .top-actions {
+    justify-content: flex-start;
+    margin-top: 18px;
+  }
+
+  .date-box,
+  .file-status {
+    text-align: left;
+  }
+
+  .cards,
+  .cards-grid,
+  .grid-2,
+  .dashboard-grid,
+  .filter-grid,
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .sidebar,
+  .top-actions,
+  .filter-panel,
+  footer {
+    display: none !important;
+  }
+
+  .content {
+    margin: 0;
+    padding: 0;
+  }
+
+  .section,
+  .chart-card,
+  .card,
+  .kpi-card {
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}
+
+
+
+/* =====================================================
+   AJUSTES FINAIS DE LAYOUT
+===================================================== */
+#comparativoMesesExecucaoBox .filter-grid {
+  align-items: end;
+}
+
+#filtroExecucaoMesesComparar {
+  min-height: 135px;
+}
+
+#tela-executivo #graficoValorServicoBarras {
+  min-height: 420px;
+}
+
+.badge.critico {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.chart-card canvas {
+  max-height: 360px;
+}
+
+
+
+/* Correções finais */
+#rankingMedicaoBox .table-wrap {
+  margin-top: 16px;
+}
+
+#comparativoMesesExecucaoBox .filter-grid {
+  align-items: end;
+}
+
+#secaoResumoKpiFinal {
+  margin-top: 22px;
+}
+
+#tela-executivo #graficoAcumulado {
+  display: none !important;
+}
+
+
+
+/* Ranking por medição visual */
+.ranking-medicao-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.1fr) minmax(300px, .9fr);
+  gap: 20px;
+  align-items: stretch;
+  margin-top: 16px;
+}
+
+.ranking-medicao-chart {
+  margin-bottom: 0;
+  min-height: 420px;
+}
+
+.ranking-medicao-cards {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.ranking-medicao-card {
+  background: linear-gradient(135deg, #ffffff, #eefbf4);
+  border: 1px solid var(--borda);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 10px 26px rgba(5, 45, 25, .08);
+}
+
+.ranking-medicao-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ranking-medicao-topo strong {
+  color: var(--verde-escuro);
+  font-size: 16px;
+}
+
+.ranking-medicao-topo span {
+  font-weight: 900;
+  color: var(--azul);
+}
+
+.ranking-medicao-card small {
+  display: block;
+  color: var(--muted);
+  margin: 6px 0 10px;
+}
+
+.ranking-medicao-card em {
+  display: block;
+  font-style: normal;
+  color: var(--muted);
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ranking-medicao-barra {
+  height: 9px;
+  border-radius: 999px;
+  background: #dfe9e3;
+  overflow: hidden;
+}
+
+.ranking-medicao-barra div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--verde), var(--verde-claro));
+}
+
+.ranking-medicao-tabela {
+  margin-top: 20px;
+}
+
+@media (max-width: 980px) {
+  .ranking-medicao-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+/* Ajustes layout final solicitados */
+#rankingMedicaoBox {
+  min-height: 380px;
+}
+
+#rankingMedicaoBox .ranking-medicao-layout {
+  display: block;
+}
+
+#rankingMedicaoBox .ranking-filter-grid {
+  grid-template-columns: 1fr;
+}
+
+#rankingMedicaoBox .ranking-medicao-cards {
+  margin-top: 14px;
+}
+
+.ranking-medicao-card.compact {
+  padding: 14px;
+}
+
+#comparativoMesesExecucaoBox {
+  margin-top: 24px;
+}
+
+#tela-kpi section.cards {
+  margin-top: 18px;
+}
+
+
+
+/* Proteção: cards do KPI só devem aparecer na tela KPI */
+body:not(.debug) section.cards:has(#kpiServicoSelecionado),
+body:not(.debug) section.cards:has(#kpiPrevistoServico),
+body:not(.debug) section.cards:has(#kpiPesoTotal),
+body:not(.debug) section.cards:has(#kpiTonViagem) {
+  display: none;
+}
+
+#tela-kpi section.cards:has(#kpiServicoSelecionado),
+#tela-kpi section.cards:has(#kpiPrevistoServico),
+#tela-kpi section.cards:has(#kpiPesoTotal),
+#tela-kpi section.cards:has(#kpiTonViagem) {
+  display: grid;
+}
+
+
+
+/* Gráfico com filtro para comparar dois meses */
+#graficoFiltroDoisMesesBox {
+  margin-top: 24px;
+}
+
+#graficoFiltroDoisMesesBox .filter-grid {
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  align-items: end;
+}
+
+#graficoFiltroDoisMesesBox .chart-card {
+  margin-top: 18px;
+  min-height: 420px;
+}
+
+#graficoFiltroDoisMeses {
+  max-height: 420px;
+}
+
+@media (max-width: 900px) {
+  #graficoFiltroDoisMesesBox .filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Gráfico com filtro de serviço e dois meses */
+#graficoFiltroDoisMesesBox .filter-grid {
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+}
+
+@media (max-width: 1000px) {
+  #graficoFiltroDoisMesesBox .filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+/* Proteção: gráfico comparativo só na página Execução P1 a P12 */
+#graficoFiltroDoisMesesBox {
+  margin-top: 24px;
+}
+
+.tela:not(#tela-contrato) #graficoFiltroDoisMesesBox {
+  display: none !important;
+}
+
+#tela-contrato:not(.ativa) #graficoFiltroDoisMesesBox {
+  display: none !important;
+}
+
+
+
+/* PAINEL GERAL • GRÁFICOS COM MESMO TAMANHO */
+#tela-executivo .painel-graficos-iguais {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  margin-bottom: 22px;
+}
+
+#tela-executivo .grafico-painel-grande {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+#tela-executivo .grafico-painel-grande canvas {
+  min-height: 420px !important;
+  max-height: 420px !important;
+}
+
+#rankingMedicaoBox .ranking-filter-grid {
+  grid-template-columns: minmax(220px, 360px);
+  margin-bottom: 16px;
+}
+
+#rankingMedicaoBox .ranking-medicao-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+  align-content: start;
+  flex: 1;
+}
+
+.ranking-medicao-card.compact,
+.ranking-medicao-card {
+  background: linear-gradient(135deg, #ffffff, #eefbf4);
+  border: 1px solid var(--borda);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 10px 26px rgba(5, 45, 25, .08);
+}
+
+.ranking-medicao-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ranking-medicao-topo strong {
+  color: var(--verde-escuro);
+  font-size: 16px;
+}
+
+.ranking-medicao-topo span {
+  color: var(--azul);
+  font-weight: 900;
+}
+
+.ranking-medicao-card small {
+  display: block;
+  color: var(--muted);
+  margin: 8px 0 10px;
+  font-weight: 700;
+}
+
+.ranking-medicao-barra {
+  height: 9px;
+  border-radius: 999px;
+  background: #dfe9e3;
+  overflow: hidden;
+}
+
+.ranking-medicao-barra div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--verde), var(--verde-claro));
+}
+
+@media (max-width: 900px) {
+  #rankingMedicaoBox .ranking-medicao-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* =====================================================
+   EXECUÇÃO P1 A P12 • GRÁFICOS LADO A LADO
+===================================================== */
+.execucao-graficos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 22px;
+  align-items: stretch;
+  margin-bottom: 22px;
+}
+
+.execucao-graficos-grid .section {
+  margin-bottom: 0;
+  min-height: 360px;
+}
+
+.execucao-graficos-grid .chart-card {
+  height: 285px;
+  min-height: 285px;
+  margin-bottom: 0;
+}
+
+.execucao-graficos-grid canvas {
+  width: 100% !important;
+  height: 260px !important;
+  max-height: 260px !important;
+}
+
+@media (max-width: 900px) {
+  .execucao-graficos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .execucao-graficos-grid .chart-card {
+    height: 250px;
+    min-height: 250px;
+  }
+
+  .execucao-graficos-grid canvas {
+    height: 230px !important;
+    max-height: 230px !important;
+  }
+}
+
+
+/* =====================================================
+   OCULTAR GRÁFICOS SEM DADOS
+===================================================== */
+.grafico-sem-dados {
+  display: none !important;
+}
+
+.aviso-grafico-sem-dados {
+  padding: 18px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  font-weight: 800;
+  text-align: center;
+}
+
+
+/* =====================================================
+   AJUSTES VISUAIS DOS GRÁFICOS EXECUÇÃO
+===================================================== */
+.execucao-graficos-grid:empty {
+  display: none;
+}
+
+.execucao-graficos-grid .grafico-sem-dados {
+  display: none !important;
+}
+
+.execucao-graficos-grid .section-title h2 {
+  font-size: 18px;
+}
+
+.execucao-graficos-grid .section-title span {
+  letter-spacing: .04em;
+}
+
+.chart-card {
+  position: relative;
+}
+
+.legenda-grafico-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+.legenda-grafico-info span {
+  background: #f1f5f9;
+  border: 1px solid #dbe5ec;
+  color: #334155;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+
+/* =====================================================
+   GRÁFICOS COM VALORES VISÍVEIS
+===================================================== */
+.execucao-graficos-grid .section {
+  overflow: visible;
+}
+
+.execucao-graficos-grid .chart-card {
+  padding-bottom: 18px;
+}
+
+.grafico-sem-dados {
+  display: none !important;
+}
+
+
+
+/* =====================================================
+   AJUSTE FINAL • LEGENDAS E GRÁFICOS DE LINHA GRANDES
+===================================================== */
+
+/* Remove visualmente o gráfico KPI Previsto x Executado */
+.kpi-previsto-executado-removido,
+.section:has(#graficoKpiPrevistoExecutado),
+.chart-card:has(#graficoKpiPrevistoExecutado) {
+  display: none !important;
+}
+
+/* Gráficos de linha ocupando a página */
+.grafico-linha-full,
+.section:has(#graficoServicoDetalhe),
+.section:has(#graficoKpiServicoDiario),
+.section:has(#graficoKpiPercentualMensal),
+.section:has(#graficoKpiProdutividadeMensal),
+.chart-card:has(#graficoServicoDetalhe),
+.chart-card:has(#graficoKpiServicoDiario),
+.chart-card:has(#graficoKpiPercentualMensal),
+.chart-card:has(#graficoKpiProdutividadeMensal) {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-height: 520px !important;
+}
+
+.grafico-linha-full .chart-card,
+.section:has(#graficoServicoDetalhe) .chart-card,
+.section:has(#graficoKpiServicoDiario) .chart-card,
+.section:has(#graficoKpiPercentualMensal) .chart-card,
+.section:has(#graficoKpiProdutividadeMensal) .chart-card {
+  height: 430px !important;
+  min-height: 430px !important;
+}
+
+#graficoServicoDetalhe,
+#graficoKpiServicoDiario,
+#graficoKpiPercentualMensal,
+#graficoKpiProdutividadeMensal {
+  width: 100% !important;
+  height: 410px !important;
+  max-height: 410px !important;
+}
+
+/* Legenda mais limpa nos gráficos */
+.chart-card canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .grafico-linha-full,
+  .section:has(#graficoServicoDetalhe),
+  .section:has(#graficoKpiServicoDiario),
+  .section:has(#graficoKpiPercentualMensal),
+  .section:has(#graficoKpiProdutividadeMensal) {
+    min-height: 390px !important;
+  }
+
+  .grafico-linha-full .chart-card,
+  .section:has(#graficoServicoDetalhe) .chart-card,
+  .section:has(#graficoKpiServicoDiario) .chart-card,
+  .section:has(#graficoKpiPercentualMensal) .chart-card,
+  .section:has(#graficoKpiProdutividadeMensal) .chart-card {
+    height: 310px !important;
+    min-height: 310px !important;
+  }
+
+  #graficoServicoDetalhe,
+  #graficoKpiServicoDiario,
+  #graficoKpiPercentualMensal,
+  #graficoKpiProdutividadeMensal {
+    height: 290px !important;
+    max-height: 290px !important;
+  }
+}
+
+
+/* =====================================================
+   COMPARATIVO MENSAL • DINÂMICO LIMPO
+===================================================== */
+.comparativo-dinamico-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(360px, 1fr));
+  gap: 22px;
+  align-items: stretch;
+  margin: 22px 0;
+}
+
+.comparativo-dinamico-grid .section {
+  margin-bottom: 0;
+  min-height: 390px;
+}
+
+.comparativo-dinamico-grid .chart-card {
+  height: 305px;
+  min-height: 305px;
+}
+
+.comparativo-dinamico-grid canvas {
+  width: 100% !important;
+  height: 285px !important;
+  max-height: 285px !important;
+}
+
+.comparativo-dinamico-grid .comparativo-top-full,
+.comparativo-dinamico-grid .comparativo-linha-full {
+  grid-column: 1 / -1;
+  min-height: 460px;
+}
+
+.comparativo-dinamico-grid .comparativo-top-full .chart-card,
+.comparativo-dinamico-grid .comparativo-linha-full .chart-card {
+  height: 375px;
+  min-height: 375px;
+}
+
+.comparativo-dinamico-grid .comparativo-top-full canvas,
+.comparativo-dinamico-grid .comparativo-linha-full canvas {
+  height: 350px !important;
+  max-height: 350px !important;
+}
+
+.comparativo-estatico-oculto {
+  display: none !important;
+}
+
+@media (max-width: 1000px) {
+  .comparativo-dinamico-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comparativo-dinamico-grid .chart-card,
+  .comparativo-dinamico-grid .comparativo-top-full .chart-card,
+  .comparativo-dinamico-grid .comparativo-linha-full .chart-card {
+    height: 270px;
+    min-height: 270px;
+  }
+
+  .comparativo-dinamico-grid canvas,
+  .comparativo-dinamico-grid .comparativo-top-full canvas,
+  .comparativo-dinamico-grid .comparativo-linha-full canvas {
+    height: 250px !important;
+    max-height: 250px !important;
+  }
+}
+
+
+/* ===== PATCH FINAL: LEGENDA FORA E GRÁFICOS LIMPOS ===== */
+.chart-card{overflow:visible!important;}
+.chart-card canvas{width:100%!important;}
+.grafico-painel-grande,.section.chart-card.grafico-painel-grande{min-height:500px!important;}
+.grafico-painel-grande canvas{height:420px!important;max-height:420px!important;}
+.comparativo-dinamico-grid{display:grid;grid-template-columns:repeat(2,minmax(360px,1fr));gap:22px;align-items:stretch;margin:22px 0;}
+.comparativo-dinamico-grid .section{margin-bottom:0;min-height:420px;}
+.comparativo-dinamico-grid .chart-card{height:330px;min-height:330px;}
+.comparativo-dinamico-grid canvas{width:100%!important;height:310px!important;max-height:310px!important;}
+.comparativo-dinamico-grid .comparativo-top-full,.comparativo-dinamico-grid .comparativo-linha-full{grid-column:1/-1;min-height:500px;}
+.comparativo-dinamico-grid .comparativo-top-full .chart-card,.comparativo-dinamico-grid .comparativo-linha-full .chart-card{height:410px;min-height:410px;}
+.comparativo-dinamico-grid .comparativo-top-full canvas,.comparativo-dinamico-grid .comparativo-linha-full canvas{height:385px!important;max-height:385px!important;}
+.comparativo-estatico-oculto,.grafico-sem-dados{display:none!important;}
+.logo-img{width:70px;height:70px;object-fit:contain;display:block;}
+@media(max-width:1000px){.comparativo-dinamico-grid{grid-template-columns:1fr}.grafico-painel-grande,.section.chart-card.grafico-painel-grande{min-height:380px!important}.grafico-painel-grande canvas,.comparativo-dinamico-grid canvas,.comparativo-dinamico-grid .comparativo-top-full canvas,.comparativo-dinamico-grid .comparativo-linha-full canvas{height:280px!important;max-height:280px!important}.comparativo-dinamico-grid .chart-card,.comparativo-dinamico-grid .comparativo-top-full .chart-card,.comparativo-dinamico-grid .comparativo-linha-full .chart-card{height:300px;min-height:300px}}
+
+
+/* =====================================================
+   BOTÃO LIMPEZA TOTAL - ADMIN
+===================================================== */
+.btn-limpeza-total {
+  margin-top: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 13px 14px;
+  cursor: pointer;
+  font-weight: 800;
+  text-align: left;
+  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+  color: #fff;
+  transition: .2s;
+  box-shadow: 0 10px 24px rgba(127, 29, 29, .22);
+}
+
+.btn-limpeza-total:hover {
+  background: linear-gradient(135deg, #991b1b, #dc2626);
+  transform: translateX(3px);
+}
+
+.btn-limpeza-total:active {
+  transform: scale(.98);
+}
+
+
+/* =====================================================
+   COMPARATIVO MENSAL POR SERVIÇO NO TOPO
+===================================================== */
+#tela-comparativo .comparativo-servico-topo {
+  order: -10;
+  border: 1px solid rgba(12, 107, 63, .22);
+}
+
+#tela-comparativo .comparativo-servico-topo canvas {
+  min-height: 360px;
+  max-height: 440px;
+}
+
+#tela-comparativo {
+  display: none;
+}
+
+#tela-comparativo.ativa {
+  display: flex;
+  flex-direction: column;
+}
+
+
+
+/* =====================================================
+   PATCH VISUAL • GRÁFICOS MAIS ORGANIZADOS
+===================================================== */
+.grid-2,
+.painel-graficos-iguais,
+.graficos-servico,
+.graficos-execucao-servico,
+.graficos-detalhe-servico {
+  align-items: stretch;
+}
+
+.grid-2 .chart-card,
+.painel-graficos-iguais .chart-card,
+.graficos-servico .chart-card,
+.graficos-execucao-servico .chart-card,
+.graficos-detalhe-servico .chart-card {
+  min-height: 360px;
+  overflow: hidden;
+}
+
+.chart-card canvas,
+.section canvas {
+  width: 100% !important;
+  max-height: 300px !important;
+}
+
+.chart-card {
+  position: relative;
+}
+
+.chart-card .section-title h2 {
+  font-size: 19px;
+  line-height: 1.25;
+}
+
+.graficos-servico,
+.graficos-execucao-servico,
+.graficos-detalhe-servico {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 20px;
+}
+
+#detalheServico .cards {
+  margin-top: 20px;
+}
+
+#tela-kpi .grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 20px;
+}
+
+#tela-kpi .section.chart-card,
+#tela-comparativo .section.chart-card {
+  min-height: 380px;
+}
+
+#cardComparativoMensalServico .chart-card {
+  height: 420px !important;
+}
+
+@media (max-width: 900px) {
+  .grid-2,
+  .graficos-servico,
+  .graficos-execucao-servico,
+  .graficos-detalhe-servico {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-card canvas,
+  .section canvas {
+    max-height: 260px !important;
+  }
+}
+
+/* =====================================================
+   PATCH FINAL • ESPAÇO GLOBAL DOS GRÁFICOS
+===================================================== */
+.section,
+.chart-card,
+.cco-grafico-card-ajustado {
+  overflow: visible !important;
+}
+
+.chart-card {
+  padding: 22px !important;
+  min-height: 390px !important;
+}
+
+.chart-card canvas,
+.cco-grafico-card-ajustado canvas {
+  display: block !important;
+  width: 100% !important;
+  height: 340px !important;
+  max-height: none !important;
+}
+
+.execucao-graficos-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(520px, 1fr)) !important;
+  gap: 26px !important;
+  align-items: stretch !important;
+  margin: 24px 0 28px !important;
+}
+
+.execucao-graficos-grid .section {
+  min-width: 0 !important;
+  padding: 24px !important;
+  margin-bottom: 0 !important;
+  overflow: visible !important;
+}
+
+.execucao-graficos-grid .chart-card {
+  min-height: 430px !important;
+  height: auto !important;
+}
+
+.execucao-graficos-grid canvas {
+  height: 370px !important;
+}
+
+.grafico-linha-full,
+.section.grafico-linha-full,
+.chart-card.grafico-linha-full,
+.execucao-graficos-grid .grafico-linha-full {
+  grid-column: 1 / -1 !important;
+}
+
+.grafico-linha-full .chart-card,
+.section:has(#graficoServicoDetalhe) .chart-card,
+.section:has(#graficoKpiServicoDiario) .chart-card,
+.section:has(#graficoKpiPercentualMensal) .chart-card,
+.section:has(#graficoKpiProdutividadeMensal) .chart-card {
+  min-height: 470px !important;
+}
+
+#graficoServicoDetalhe,
+#graficoKpiServicoDiario,
+#graficoKpiPercentualMensal,
+#graficoKpiProdutividadeMensal {
+  height: 410px !important;
+}
+
+.painel-graficos-iguais,
+.comparativo-dinamico-grid {
+  gap: 26px !important;
+}
+
+.painel-graficos-iguais .chart-card,
+.comparativo-dinamico-grid .chart-card {
+  min-height: 430px !important;
+}
+
+.painel-graficos-iguais canvas,
+.comparativo-dinamico-grid canvas {
+  height: 370px !important;
+}
+
+.cards {
+  margin-top: 26px !important;
+}
+
+.grafico-sem-dados {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 1280px) {
+  .execucao-graficos-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .chart-card canvas,
+  .execucao-graficos-grid canvas,
+  .painel-graficos-iguais canvas,
+  .comparativo-dinamico-grid canvas {
+    height: 340px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .chart-card {
+    min-height: 340px !important;
+    padding: 16px !important;
+  }
+
+  .chart-card canvas,
+  .execucao-graficos-grid canvas,
+  .painel-graficos-iguais canvas,
+  .comparativo-dinamico-grid canvas,
+  #graficoServicoDetalhe,
+  #graficoKpiServicoDiario,
+  #graficoKpiPercentualMensal,
+  #graficoKpiProdutividadeMensal {
+    height: 300px !important;
+  }
+}
+
+/* =====================================================
+   AJUSTE FINAL DE ESPAÇO DOS GRÁFICOS
+===================================================== */
+.cco-card-grafico-final,
+.cco-grafico-card-ajustado,
+.chart-card {
+  overflow: visible !important;
+}
+.cco-card-grafico-final canvas,
+.cco-grafico-card-ajustado canvas,
+.chart-card canvas {
+  min-height: 430px !important;
+  height: 430px !important;
+  max-height: none !important;
+}
+.painel-graficos-iguais {
+  align-items: stretch;
+}
+.painel-graficos-iguais .chart-card,
+.graficos-servico .chart-card,
+.graficos-servico .section {
+  min-height: 540px !important;
+  padding: 28px !important;
+}
+.graficos-servico {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)) !important;
+  gap: 26px !important;
+  align-items: stretch !important;
+}
+#cardComparativoMensalServico .chart-card,
+.comparativo-servico-topo .chart-card {
+  height: 480px !important;
+  min-height: 480px !important;
+  overflow: visible !important;
+}
+#cardComparativoMensalServico canvas,
+#graficoComparativoServicoMensal {
+  height: 430px !important;
+  min-height: 430px !important;
+}
+@media (max-width: 900px) {
+  .graficos-servico { grid-template-columns: 1fr !important; }
+  .cco-card-grafico-final canvas,
+  .cco-grafico-card-ajustado canvas,
+  .chart-card canvas {
+    height: 360px !important;
+    min-height: 360px !important;
+  }
+}
+
+
+/* PATCH FINAL GITHUB - espaço e datas dos gráficos */
+.chart-card,
+.grafico-card,
+.section:has(canvas) {
+  overflow: visible !important;
+}
+
+.chart-card canvas,
+.grafico-card canvas,
+.section canvas {
+  min-height: 380px !important;
+}
+
+#graficoKpiDiario,
+#graficoKpiExecucaoDiaria,
+#graficoExecucaoDiaria,
+#graficoServicoDetalhe {
+  min-height: 460px !important;
+}
+
+.painel-graficos-iguais,
+.graficos-servico,
+.graficos-grid {
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .chart-card canvas,
+  .grafico-card canvas,
+  .section canvas {
+    min-height: 340px !important;
+  }
+}
+
+
+/* =====================================================
+   SAP ANALYTICS CLOUD • VISUAL EXECUTIVO CLARO
+===================================================== */
+:root {
+  --sap-verde: #A7F3D0;
+  --sap-azul: #BFDBFE;
+  --sap-roxo: #DDD6FE;
+  --sap-vermelho: #FECACA;
+  --sap-amarelo: #FDE68A;
+  --sap-ciano: #BAE6FD;
+  --sap-texto: #0f172a;
+  --sap-muted: #64748b;
+  --sap-borda: rgba(148, 163, 184, .26);
+  --sap-card: rgba(255, 255, 255, .94);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(167, 243, 208, .45), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(191, 219, 254, .42), transparent 32%),
+    radial-gradient(circle at 50% 92%, rgba(221, 214, 254, .38), transparent 28%),
+    linear-gradient(135deg, #f8fafc 0%, #eef6ff 48%, #f8f5ff 100%) !important;
+  color: var(--sap-texto);
+}
+
+.topbar,
+.section,
+.chart-card,
+.filter-panel,
+.page-header,
+.card,
+.kpi-card,
+.resumo-ia,
+.table-wrap {
+  background: var(--sap-card) !important;
+  border: 1px solid var(--sap-borda) !important;
+  border-radius: 24px !important;
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, .08),
+    inset 0 1px 0 rgba(255, 255, 255, .72) !important;
+}
+
+.chart-card {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.97), rgba(248,250,252,.94)) !important;
+  min-height: 450px;
+}
+
+.chart-card canvas {
+  min-height: 370px !important;
+}
+
+.section-title h2,
+.page-header h1,
+.topbar h1 {
+  color: #064e3b !important;
+  letter-spacing: -.03em;
+}
+
+.section-title span,
+.eyebrow,
+.page-header span {
+  color: #0f766e !important;
+}
+
+.card {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.98), rgba(240,253,250,.82)) !important;
+}
+
+.card strong {
+  color: #064e3b !important;
+}
+
+.file-label,
+.btn,
+.btn-mini {
+  background: linear-gradient(135deg, #60A5FA, #34D399) !important;
+  border-radius: 16px !important;
+}
+
+.btn.secondary {
+  background: linear-gradient(135deg, #BFDBFE, #93C5FD) !important;
+  color: #0f172a !important;
+}
+
+.btn.danger {
+  background: linear-gradient(135deg, #FECACA, #FCA5A5) !important;
+  color: #7f1d1d !important;
+}
+
+.btn-limpar-filtro {
+  background: linear-gradient(135deg, #ffffff, #eff6ff) !important;
+  color: #0f766e !important;
+  border: 1px solid var(--sap-borda) !important;
+}
+
+thead th {
+  background: linear-gradient(135deg, #ecfdf5, #eff6ff, #faf5ff) !important;
+  color: #064e3b !important;
+  font-weight: 900 !important;
+}
+
+tbody tr:hover {
+  background: rgba(191, 219, 254, .22) !important;
+}
+
+.badge.ok {
+  background: #A7F3D0 !important;
+  color: #065f46 !important;
+}
+
+.badge.info {
+  background: #BFDBFE !important;
+  color: #1e3a8a !important;
+}
+
+.badge.critico {
+  background: #FECACA !important;
+  color: #7f1d1d !important;
+}
+
+/* =========================================================
+   DESIGN MODERNO EXTRA PARA CARDS DOS GRÁFICOS
+   Visual apenas. Não altera lógica do sistema.
+   ========================================================= */
+.chart-card,
+.section.chart-card,
+.grafico-painel-grande {
+  background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,251,255,.96)) !important;
+  border: 1px solid rgba(148, 163, 184, .18) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .08), 0 2px 10px rgba(15, 23, 42, .04) !important;
+  overflow: hidden;
+  position: relative;
+}
+
+.chart-card::before,
+.section.chart-card::before,
+.grafico-painel-grande::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, #8bb7ff, #82e7d3, #ffe0a3, #d6c0ff);
+  opacity: .95;
+}
+
+.chart-card canvas,
+.section.chart-card canvas,
+.grafico-painel-grande canvas {
+  filter: drop-shadow(0 10px 18px rgba(15, 23, 42, .08));
+}
+
+.section-title span {
+  color: #64748b !important;
+  letter-spacing: .09em;
+  font-weight: 800;
+}
+
+.section-title h2,
+.section-title h3 {
+  color: #0f172a !important;
+  font-weight: 850 !important;
+}
+
+
+/* =====================================================
+   PATCH FINAL • LAYOUT VERDE CLARO INSTITUCIONAL
+   Remove tons rosa/lilás/azulados e deixa visual CCO/SLU.
+===================================================== */
+:root{
+  --sap-verde:#DFF7E8 !important;
+  --sap-azul:#BBF7D0 !important;
+  --sap-roxo:#DCFCE7 !important;
+  --sap-vermelho:#ECFDF5 !important;
+  --sap-amarelo:#F0FDF4 !important;
+  --sap-ciano:#A7F3D0 !important;
+  --sap-texto:#0B3D2A !important;
+  --sap-muted:#527265 !important;
+  --sap-borda:rgba(22, 163, 74, .18) !important;
+  --sap-card:rgba(255,255,255,.96) !important;
+  --fundo:#F3FBF6 !important;
+  --card:#FFFFFF !important;
+  --texto:#0B3D2A !important;
+  --verde:#0F7B4D !important;
+  --verde-claro:#22C55E !important;
+  --verde-escuro:#063F24 !important;
+}
+
+body{
+  background:
+    radial-gradient(circle at 14% 8%, rgba(187,247,208,.62), transparent 32%),
+    radial-gradient(circle at 86% 18%, rgba(220,252,231,.78), transparent 34%),
+    radial-gradient(circle at 50% 95%, rgba(167,243,208,.45), transparent 30%),
+    linear-gradient(135deg, #F7FCF9 0%, #EEF9F1 50%, #F4FBF6 100%) !important;
+}
+
+.topbar,
+.section,
+.chart-card,
+.filter-panel,
+.page-header,
+.card,
+.kpi-card,
+.resumo-ia,
+.table-wrap{
+  background:linear-gradient(145deg, rgba(255,255,255,.98), rgba(244,252,247,.94)) !important;
+  border:1px solid rgba(22,163,74,.18) !important;
+  box-shadow:0 18px 45px rgba(6,63,36,.08), inset 0 1px 0 rgba(255,255,255,.85) !important;
+}
+
+.chart-card,
+.section.chart-card,
+.grafico-painel-grande{
+  background:linear-gradient(180deg, rgba(255,255,255,.99), rgba(241,250,244,.96)) !important;
+  border:1px solid rgba(22,163,74,.18) !important;
+  box-shadow:0 18px 45px rgba(6,63,36,.08), 0 2px 10px rgba(6,63,36,.04) !important;
+}
+
+.chart-card::before,
+.section.chart-card::before,
+.grafico-painel-grande::before{
+  background:linear-gradient(90deg, #0B5D3B, #0F7B4D, #16A34A, #86EFAC) !important;
+}
+
+.file-label,
+.btn,
+.btn-mini{
+  background:linear-gradient(135deg, #0B5D3B, #16A34A) !important;
+  color:#FFFFFF !important;
+}
+
+.btn.secondary{
+  background:linear-gradient(135deg, #BBF7D0, #4ADE80) !important;
+  color:#064E3B !important;
+}
+
+.btn.danger{
+  background:linear-gradient(135deg, #B91C1C, #DC2626) !important;
+  color:#FFFFFF !important;
+}
+
+thead th{
+  background:linear-gradient(135deg, #ECFDF5, #DCFCE7, #BBF7D0) !important;
+  color:#064E3B !important;
+}
+
+tbody tr:hover{ background:rgba(187,247,208,.28) !important; }
+
+.section-title span,
+.eyebrow,
+.page-header span{ color:#0F7B4D !important; }
+.section-title h2,
+.section-title h3,
+.page-header h1,
+.topbar h1{ color:#063F24 !important; }
+
+.chart-card canvas,
+.section.chart-card canvas,
+.grafico-painel-grande canvas{
+  filter:drop-shadow(0 8px 14px rgba(6,63,36,.10)) !important;
+}
+
+/* =====================================================
+   PATCH MOBILE FINAL • GRÁFICOS E DATAS NO CELULAR
+   - melhora altura dos gráficos no celular
+   - evita corte/sobreposição de datas
+   - deixa cards em uma coluna e mais legíveis
+===================================================== */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden !important;
+  }
+
+  .content {
+    padding: 16px 8px !important;
+  }
+
+  .topbar,
+  .page-header,
+  .filter-panel,
+  .section,
+  .chart-card,
+  .section.chart-card {
+    border-radius: 22px !important;
+  }
+
+  .grid-2,
+  .dashboard-grid,
+  .cards,
+  .cards-grid,
+  .filter-grid,
+  .filtros,
+  .painel-graficos-iguais,
+  .graficos-servico,
+  .execucao-graficos-grid,
+  .comparativo-dinamico-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .section-title h2,
+  .section-title h3 {
+    font-size: 22px !important;
+    line-height: 1.18 !important;
+    word-break: normal !important;
+  }
+
+  .section-title span,
+  .eyebrow,
+  .page-header span {
+    font-size: 11px !important;
+    letter-spacing: .08em !important;
+  }
+
+  .chart-card,
+  .section.chart-card,
+  .grafico-painel-grande,
+  .cco-card-grafico-final,
+  .cco-grafico-card-ajustado {
+    min-height: 470px !important;
+    height: auto !important;
+    padding: 18px 12px 22px !important;
+    overflow: visible !important;
+  }
+
+  .chart-card canvas,
+  .section.chart-card canvas,
+  .grafico-painel-grande canvas,
+  .cco-card-grafico-final canvas,
+  .cco-grafico-card-ajustado canvas,
+  #graficoKpiServicoMensal,
+  #graficoKpiPercentualMensal,
+  #graficoKpiProdutividadeMensal,
+  #graficoKpiVelocidadeMediaMensal,
+  #graficoKpiComparativoMensal,
+  #graficoKpiServicoDiario,
+  #graficoKpiPrevistoExecutado,
+  #graficoKpiServicoIndicadores {
+    display: block !important;
+    width: 100% !important;
+    min-height: 350px !important;
+    height: 350px !important;
+    max-height: none !important;
+  }
+
+  #graficoKpiPercentualMensal,
+  #graficoKpiProdutividadeMensal,
+  #graficoKpiServicoMensal {
+    min-height: 380px !important;
+    height: 380px !important;
+  }
+
+  .table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .content {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .chart-card,
+  .section.chart-card {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+/* =====================================================
+   MOBILE FINAL • GRÁFICOS MAIS LEGÍVEIS NO CELULAR
+   - Cards mais altos para Chart.js
+   - Menos aperto em datas e legends
+   - Canvas com altura mínima no Android/iPhone
+===================================================== */
+@media (max-width: 768px) {
+  .content {
+    padding: 14px 8px !important;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .section,
+  .chart-card {
+    border-radius: 22px !important;
+    padding: 18px 14px !important;
+    overflow: hidden !important;
+  }
+
+  .section.chart-card,
+  .chart-card {
+    min-height: 455px !important;
+  }
+
+  .chart-card canvas,
+  .section.chart-card canvas {
+    width: 100% !important;
+    min-height: 335px !important;
+    max-height: 360px !important;
+  }
+
+  #graficoKpiServicoDiario,
+  #graficoKpiServicoMensal,
+  #graficoKpiPercentualMensal,
+  #graficoKpiProdutividadeMensal,
+  #graficoKpiVelocidadeMediaMensal {
+    min-height: 345px !important;
+    max-height: 370px !important;
+  }
+
+  .section-title h2 {
+    font-size: 22px !important;
+    line-height: 1.18 !important;
+  }
+
+  .section-title span {
+    font-size: 11px !important;
+    letter-spacing: .10em !important;
+  }
+}
+
+
+
+/* =====================================================
+   MOBILE FIX2 • gráficos legíveis no celular
+===================================================== */
+@media (max-width: 768px) {
+  .content {
+    margin-left: 0 !important;
+    padding: 14px !important;
+  }
+
+  .sidebar {
+    position: relative !important;
+    width: 100% !important;
+    inset: auto !important;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .layout {
+    display: block !important;
+  }
+
+  .grid-2,
+  .grid-3,
+  .cards,
+  .filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .section,
+  .chart-card,
+  .filter-panel,
+  .page-header,
+  .topbar {
+    border-radius: 22px !important;
+    padding: 18px 14px !important;
+  }
+
+  .chart-card,
+  .section.chart-card {
+    min-height: 430px !important;
+    overflow: hidden;
+  }
+
+  .chart-card canvas,
+  .section.chart-card canvas,
+  canvas {
+    min-height: 330px !important;
+    max-height: 360px !important;
+  }
+
+  .section-title h2 {
+    font-size: 22px !important;
+    line-height: 1.18 !important;
+  }
+
+  .section-title span {
+    font-size: 11px !important;
+  }
+
+  .topbar {
+    display: block !important;
+  }
+
+  .top-actions {
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+  }
+
+  table {
+    font-size: 12px !important;
+  }
+}

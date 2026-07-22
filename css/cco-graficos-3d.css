@@ -1,0 +1,56 @@
+.cco-chart-3d,.cco-echarts-3d{display:block;width:100%;height:340px;min-height:340px;border:1px solid rgba(167,243,208,.08);border-radius:11px;background:rgba(3,17,14,.42);overflow:hidden}
+.cco-chart-3d--principal,.kpi-single-chart .cco-chart-3d,.grafico-linha-full .cco-chart-3d{height:420px;min-height:420px}
+.kpi-composition-chart .cco-chart-3d,.kpi-speed-chart .cco-chart-3d{height:340px;min-height:340px}
+canvas[aria-hidden="true"]{display:none!important}
+@media(max-width:768px){.cco-chart-3d,.cco-chart-3d--principal,.cco-echarts-3d,.kpi-single-chart .cco-chart-3d,.grafico-linha-full .cco-chart-3d{height:300px;min-height:300px}}
+
+/* Execução: evolução histórica abaixo da operação por turno. */
+.execution-page #secaoEvolucaoServico{grid-column:1/-1;width:100%;min-width:0;margin-top:22px;flex:0 0 100%}
+.execution-page #graficoExecDetalheEvolucao{width:100%;height:390px;min-height:390px}
+@media(max-width:900px){.execution-page #graficoExecDetalheEvolucao{height:350px;min-height:350px}}
+@media(max-width:680px){.execution-page #graficoExecDetalheEvolucao{height:310px;min-height:310px}}
+
+.execution-page .secao-evolucao__cabecalho{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.execution-page .execucao-tendencia{display:flex;align-items:center;gap:10px;min-width:230px;max-width:360px;padding:9px 12px;border:1px solid rgba(92,232,180,.22);border-radius:14px;background:rgba(4,34,28,.76);color:#63cfee}
+.execution-page .execucao-tendencia__icone{display:block;width:38px;height:38px;flex:0 0 38px}
+.execution-page .execucao-tendencia__svg{display:block;width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.execution-page .execucao-tendencia__titulo{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.execution-page .execucao-tendencia__texto{display:block;margin-top:2px;font-size:13px;line-height:1.3}
+.execution-page .execucao-tendencia.is-crescimento{color:#5cf0b6}.execution-page .execucao-tendencia.is-queda{color:#ff9b72}.execution-page .execucao-tendencia.is-estavel{color:#63cfee}.execution-page .execucao-tendencia.is-indisponivel{color:#91a9a0}
+.execution-page .execucao-tendencia__horizontal{display:none}.execution-page .execucao-tendencia.is-queda .execucao-tendencia__direcional{transform:translateY(48px) scaleY(-1)}.execution-page .execucao-tendencia.is-estavel .execucao-tendencia__direcional,.execution-page .execucao-tendencia.is-indisponivel .execucao-tendencia__direcional{display:none}.execution-page .execucao-tendencia.is-estavel .execucao-tendencia__horizontal,.execution-page .execucao-tendencia.is-indisponivel .execucao-tendencia__horizontal{display:block}
+@keyframes ccoTendenciaSubir{0%{opacity:0;transform:translateY(12px) scale(.85)}70%{opacity:1;transform:translateY(-2px) scale(1.05)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes ccoTendenciaDescer{0%{opacity:0;transform:translateY(-12px) scale(.85)}70%{opacity:1;transform:translateY(2px) scale(1.05)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes ccoTendenciaEstavel{0%{opacity:0;transform:translateX(-10px)}100%{opacity:1;transform:translateX(0)}}
+.execution-page .execucao-tendencia.is-animando.is-crescimento .execucao-tendencia__icone{animation:ccoTendenciaSubir 700ms cubic-bezier(.2,.8,.2,1)}.execution-page .execucao-tendencia.is-animando.is-queda .execucao-tendencia__icone{animation:ccoTendenciaDescer 700ms cubic-bezier(.2,.8,.2,1)}.execution-page .execucao-tendencia.is-animando.is-estavel .execucao-tendencia__icone{animation:ccoTendenciaEstavel 600ms ease-out}
+@media(max-width:760px){.execution-page .secao-evolucao__cabecalho{align-items:flex-start;flex-direction:column}.execution-page .execucao-tendencia{width:100%;max-width:none;min-width:0}.execution-page .execucao-tendencia__icone{width:32px;height:32px;flex-basis:32px}.execution-page .execucao-tendencia__texto{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.execution-page .execucao-tendencia__icone{animation:none!important}}
+@media print{.cco-chart-3d,.cco-echarts-3d{break-inside:avoid}}
+
+/* KPI • contenção exclusiva da rosca Indicadores Operacionais. */
+body.kpi-page .section.chart-card:has(#graficoKpiServicoIndicadores){display:flex;flex-direction:column;min-height:430px;overflow:hidden}
+body.kpi-page .kpi-composition-visuals{flex:0 0 auto;margin-bottom:10px}
+body.kpi-page .kpi-composition-chart{flex:1 1 auto;width:100%;height:330px;min-height:0;margin-top:0;padding-top:8px;overflow:hidden}
+body.kpi-page #graficoKpiServicoIndicadores{width:100%!important;height:330px!important;min-height:330px!important;max-height:330px!important}
+@media (min-width:769px) and (max-width:1024px){body.kpi-page .kpi-composition-chart,body.kpi-page #graficoKpiServicoIndicadores{height:310px!important;min-height:310px!important;max-height:310px!important}}
+@media (max-width:768px){body.kpi-page .kpi-composition-chart,body.kpi-page #graficoKpiServicoIndicadores{height:290px!important;min-height:290px!important;max-height:290px!important}}
+
+/* KPI • percurso operacional da Velocidade Média Mensal. */
+body.kpi-page .section.chart-card:has(#graficoKpiVelocidadeMediaMensal){position:relative;overflow:hidden}
+body.kpi-page .cco-velocidade-percurso{position:absolute;z-index:2;top:76px;bottom:18px;left:18px;width:calc(70% - 24px);min-height:220px;overflow:hidden;border-radius:12px;background:radial-gradient(circle at 48% 45%,rgba(34,211,238,.08),transparent 52%),linear-gradient(rgba(167,243,208,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(167,243,208,.025) 1px,transparent 1px);background-size:100% 100%,24px 24px,24px 24px;pointer-events:none}
+body.kpi-page .cco-velocidade-percurso>span{position:absolute;z-index:2;top:10px;left:14px;color:#a7f3d0;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+body.kpi-page .cco-velocidade-rota{display:block;width:100%;height:100%;overflow:visible}
+body.kpi-page .cco-rota-base{fill:none;stroke:url(#ccoRotaGradiente);stroke-width:18;stroke-linecap:round;filter:drop-shadow(0 8px 12px rgba(0,0,0,.35))}
+body.kpi-page .cco-rota-progresso{fill:none;stroke:rgba(79,240,179,.9);stroke-width:4;stroke-linecap:round;stroke-dasharray:12 16;animation:ccoRotaMovimento 1.8s linear infinite}
+body.kpi-page .cco-rota-inicio{fill:#4ade80;stroke:#d1fae5;stroke-width:3;filter:drop-shadow(0 0 8px rgba(74,222,128,.65))}
+body.kpi-page .cco-rota-fim{fill:#22d3ee;stroke:#cffafe;stroke-width:3;filter:drop-shadow(0 0 8px rgba(34,211,238,.65))}
+body.kpi-page .cco-rota-texto{fill:#d1fae5;font:700 13px Inter,sans-serif}
+body.kpi-page .cco-rota-marcas circle{fill:#052e2b;stroke:#a7f3d0;stroke-width:3}
+body.kpi-page .cco-rota-particulas circle{fill:#67e8f9;opacity:.58;animation:ccoParticulaRota 2.4s ease-in-out infinite alternate}
+body.kpi-page .cco-rota-particulas circle:nth-child(2){animation-delay:.6s}body.kpi-page .cco-rota-particulas circle:nth-child(3){animation-delay:1.2s}
+body.kpi-page .cco-veiculo-rota{fill:#10b981;stroke:#d1fae5;stroke-width:2;filter:url(#ccoBrilhoVeiculo);will-change:transform}
+body.kpi-page .cco-veiculo-rota circle{fill:#052e2b;stroke:#67e8f9}body.kpi-page .cco-veiculo-rota .cco-veiculo-brilho{fill:none;stroke:#ecfdf5;stroke-width:2}
+@keyframes ccoRotaMovimento{to{stroke-dashoffset:-28}}
+@keyframes ccoParticulaRota{to{opacity:.16;transform:translateY(-5px)}}
+@media(max-width:1024px){body.kpi-page .cco-velocidade-percurso{width:calc(68% - 18px)}}
+@media(max-width:768px){body.kpi-page .kpi-speed-chart{height:360px;min-height:360px}body.kpi-page .cco-velocidade-percurso{top:72px;right:8px;bottom:auto;left:8px;width:calc(100% - 16px);height:205px;min-height:205px}body.kpi-page .cco-velocidade-percurso>span,body.kpi-page .cco-rota-texto{display:none}body.kpi-page .kpi-speedometer-drawing{top:auto;right:auto;bottom:8px;left:50%;transform:translateX(-50%) scale(.78);transform-origin:bottom center}}
+@media(prefers-reduced-motion:reduce){body.kpi-page .cco-rota-progresso,body.kpi-page .cco-rota-particulas circle{animation:none}body.kpi-page .cco-veiculo-rota{display:none}}

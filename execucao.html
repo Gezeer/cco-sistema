@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Execução P1 a P12 • CCO</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="css/style.css?v=20260717-periodos-operacoes-v1" />
+  <link rel="stylesheet" href="css/theme.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/layout.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/dashboard.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cards.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/charts.css?v=20260718-graficos-animados-3d-v1">
+  <link rel="stylesheet" href="css/forms.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/tables.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/animations.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cco-green-command.css?v=20260720-cores-execucao-v4">
+  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260721-execucao-evolucao-tendencia-v1">
+</head>
+<body class="execution-page">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="logo.png" alt="Valor Ambiental" style="width:58px;height:58px;object-fit:contain;border-radius:14px;background:rgba(255,255,255,.16);padding:6px;">
+        <div>
+          <h2>ÍNDICE DE EFICIÊNCIA OPERACIONAL</h2>
+          <p>Painel Executivo</p>
+        </div>
+      </div>
+
+      <div class="sidebar-text">
+        Gestão executiva dos indicadores operacionais, contratuais e KPI’s dos serviços P1 a P12.
+      </div>
+      
+      <nav class="menu">
+        <button onclick="window.location.href='index.html'">Painel Geral</button>
+        <button onclick="window.location.href='kpi.html'">🎯 KPI</button>
+        <button class="active" onclick="window.location.href='execucao.html'">Execução P1 a P12</button>
+        <button id="menuAnalyticsAI" onclick="window.location.href='analytics-ai.html'">✨ CCO Analytics AI</button>
+        <button id="menuBaseImportada" onclick="window.location.href='dados.html'">202️ Base Importada</button>
+        <button id="menuHistorico" onclick="window.location.href='historico.html'">📜 Histórico</button>
+        <button class="logout" onclick="sair()">➜ Sair</button>
+        <button id="btnLimpezaTotal" class="btn-limpeza-total" onclick="limpezaTotal()">Limpeza Total</button>
+      </nav>
+
+    </aside>
+
+    <main class="content">
+      
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">Centro de Controle Operacional 👥</span>
+          <h1>Intranet Executiva de KPI’s</h1>
+          <p>
+            Consolidação dos indicadores de limpeza urbana, execução contratual,
+            produtividade, volume operacional e respostas executivas por serviço.
+          </p>
+        </div>
+
+        <div class="top-actions">
+          <div class="date-box" id="dataAtual"></div>
+          
+          <button id="btnExportar" class="btn secondary" onclick="window.print()">Exportar PDF</button>
+          
+          <div class="file-status" id="nomeArquivo">Carregando dados da base...</div>
+        </div>
+      </header>
+
+      <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <strong>Processando planilha...</strong>
+          <span>Aguarde enquanto os dados são analisados.</span>
+        </div>
+      </div>
+
+      <section id="tela-contrato" class="tela ativa">
+        <div class="section">
+          <div class="section-title">
+            <span>Execução contratual</span>
+            <h2>Serviços P1 a P12</h2>
+          </div>
+
+          <p class="section-description">
+            Selecione mês e ano para visualizar a execução mensal acumulativa dos serviços P1 a P12.
+          </p>
+
+          <section class="filter-panel filtro-execucao-p12">
+            <div class="filter-header">
+              <div>
+                <span>Filtro mensal da execução</span>
+                <h3>Selecionar mês da execução P1 a P12</h3>
+              </div>
+              <button class="btn-limpar-filtro" onclick="limparFiltroExecucaoMensal()">Limpar filtro</button>
+            </div>
+
+            <div class="filter-grid">
+              <div class="filter-group">
+                <label>Mês com dados</label>
+                <select id="filtroExecucaoMes" onchange="alterarMesExecucaoCCO()">
+                  <option value="">Todos os meses</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Ano com dados</label>
+                <select id="filtroExecucaoAno" onchange="alterarAnoExecucaoCCO()">
+                  <option value="">Todos os anos</option>
+                </select>
+              </div>
+            </div>
+
+            <p class="section-description">
+              O filtro considera apenas os meses e anos existentes na planilha importada.
+              Os lançamentos diários são somados dentro do mês até atingir o previsto mensal.
+            </p>
+          </section>
+<div class="tabs-servicos">
+            <button class="servico-btn active" onclick="mostrarServico('geral', this)">Geral<br><small>Consolidado</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P1', this)">P1<br><small>Coleta Orgnica</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P2.1', this)">P2.1<br><small>Coleta Seletiva</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P2.2', this)">P2.2<br><small>Rejeito Seletivo</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P3', this)">P3<br><small>Remoção Manual</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P4', this)">P4<br><small>Remoção Mecanizada</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P5', this)">P5<br><small>Varrição Manual</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P6', this)">P6<br><small>Varrição Mecanizada</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P7', this)">P7<br><small>Lavagem de Vias</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P8', this)">P8<br><small>Limpeza de Bens</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P9', this)">P9<br><small>Catação</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P10', this)">P10<br><small>Pintura Mecanizada</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P11', this)">P11<br><small>Pós-eventos/Gordura</small></button>
+            <button class="servico-btn" onclick="mostrarServico('P12', this)">P12<br><small>Transbordo</small></button>
+          </div>
+
+          <div id="avisoPeriodoExecucao" class="resumo-ia"></div>
+
+          <div id="servico-geral" class="servico-painel ativa">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Programa</th>
+                    <th>KPI</th>
+                    <th>Previsto</th>
+                    <th>Executado</th>
+                    <th>Índice</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="tabelaContratual"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="servico-detalhe" class="servico-painel">
+            <div id="detalheServico"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPI POR SERVIÇO COMPLETO -->
+
+      <footer>
+        Intranet KPI CCO • Serviço de Limpeza Urbana • Valor Ambiental
+      </footer>
+    </main>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js?v=20260720-novo-banco-principal-v1"></script>
+<script src="js/supabase.js?v=20260720-conexao-diagnostico-v3"></script>
+<script>window.CCO_PAGE = "execucao";</script>
+<script src="js/cco-regras-negocio.js?v=20260720-dias-centralizados-v1" defer></script>
+<script src="js/regras-servicos.js?v=20260720-valores-oficiais-v1" defer></script>
+<script src="services/cache.js?v=20260720-arquitetura-v2" defer></script>
+<script src="services/painelService.js?v=20260720-arquitetura-v2" defer></script>
+<script src="services/kpiService.js?v=20260720-arquitetura-v2" defer></script>
+<script src="services/execucaoService.js?v=20260721-execucao-filtro-2025-v1" defer></script>
+  <script src="cco-metricas.js?v=20260720-novo-banco-principal-v1" defer></script>
+  <script src="js/cco-graficos-3d.js?v=20260721-graficos-3d-direto-v4" defer></script>
+<script src="utils.js?v=20260721-execucao-filtro-2025-v1" defer></script>
+<script src="cco-fixes.js?v=20260721-execucao-filtro-2025-v1" defer></script>
+  <script src="execucao.js?v=20260721-execucao-evolucao-tendencia-v1" defer></script>
+  <script src="js/theme.js?v=20260718-enterprise-v1"></script>
+  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/layout.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/animations.js?v=20260718-enterprise-v1"></script>
+  <script src="js/cco-v2-data.js?v=20260720-v2"></script>
+</body>
+</html>

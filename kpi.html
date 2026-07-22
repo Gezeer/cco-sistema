@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KPI • CCO</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="css/style.css?v=20260717-kpi-performance-v1" />
+  <link rel="stylesheet" href="css/theme.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/layout.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/dashboard.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cards.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/charts.css?v=20260718-graficos-animados-3d-v1">
+  <link rel="stylesheet" href="css/forms.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/tables.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/animations.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cco-green-command.css?v=20260718-kpi-fundo-verde-v4">
+  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260721-kpi-percurso-velocidade-v1">
+</head>
+<body class="kpi-page">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="logo.png" alt="Valor Ambiental" style="width:58px;height:58px;object-fit:contain;border-radius:14px;background:rgba(255,255,255,.16);padding:6px;">
+        <div>
+          <h2>ÍNDICE DE EFICIÊNCIA OPERACIONAL</h2>
+          <p>Painel Executivo</p>
+        </div>
+      </div>
+
+      <div class="sidebar-text">
+        Gestão executiva dos indicadores operacionais, contratuais e KPI’s dos serviços P1 a P12.
+      </div>
+      
+      <nav class="menu">
+        <button onclick="window.location.href='index.html'">Painel Geral</button>
+        <button class="active" onclick="window.location.href='kpi.html'">🎯 KPI</button>
+        <button onclick="window.location.href='execucao.html'">Execução P1 a P12</button>
+        <button id="menuAnalyticsAI" onclick="window.location.href='analytics-ai.html'">✨ CCO Analytics AI</button>
+        <button id="menuBaseImportada" onclick="window.location.href='dados.html'">202️ Base Importada</button>
+        <button id="menuHistorico" onclick="window.location.href='historico.html'">📜 Histórico</button>
+        <button class="logout" onclick="sair()">➜ Sair</button>
+        <button id="btnLimpezaTotal" class="btn-limpeza-total" onclick="limpezaTotal()">Limpeza Total</button>
+      </nav>
+
+    </aside>
+
+    <main class="content">
+      
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">Centro de Controle Operacional 👥</span>
+          <h1>Intranet Executiva de KPI’s</h1>
+          <p>
+            Consolidação dos indicadores de limpeza urbana, execução contratual,
+            produtividade, volume operacional e respostas executivas por serviço.
+          </p>
+        </div>
+
+        <div class="top-actions">
+          <div class="date-box" id="dataAtual"></div>
+          
+          <button id="btnExportar" class="btn secondary" onclick="window.print()">Exportar PDF</button>
+          
+          <div class="file-status" id="nomeArquivo">Carregando dados da base...</div>
+        </div>
+      </header>
+
+      <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <strong>Processando planilha...</strong>
+          <span>Aguarde enquanto os dados são analisados.</span>
+        </div>
+      </div>
+
+      <section id="tela-kpi" class="tela ativa">
+        <div class="page-header">
+          <span>Indicadores estratégicos</span>
+          <h1>🎯 KPI por Serviço</h1>
+          <p>
+            Análise individual dos serviços P1 a P12 com filtros por serviço, ano, mês e dia,
+            comparando previsto, executado, percentual, valor contratual e produtividade.
+          </p>
+        </div>
+
+        <section class="filter-panel">
+          <div class="filter-header">
+            <div>
+              <span>Filtro KPI</span>
+              <h3>Selecionar serviço e período</h3>
+            </div>
+
+            <button class="btn-limpar-filtro" onclick="limparFiltroKpiServico()">
+              Limpar filtro
+            </button>
+          </div>
+
+          <div class="filter-grid">
+            <div class="filter-group">
+              <label>Serviço</label>
+              <select id="filtroKpiServico">
+                <option value="">Todos os serviços</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Ano</label>
+              <select id="filtroKpiAno">
+                <option value="">Todos os anos</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Mês</label>
+              <select id="filtroKpiMes">
+                <option value="">Todos os meses</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Dia</label>
+              <select id="filtroKpiDia">
+                <option value="">Todos os dias</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+
+
+<section class="grid-2">
+          <div class="section chart-card">
+            <div class="section-title">
+              <span>Evolução diária</span>
+              <h2>Execução diária do serviço</h2>
+            </div>
+            <div id="graficoKpiServicoDiario" class="cco-chart-3d cco-chart-3d--principal" role="img" aria-label="Execução diária do serviço"></div>
+          </div>
+
+          <div class="section chart-card">
+            <div class="section-title">
+              <span>Previsto x executado</span>
+              <h2>Comparativo contratual</h2>
+            </div>
+            <div id="graficoKpiPrevistoExecutado" class="cco-chart-3d" role="img" aria-label="Comparativo contratual"></div>
+          </div>
+        </section>
+
+        <section class="grid-2">
+          <div class="section chart-card">
+            <div class="section-title">
+              <span>Evolução mensal</span>
+              <h2>Produção mensal do serviço</h2>
+            </div>
+            <div id="graficoKpiServicoMensal" class="cco-chart-3d" role="img" aria-label="Produção mensal do serviço"></div>
+          </div>
+
+          <div class="section chart-card">
+          <div class="section-title">
+              <span>Composição</span>
+              <h2>Indicadores operacionais</h2>
+            </div>
+            <div class="kpi-composition-visuals" aria-label="Símbolos dos indicadores operacionais">
+              <div title="Peso"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 7v30M13 12h22M10 12 4 27h12L10 12Zm28 0-6 15h12L38 12ZM4 27c1 6 11 6 12 0m16 0c1 6 11 6 12 0M14 40h20"/></svg><span>Peso</span><strong id="kpiCompositionPeso">—</strong></div>
+              <div title="Quilômetros"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 35a18 18 0 1 1 32 0M13 31l4-4m7-9v-5m7 14 4 4M24 34l10-12"/><circle cx="24" cy="34" r="3"/></svg><span>KM</span><strong id="kpiCompositionKm">—</strong></div>
+              <div title="Viagens"><svg viewBox="0 0 64 48" aria-hidden="true"><path d="M5 13h34v25H5zM39 22h10l9 10v6H39zM14 38a5 5 0 1 0 10 0m22 0a5 5 0 1 0 10 0"/><path class="plane-mark" d="m13 25 17-7-5 7 5 7-17-7 7-2v4Z"/></svg><span>Viagens</span><strong id="kpiCompositionViagens">—</strong></div>
+              <div title="Equipes"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="18" cy="17" r="6"/><circle cx="32" cy="19" r="5"/><path d="M7 39c1-10 21-10 22 0m-3-8c7-4 15 1 15 8"/></svg><span>Equipes</span><strong id="kpiCompositionEquipes">—</strong></div>
+            </div>
+            <div class="kpi-composition-chart"><div id="graficoKpiServicoIndicadores" class="cco-chart-3d" role="img" aria-label="Indicadores operacionais"></div></div>
+          </div>
+        </section>
+
+
+        <section class="grid-2 kpi-single-chart">
+          <div class="section chart-card">
+            <div class="section-title">
+              <span>Comparação mensal</span>
+              <h2>Previsto x Executado por mês</h2>
+            </div>
+            <div id="graficoKpiComparativoMensal" class="cco-chart-3d" role="img" aria-label="Previsto e executado por mês"></div>
+          </div>
+
+        </section>
+
+        <section class="section chart-card">
+          <div class="section-title">
+            <span>Produtividade</span>
+            <h2>Ton/viagem e KM/viagem por mês</h2>
+          </div>
+          <div id="graficoKpiProdutividadeMensal" class="cco-chart-3d" role="img" aria-label="Produtividade mensal"></div>
+        </section>
+
+        <section class="section chart-card">
+          <div class="section-title">
+            <span>Velocidade Média</span>
+            <h2>Velocidade Média Mensal</h2>
+          </div>
+          <div class="cco-velocidade-percurso"><span>Percurso operacional</span><svg class="cco-velocidade-rota" viewBox="0 0 900 260" role="img" aria-label="Percurso operacional animado"><defs><linearGradient id="ccoRotaGradiente" x1="0" x2="1"><stop offset="0" stop-color="#0a4e40"/><stop offset=".52" stop-color="#0f766e"/><stop offset="1" stop-color="#083c34"/></linearGradient><filter id="ccoBrilhoVeiculo"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path id="percursoPath" class="cco-rota-base" d="M 70 190 C 180 70, 300 230, 420 125 S 650 60, 820 145"/><path class="cco-rota-progresso" d="M 70 190 C 180 70, 300 230, 420 125 S 650 60, 820 145"/><circle class="cco-rota-inicio" cx="70" cy="190" r="9"/><text class="cco-rota-texto" x="45" y="220">Início</text><circle class="cco-rota-fim" cx="820" cy="145" r="9"/><text class="cco-rota-texto" x="800" y="178">Fim</text><g class="cco-rota-marcas"><circle cx="248" cy="155" r="5"><title>Trecho operacional 1</title></circle><circle cx="445" cy="111" r="5"><title>Trecho operacional 2</title></circle><circle cx="650" cy="91" r="5"><title>Trecho operacional 3</title></circle></g><g class="cco-rota-particulas"><circle cx="170" cy="105" r="3"/><circle cx="515" cy="82" r="2.5"/><circle cx="745" cy="112" r="3"/></g><g id="ccoVeiculoVelocidade" class="cco-veiculo-rota" aria-label="Veículo operacional em movimento"><g id="ccoSuspensaoVeiculo"><rect x="-18" y="-10" width="24" height="12" rx="3"/><path d="M6-8h6l6 7v5H6Z"/><circle cx="-10" cy="6" r="4"/><circle cx="12" cy="6" r="4"/><path class="cco-veiculo-brilho" d="M-14-7H2"/></g></g></svg></div>
+          <div class="kpi-speed-chart"><div id="graficoKpiVelocidadeMediaMensal" class="cco-chart-3d" role="img" aria-label="Velocidade média mensal"></div><div id="kpiSpeedometerDrawing" class="kpi-speedometer-drawing" style="--needle-angle:-90deg"><svg viewBox="0 0 160 96" aria-hidden="true"><path class="speed-arc" d="M20 78a60 60 0 0 1 120 0"/><path class="speed-zone speed-zone-a" d="M20 78a60 60 0 0 1 30-52"/><path class="speed-zone speed-zone-b" d="M50 26a60 60 0 0 1 60 0"/><path class="speed-zone speed-zone-c" d="M110 26a60 60 0 0 1 30 52"/><g class="speed-needle"><path d="M80 78 76 35 84 78Z"/><circle cx="80" cy="78" r="7"/></g></svg><strong id="kpiSpeedometerValue">—</strong><small>km/h</small></div></div>
+        </section>
+<section class="section">
+          <div class="section-title">
+            <span>Indicadores de pagamento</span>
+            <h2>KPI contratual do serviço selecionado</h2>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Serviço</th>
+                  <th>KPI principal</th>
+                  <th>Indicador de pagamento</th>
+                  <th>Base de cálculo</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaKpisPagamento"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+        
+
+
+        <section class="cards">
+          <div class="card">
+            <span>Serviço analisado</span>
+            <strong id="kpiServicoSelecionado">Todos</strong>
+            <small>P1 a P12</small>
+          </div>
+
+          <div class="card">
+            <span>Previsto Mensal</span>
+            <strong id="kpiPrevistoServico">0</strong>
+            <small>meta contratual</small>
+          </div>
+
+          <div class="card">
+            <span>Executado</span>
+            <strong id="kpiExecutadoServico">0</strong>
+            <small>acumulado calculado</small>
+          </div>
+
+          <div class="card">
+            <span>Índice Execução</span>
+            <strong id="kpiPercentualServico">0%</strong>
+            <small>executado x previsto</small>
+          </div>
+        </section>
+
+        
+<section class="cards">
+          <div class="card">
+            <span>Valor Contratual</span>
+            <strong id="kpiValorServico">R$ 0,00</strong>
+            <small>valor calculado</small>
+          </div>
+
+          <div class="card">
+            <span>Dias Operados</span>
+            <strong id="kpiDiasOperados">0</strong>
+            <small>dias com lançamento</small>
+          </div>
+
+          <div class="card">
+            <span>Média por Dia</span>
+            <strong id="kpiMediaDia">0</strong>
+            <small>executado / dias</small>
+          </div>
+
+          <div class="card">
+            <span>Registros</span>
+            <strong id="kpiRegistros">0</strong>
+            <small>lançamentos filtrados</small>
+          </div>
+        </section>
+
+        
+<section class="cards">
+          <div class="card">
+            <span>Toneladas</span>
+            <strong id="kpiPesoTotal">0</strong>
+            <small>peso coletado</small>
+          </div>
+
+          <div class="card">
+            <span>Viagens</span>
+            <strong id="kpiViagensTotal">0</strong>
+            <small>viagens realizadas</small>
+          </div>
+
+          <div class="card">
+            <span>KM Executado</span>
+            <strong id="kpiKmTotal">0</strong>
+            <small>percurso executado</small>
+          </div>
+
+          <div class="card">
+            <span>Equipes</span>
+            <strong id="kpiEquipesTotal">0</strong>
+            <small>equipes em operação</small>
+          </div>
+        </section>
+
+        
+<section class="cards">
+          <div class="card">
+            <span>Ton/viagem</span>
+            <strong id="kpiTonViagem">0</strong>
+            <small>produtividade por carga</small>
+          </div>
+
+          <div class="card">
+            <span>Ton/KM</span>
+            <strong id="kpiTonKm">0</strong>
+            <small>produtividade por percurso</small>
+          </div>
+
+          <div class="card">
+            <span>KM/viagem</span>
+            <strong id="kpiKmViagem">0</strong>
+            <small>distncia média</small>
+          </div>
+
+          <div class="card">
+            <span>Status</span>
+            <strong id="kpiStatusServico">-</strong>
+            <small>situação do KPI</small>
+          </div>
+        </section>
+
+        
+<section class="section" id="secaoResumoKpiFinal">
+          <div class="section-title">
+            <span>Leitura executiva</span>
+            <h2>Resumo automático do KPI</h2>
+          </div>
+          <div id="resumoKpiServico" class="resumo-ia">
+            Selecione um serviço para visualizar a análise.
+          </div>
+
+        <!-- GRÁFICO COM FILTRO PARA COMPARAR DOIS MESES -->
+        <section class="section" id="graficoFiltroDoisMesesBox">
+          <div class="section-title">
+            <span>Comparativo entre meses</span>
+            <h2>Peso, KM e Viagens por Serviço</h2>
+          </div>
+
+          <p class="section-description">
+            Escolha o serviço e dois meses para comparar, em um único gráfico, os totais de Peso, KM e Viagens.
+          </p>
+
+          <div class="filter-grid">
+            <div class="filter-group">
+              <label>Serviço</label>
+              <select id="compararServico" onchange="atualizarMesesDoServicoComparativo()">
+                <option value="">Todos os serviços</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Mês 1</label>
+              <select id="compararMesA" onchange="renderGraficoFiltroDoisMeses()">
+                <option value="">Selecionar mês</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Mês 2</label>
+              <select id="compararMesB" onchange="renderGraficoFiltroDoisMeses()">
+                <option value="">Selecionar mês</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>Ação</label>
+              <button class="btn-limpar-filtro" onclick="limparGraficoFiltroDoisMeses()">
+                Limpar comparação
+              </button>
+            </div>
+          </div>
+
+          <div class="section chart-card">
+            <div id="graficoFiltroDoisMeses" class="cco-chart-3d" role="img" aria-label="Comparação entre dois meses"></div>
+          </div>
+        </section>
+
+      </section>
+
+
+      <footer>
+        Intranet KPI CCO • Serviço de Limpeza Urbana • Valor Ambiental
+      </footer>
+    
+</main>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js?v=20260720-novo-banco-principal-v1"></script>
+<script src="js/supabase.js?v=20260720-conexao-diagnostico-v3"></script>
+<script>window.CCO_PAGE = "kpi";</script>
+<script src="js/cco-regras-negocio.js?v=20260720-dias-centralizados-v1" defer></script>
+<script src="js/regras-servicos.js?v=20260720-valores-oficiais-v1" defer></script>
+<script src="services/cache.js?v=20260720-arquitetura-v2" defer></script>
+<script src="services/painelService.js?v=20260720-arquitetura-v2" defer></script>
+<script src="services/kpiService.js?v=20260720-arquitetura-v2" defer></script>
+<script src="cco-metricas.js?v=20260720-novo-banco-principal-v1" defer></script>
+<script src="js/cco-graficos-3d.js?v=20260721-kpi-indicadores-espacamento-v1" defer></script>
+<script src="utils.js?v=20260720-valores-oficiais-v1" defer></script>
+<script src="cco-fixes.js?v=20260720-novo-banco-principal-v1" defer></script>
+<script src="kpi.js?v=20260721-kpi-previsto-executado-v1" defer></script>
+  <script src="js/theme.js?v=20260718-enterprise-v1"></script>
+  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/layout.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/animations.js?v=20260718-enterprise-v1"></script>
+  <script src="js/cco-v2-data.js?v=20260720-v2"></script>
+</body>
+</html>

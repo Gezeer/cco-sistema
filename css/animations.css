@@ -1,0 +1,6 @@
+@keyframes ccoFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ccoScale{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+@keyframes ccoShimmer{to{background-position:-200% 0}}
+.content>*,.analytics-content>*{animation:ccoFade 300ms ease both}
+.cco-skeleton{border-radius:14px;background:linear-gradient(90deg,#edf1f4 25%,#fafafa 50%,#edf1f4 75%);background-size:200% 100%;animation:ccoShimmer 1.2s infinite}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Histórico • CCO</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="css/style.css?v=20260717-filtro-2025-kpi-importacao" />
+  <link rel="stylesheet" href="css/theme.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/layout.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/dashboard.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cards.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/charts.css?v=20260718-graficos-animados-3d-v1">
+  <link rel="stylesheet" href="css/forms.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/tables.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/animations.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cco-green-command.css?v=20260718-filtros-compactos-v1">
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="logo.png" alt="Valor Ambiental" style="width:58px;height:58px;object-fit:contain;border-radius:14px;background:rgba(255,255,255,.16);padding:6px;">
+        <div>
+          <h2>ÍNDICE DE EFICIÊNCIA OPERACIONAL</h2>
+          <p>Painel Executivo</p>
+        </div>
+      </div>
+
+      <div class="sidebar-text">
+        Gestão executiva dos indicadores operacionais, contratuais e KPI’s dos serviços P1 a P12.
+      </div>
+      
+      <nav class="menu">
+        <button onclick="window.location.href='index.html'">Painel Geral</button>
+        <button onclick="window.location.href='kpi.html'">🎯 KPI</button>
+        <button onclick="window.location.href='execucao.html'">Execução P1 a P12</button>
+        <button id="menuAnalyticsAI" onclick="window.location.href='analytics-ai.html'">✨ CCO Analytics AI</button>
+        <button id="menuBaseImportada" onclick="window.location.href='dados.html'">202️ Base Importada</button>
+        <button id="menuHistorico" class="active" onclick="window.location.href='historico.html'">📜 Histórico</button>
+        <button class="logout" onclick="sair()">➜ Sair</button>
+        <button id="btnLimpezaTotal" class="btn-limpeza-total" onclick="limpezaTotal()">Limpeza Total</button>
+      </nav>
+
+    </aside>
+
+    <main class="content">
+      
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">Centro de Controle Operacional 👥</span>
+          <h1>Intranet Executiva de KPI’s</h1>
+          <p>
+            Consolidação dos indicadores de limpeza urbana, execução contratual,
+            produtividade, volume operacional e respostas executivas por serviço.
+          </p>
+        </div>
+
+        <div class="top-actions">
+          <div class="date-box" id="dataAtual"></div>
+          
+          <button id="btnExportar" class="btn secondary" onclick="window.print()">Exportar PDF</button>
+          
+          <div class="file-status" id="nomeArquivo">Carregando dados da base...</div>
+        </div>
+      </header>
+
+      <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <strong>Processando planilha...</strong>
+          <span>Aguarde enquanto os dados são analisados.</span>
+        </div>
+      </div>
+
+      <section id="tela-historico" class="tela ativa">
+        <div class="section">
+          <div class="section-title">
+            <span>Controle de versões</span>
+            <h2>📜 Histórico de Importações</h2>
+          </div>
+
+          <p class="section-description">
+            Cada planilha importada fica guardada para consulta. Você pode restaurar uma base antiga quando precisar.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Usuário</th>
+                  <th>Lote</th>
+                  <th>Arquivo</th>
+                  <th>Registros</th>
+                  <th>Status</th>
+                  <th>Período</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaHistorico">
+                <tr><td colspan="7">Carregando histórico...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Intranet KPI CCO • Serviço de Limpeza Urbana • Valor Ambiental
+      </footer>
+    </main>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js?v=20260720-novo-banco-principal-v1"></script>
+<script src="js/supabase.js?v=20260720-conexao-diagnostico-v3"></script>
+<script>window.CCO_PAGE = "historico";</script>
+<script src="js/cco-regras-negocio.js?v=20260720-dias-centralizados-v1" defer></script>
+<script src="js/regras-servicos.js?v=20260720-valores-oficiais-v1" defer></script>
+<script src="cco-metricas.js?v=20260720-novo-banco-principal-v1" defer></script>
+<script src="utils.js?v=20260720-valores-oficiais-v1" defer></script>
+<script src="historico.js?v=20260720-novo-banco-principal-v1" defer></script>
+  <script src="js/theme.js?v=20260718-enterprise-v1"></script>
+  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/layout.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/animations.js?v=20260718-enterprise-v1"></script>
+  <script src="js/cco-v2-data.js?v=20260720-v2"></script>
+</body>
+</html>

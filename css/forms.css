@@ -1,0 +1,5 @@
+input,select,textarea{font:inherit;color:var(--cco-text)}
+input:not([type="checkbox"]):not([type="file"]),select,textarea{min-height:44px;border:1px solid #d8dee6!important;border-radius:12px!important;background:var(--cco-card)!important;padding:0 13px!important;transition:border-color 200ms ease,box-shadow 200ms ease!important}
+textarea{padding-top:12px!important}
+input:focus,select:focus,textarea:focus{outline:0!important;border-color:#22a873!important;box-shadow:0 0 0 4px rgba(11,110,79,.11)!important}
+.filter-group label{display:block;margin-bottom:6px;color:#4b5563;font-size:12px;font-weight:700}

@@ -1,0 +1,7 @@
+.kpi-card,.analytics-card,.section-card{position:relative;overflow:hidden;border-radius:20px!important;background:var(--cco-card)!important;box-shadow:var(--cco-shadow)!important}
+.kpi-card,.analytics-card{min-height:136px}
+.kpi-card::before,.analytics-card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(180deg,var(--cco-primary),var(--cco-accent))}
+.metric-badge,.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:11px;font-weight:750}
+.metric-badge.success,.badge.ok{background:#dcfce7;color:#166534}.metric-badge.info,.badge.info{background:#dbeafe;color:#1d4ed8}.metric-badge.warning{background:#fef3c7;color:#92400e}.metric-badge.danger{background:#fee2e2;color:#991b1b}
+.empty-state{min-height:180px;display:grid;place-items:center;padding:32px;text-align:center;color:var(--cco-muted);border:1px dashed var(--cco-border);border-radius:18px;background:linear-gradient(135deg,#fff,#f8fafc)}
+.empty-state svg{width:36px;height:36px;margin-bottom:10px;color:#94a3b8}

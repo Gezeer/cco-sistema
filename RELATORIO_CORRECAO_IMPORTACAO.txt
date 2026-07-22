@@ -1,0 +1,34 @@
+CORREÇÃO DEFINITIVA — IMPORTAÇÃO SEMANAL CCO
+Data: 2026-07-17
+
+ARQUIVOS ALTERADOS
+- cco-importacao-semanal.js
+- supabase_importacao_semanal.sql (revisado e mantido como migration a executar)
+
+CORREÇÕES PRINCIPAIS
+1. RD é sempre string; nenhuma conversão Number/parseInt/parseFloat/BigInt é aplicada ao RD.
+2. RD automático preservado no formato:
+   AUTO|servico|data_operacao|veiculo|hora_inicio|ra|setor
+3. Payload de public.operacoes agora passa por lista explícita de colunas permitidas.
+4. Campos obrigatórios são validados antes do upsert:
+   rd, servico, data_operacao, importacao_id.
+5. Upsert preservado com onConflict: rd,servico.
+6. Filtros ativos do novo banco continuam usando data_operacao.
+7. O alias servico_p permanece apenas como possível cabeçalho de entrada da planilha; não é enviado ao banco.
+8. data_normalizada permanece apenas como campo local de compatibilidade da interface legada; não é enviado ao Supabase pelo motor semanal.
+
+SQL A EXECUTAR NO SUPABASE
+Execute o arquivo supabase_importacao_semanal.sql inteiro no SQL Editor e, ao final:
+
+notify pgrst, 'reload schema';
+
+VALIDAÇÃO
+select column_name, data_type, is_nullable
+from information_schema.columns
+where table_schema='public'
+  and table_name='operacoes'
+  and column_name in ('rd','servico','tipo_servico','data_operacao','importacao_id')
+order by column_name;
+
+RESULTADO ESPERADO PARA RD
+rd | text | NO

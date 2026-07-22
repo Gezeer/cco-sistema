@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCO Analytics AI • CCO</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="css/style.css?v=20260718-ai-design-tabela-v1">
+  <link rel="stylesheet" href="css/analytics-ai.css?v=20260721-analytics-robo-espacamento-v2">
+  <link rel="stylesheet" href="css/theme.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/layout.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cco-green-command.css?v=20260720-cards-copiloto-v3">
+  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260720-graficos-3d-integracao-v2">
+</head>
+<body class="analytics-page analytics-assistant-page">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><img src="logo.png" alt="Valor Ambiental" style="width:58px;height:58px;object-fit:contain;border-radius:14px;background:rgba(255,255,255,.16);padding:6px;"><div><h2>ÍNDICE DE EFICIÊNCIA OPERACIONAL</h2><p>Painel Executivo</p></div></div>
+      <div class="sidebar-text">Gestão executiva dos indicadores operacionais, contratuais e KPI’s dos serviços P1 a P12.</div>
+      <nav class="menu">
+        <button onclick="window.location.href='index.html'">Painel Geral</button>
+        <button onclick="window.location.href='kpi.html'">🎯 KPI</button>
+        <button onclick="window.location.href='execucao.html'">Execução P1 a P12</button>
+        <button id="menuAnalyticsAI" class="active" onclick="window.location.href='analytics-ai.html'">✨ CCO Analytics AI</button>
+        <button id="menuBaseImportada" onclick="window.location.href='dados.html'">202️ Base Importada</button>
+        <button id="menuHistorico" onclick="window.location.href='historico.html'">📜 Histórico</button>
+        <button class="logout" onclick="sair()">➜ Sair</button>
+      </nav>
+    </aside>
+
+    <main class="content analytics-content analytics-assistant">
+      <header class="analytics-hero analytics-assistant-hero analytics-ai-hero">
+        <div class="analytics-ai-hero__conteudo"><span class="eyebrow">◈ Inteligência sobre toda a base</span><h1>CCO Analytics AI</h1><p>Assistente executivo para consultar todos os períodos e serviços importados.</p></div>
+        <div class="analytics-hero-assistant"><div class="analytics-database-status"><span id="analyticsSyncBadge" class="sync-badge loading" role="status">Conectando ao banco</span></div><div id="ccoRoboAnalytics" class="cco-robo-ai is-idle" aria-label="Assistente virtual do CCO"><svg class="cco-robo-ai__svg" viewBox="0 0 260 300" role="img" aria-label="Robô assistente do CCO"><defs><linearGradient id="ccoRoboMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#173f38"/><stop offset="55%" stop-color="#0c2f29"/><stop offset="100%" stop-color="#061d19"/></linearGradient><radialGradient id="ccoRoboOlho" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#d9fff1"/><stop offset="45%" stop-color="#61f0ba"/><stop offset="100%" stop-color="#0ca56e"/></radialGradient><filter id="ccoRoboGlow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g class="cco-robo-ai__corpo"><ellipse class="cco-robo-ai__sombra" cx="130" cy="276" rx="72" ry="14"/><g class="cco-robo-ai__flutuante"><rect class="cco-robo-ai__tronco" x="72" y="142" width="116" height="92" rx="28"/><rect class="cco-robo-ai__painel" x="95" y="165" width="70" height="38" rx="12"/><path class="cco-robo-ai__onda" d="M105 184 C112 169 120 198 128 184 S144 169 154 184"/><g class="cco-robo-ai__cabeca"><rect x="55" y="42" width="150" height="108" rx="44" class="cco-robo-ai__cabeca-forma"/><rect x="72" y="68" width="116" height="56" rx="24" class="cco-robo-ai__visor"/><circle cx="105" cy="96" r="12" class="cco-robo-ai__olho cco-robo-ai__olho--esquerdo"/><circle cx="155" cy="96" r="12" class="cco-robo-ai__olho cco-robo-ai__olho--direito"/><path class="cco-robo-ai__boca" d="M110 116 Q130 128 150 116"/></g><g class="cco-robo-ai__antena"><line x1="130" y1="42" x2="130" y2="22"/><circle cx="130" cy="16" r="8"/></g><g class="cco-robo-ai__braco cco-robo-ai__braco--esquerdo"><rect x="42" y="156" width="26" height="64" rx="13"/></g><g class="cco-robo-ai__braco cco-robo-ai__braco--direito"><rect x="192" y="156" width="26" height="64" rx="13"/></g></g></g></svg><div class="cco-robo-ai__fala" aria-live="polite"><span id="ccoRoboMensagem">Pergunte qualquer coisa sobre os dados do CCO.</span></div></div></div>
+      </header>
+
+      <section class="analytics-catalog-summary" aria-label="Cobertura dos dados">
+        <article><span>Períodos disponíveis</span><strong id="ccoAnalyticsPeriodos">—</strong></article>
+        <article><span>Intervalo total</span><strong id="ccoAnalyticsIntervalo">—</strong></article>
+        <article><span>Total de operações</span><strong id="ccoAnalyticsRegistros">—</strong></article>
+        <article><span>Total financeiro</span><strong id="ccoAnalyticsFinanceiro">—</strong></article>
+        <article><span>Base</span><strong id="ccoAnalyticsBanco">Verificando</strong></article>
+      </section>
+
+      <div id="analyticsStatus" class="analytics-status" role="status" aria-live="polite"></div>
+
+      <section class="cco-ai-workspace" aria-label="Assistente CCO Analytics AI">
+        <aside class="cco-ai-history">
+          <div><span>CONVERSA ATUAL</span><h2>Histórico</h2></div>
+          <div id="ccoAnalyticsHistorico" class="cco-ai-history-list"></div>
+          <div class="cco-ai-history-actions"><button id="ccoAnalyticsNova" type="button">Nova análise</button><button id="ccoAnalyticsLimpar" type="button">Limpar conversa</button></div>
+        </aside>
+
+        <div class="cco-ai-main">
+          <div class="cco-ai-intro"><span>ANÁLISE GLOBAL</span><h2>Pergunte sobre qualquer período do CCO</h2><p>Períodos, serviços, RAs, turnos, valores, metas, qualidade, tendências e importações.</p></div>
+
+          <div class="cco-ai-executive-summary" aria-label="Resumo executivo de todos os períodos"><article><span>Melhor período</span><strong id="ccoAnalyticsMelhor">—</strong></article><article><span>Pior período</span><strong id="ccoAnalyticsPior">—</strong></article><article><span>Maior valor financeiro</span><strong id="ccoAnalyticsMaiorValor">—</strong></article><article><span>Serviços em atenção</span><strong id="ccoAnalyticsAtencao">—</strong></article></div>
+
+          <div id="ccoAnalyticsSugestoes" class="quick-questions cco-ai-suggestions" aria-label="Sugestões rápidas">
+            <button type="button">Resumo de todos os meses</button><button type="button">Melhor e pior mês</button><button type="button">Ranking financeiro</button><button type="button">Serviços em atenção</button><button type="button">Comparar 2025 e 2026</button><button type="button">Evolução do P5</button><button type="button">Analisar P12</button><button type="button">Qualidade dos dados</button><button type="button">Detectar anomalias</button><button type="button">Resumo para diretoria</button>
+          </div>
+
+          <div id="ccoAnalyticsMensagens" class="copilot-messages cco-ai-messages" aria-live="polite" aria-busy="true"></div>
+
+          <form id="ccoAnalyticsForm" class="cco-ai-composer">
+            <label for="ccoAnalyticsPergunta">Pergunta</label>
+            <textarea id="ccoAnalyticsPergunta" maxlength="1600" rows="3" placeholder="Pergunte qualquer coisa sobre todos os dados do CCO..."></textarea>
+            <div><small>Enter envia • Shift + Enter cria uma nova linha</small><button id="ccoAnalyticsEnviar" type="submit">Analisar</button></div>
+          </form>
+        </div>
+      </section>
+
+      <footer class="cco-ai-footer">As respostas usam somente dados disponíveis no CCO e respeitam as permissões do usuário autenticado.</footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js?v=20260720-novo-banco-principal-v1"></script>
+  <script src="js/supabase.js?v=20260720-conexao-diagnostico-v3"></script>
+  <script>window.CCO_PAGE = "analytics-ai";</script>
+  <script src="js/cco-regras-negocio.js?v=20260720-dias-centralizados-v1" defer></script>
+  <script src="js/regras-servicos.js?v=20260720-valores-oficiais-v1" defer></script>
+  <script src="js/cco-graficos-3d.js?v=20260720-graficos-3d-integracao-v2" defer></script>
+  <script src="js/cco-analytics-formatacao.js?v=20260721-analytics-chat-v2" defer></script>
+  <script src="js/cco-analytics-intencoes.js?v=20260721-analytics-chat-v2" defer></script>
+  <script src="js/cco-analytics-consultas.js?v=20260721-analytics-chat-v2" defer></script>
+  <script src="js/cco-analytics-graficos.js?v=20260721-analytics-chat-v2" defer></script>
+  <script src="js/cco-robo-ai.js?v=20260721-analytics-robo-v1" defer></script>
+  <script src="js/cco-analytics-ai.js?v=20260721-analytics-robo-v1" defer></script>
+  <script src="js/theme.js?v=20260718-enterprise-v1"></script>
+  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+</body>
+</html>

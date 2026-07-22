@@ -1,0 +1,22 @@
+CORREÇÃO FINAL — SERVIÇOS NO GRÁFICO E ANO 2025
+
+1. utils.js
+- Gráfico usa lista fixa dos 13 serviços.
+- autoSkip permanece false.
+- Normalização de P2.1/P2.2 aceita vírgula, hífen e formas P21/P22.
+- Marcador window.__CCO_GRAFICO_TODOS_SERVICOS_ATIVO__ para diagnóstico.
+
+2. cco-fixes.js
+- Catálogo de períodos não depende somente da view periodos_disponiveis.
+- Agora também lê data_operacao diretamente de public.operacoes, em páginas de 1000 linhas.
+- Mescla e deduplica todos os anos/meses reais, incluindo 2025.
+
+3. HTML
+- Cache-busting atualizado em todas as páginas.
+- index.html também usa versão nas cargas dinâmicas, evitando reutilização do utils.js antigo pelo GitHub Pages/navegador.
+
+TESTE NO CONSOLE
+window.__CCO_GRAFICO_TODOS_SERVICOS_ATIVO__ === true
+window.__CCO_CATALOGO_PERIODOS__
+
+O segundo comando deve listar 2025-11, 2025-12 e os meses de 2026 existentes em operacoes.

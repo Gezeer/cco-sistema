@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Geral • CCO</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="css/style.css?v=20260718-ai-design-tabela-v1" />
+  <link rel="stylesheet" href="css/theme.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/layout.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/dashboard.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cards.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/charts.css?v=20260720-painel-layout-correto-v1">
+  <link rel="stylesheet" href="css/forms.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/tables.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/animations.css?v=20260718-enterprise-v1">
+  <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/cco-green-command.css?v=20260720-painel-layout-correto-v1">
+  <link rel="stylesheet" href="css/painel-geral.css?v=20260720-financeiro-monitor-v2">
+</head>
+<body class="painel-geral-page">
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="logo.png" alt="Valor Ambiental" style="width:58px;height:58px;object-fit:contain;border-radius:14px;background:rgba(255,255,255,.16);padding:6px;">
+        <div>
+          <h2>ÍNDICE DE EFICIÊNCIA OPERACIONAL</h2>
+          <p>Painel Executivo</p>
+        </div>
+      </div>
+
+      <div class="sidebar-text">
+        Gestão executiva dos indicadores operacionais, contratuais e KPI’s dos serviços P1 a P12.
+      </div>
+      
+      <nav class="menu">
+        <button class="active" onclick="window.location.href='index.html'">Painel Geral</button>
+        <button onclick="window.location.href='kpi.html'">🎯 KPI</button>
+        <button onclick="window.location.href='execucao.html'">Execução P1 a P12</button>
+        <button id="menuAnalyticsAI" onclick="window.location.href='analytics-ai.html'">✨ CCO Analytics AI</button>
+        <button id="menuBaseImportada" onclick="window.location.href='dados.html'">202️ Base Importada</button>
+        <button id="menuHistorico" onclick="window.location.href='historico.html'">📜 Histórico</button>
+        <button class="logout" onclick="sair()">➜ Sair</button>
+        <button id="btnLimpezaTotal" class="btn-limpeza-total" onclick="limpezaTotal()">Limpeza Total</button>
+      </nav>
+
+    </aside>
+
+    <main class="content cco-main">
+      
+      <header class="topbar cco-topbar">
+        <div>
+          <span class="eyebrow">Centro de Controle Operacional 👥</span>
+          <h1>Intranet Executiva de KPI’s</h1>
+          <p>
+            Consolidação dos indicadores de limpeza urbana, execução contratual,
+            produtividade, volume operacional e respostas executivas por serviço.
+          </p>
+        </div>
+
+        <div class="top-actions">
+          <div class="date-box" id="dataAtual"></div>
+          
+          <label class="file-label" id="btnImportar">
+            📥 Importar planilhas
+            <input type="file" id="arquivoExcel" accept=".xlsx,.xls,.csv" multiple />
+          </label>
+
+          <button id="btnExportar" class="btn secondary" onclick="window.print()">Exportar PDF</button>
+          <button id="btnLimpar" class="btn danger" onclick="limparBanco()">Limpar base ativa</button>
+          <div class="file-status" id="nomeArquivo">Carregando dados da base...</div>
+        </div>
+      </header>
+
+      <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <strong>Processando planilha...</strong>
+          <span>Aguarde enquanto os dados são analisados.</span>
+        </div>
+      </div>
+
+      <section id="tela-executivo" class="tela ativa cco-painel">
+
+        <div id="cardsOriginaisAnchor"></div>
+
+        <section class="filter-panel cco-filter-panel">
+          <div class="filter-header">
+            <div>
+              <span>FILTRO OPERACIONAL</span>
+              <h3>Painel mensal </h3>
+            </div>
+            <button class="btn-limpar-filtro" onclick="limparFiltroPeriodo()">Limpar filtros</button>
+          </div>
+
+          <div class="filter-grid">
+            <div class="filter-group cco-filter-field"><label>Ano</label><select id="filtroAno"><option value="">Selecionar</option></select></div>
+            <div class="filter-group cco-filter-field"><label>Mês</label><select id="filtroMes"><option value="">Selecionar</option></select></div>
+            <div class="filter-group cco-filter-field">
+              <label>Dia com dados</label>
+              <select id="filtroDia">
+                <option value="">Todos os dias</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="cco-dashboard-row cco-dashboard-row-primary">
+          <article class="section chart-card cco-panel-card cco-chart-execucao">
+            <div class="section-title">
+              <div><span>Indicador operacional</span><h2>Execução por Serviço</h2><p>Desempenho dos 13 serviços no período selecionado</p></div>
+            </div>
+            <div id="graficoExecucao" class="grafico-echarts cco-chart-container"></div>
+          </article>
+
+          <article class="section cco-panel-card cco-ranking-medicao" id="rankingMedicaoBox">
+            <div class="section-title">
+              <div><span>Ranking financeiro</span><h2>Ranking por Medição</h2><p>Serviços com maior participação por tipo de medição</p></div>
+            </div>
+
+            <div id="cardsRankingMedicao" class="cco-ranking-list">
+              Nenhum dado disponível.
+            </div>
+          </article>
+        </section>
+
+        <section class="cco-dashboard-row cco-dashboard-row-secondary">
+          <article class="section chart-card cco-panel-card cco-chart-financeiro">
+            <div class="section-title"><div><span>Representação financeira</span><h2>Valor contratado por Serviço</h2><p>Valores oficiais consolidados por serviço</p></div></div>
+            <div id="graficoFinanceiro" class="grafico-echarts cco-chart-container cco-chart-container-financeiro"></div>
+          </article>
+
+          <article class="section cco-panel-card cco-monitoramento-dados">
+            <div class="section-title"><div><span>Acompanhamento</span><h2>Monitoramento de Dados</h2><p>Status e disponibilidade das informações operacionais</p></div></div>
+            <div class="cco-monitor-device" role="region" aria-label="Monitor executivo de dados do período selecionado">
+              <div class="cco-monitor-frame">
+                <div class="cco-monitor-camera" aria-hidden="true"></div>
+                <div class="cco-monitor-screen">
+                  <header class="cco-monitor-header"><div><span class="cco-monitor-live-dot" aria-hidden="true"></span><strong>Monitoramento de Dados</strong></div><span id="monitorStatusOnline" class="cco-monitor-status is-empty">Carregando</span></header>
+                  <div id="statusDados" class="cco-monitor-periodo" aria-live="polite">Carregando dados da base...</div>
+                  <div id="alertasExecutivos" class="cco-monitor-grid" aria-live="polite"></div>
+                </div>
+              </div>
+              <div class="cco-monitor-stand" aria-hidden="true"><div class="cco-monitor-neck"></div><div class="cco-monitor-base"></div></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section cco-panel-card cco-tabela-executiva">
+          <div class="section-title"><div><span>Tabela oficial</span><h2>Painel Executivo</h2><p>Detalhamento contratual e operacional do período</p></div></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Serviço</th><th>Acumulado no Mês</th><th>Medição</th><th>Previsto Mês</th><th>% Execução</th><th>Dias acumulados</th><th>Total dias mês</th><th>Valor</th><th>Status</th></tr></thead>
+              <tbody id="tabelaPainelExecutivo"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- EXECUÇÃO P1 A P12 -->
+
+      <footer>
+        Intranet KPI CCO • Serviço de Limpeza Urbana • Valor Ambiental
+      </footer>
+    </main>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js?v=20260720-novo-banco-principal-v1"></script>
+<script src="js/supabase.js?v=20260720-conexao-diagnostico-v3"></script>
+<script src="js/cco-regras-negocio.js?v=20260720-dias-centralizados-v1"></script>
+<script src="js/regras-servicos.js?v=20260720-equipes-fixas-v1"></script>
+<script src="services/cache.js?v=20260720-arquitetura-v2"></script>
+	<script src="services/painelService.js?v=20260720-dias-acumulados-v1"></script>
+<script src="services/kpiService.js?v=20260720-arquitetura-v2"></script>
+<script src="services/execucaoService.js?v=20260720-arquitetura-v2"></script>
+<script src="services/analyticsService.js?v=20260720-arquitetura-v2"></script>
+<script src="services/importador.js?v=20260720-arquitetura-v2"></script>
+
+<script>
+  window.CCO_PAGE = "painel";
+  window.__CCO_ORQUESTRADOR_ATIVO__ = true;
+
+  const VERSAO_CCO = "20260720-dias-acumulados-v1";
+  function adicionarVersaoArquivo(caminho, versao) {
+    const base = String(caminho || "").split("?")[0];
+    return `${base}?v=${encodeURIComponent(versao)}`;
+  }
+
+  function carregarScriptSequencial(src) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = adicionarVersaoArquivo(src, VERSAO_CCO);
+      script.async = false;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Falha ao carregar: " + src));
+      document.body.appendChild(script);
+    });
+  }
+
+  async function aguardarGlobal(nome, tentativas = 80, intervalo = 50) {
+    for (let i = 0; i < tentativas; i++) {
+      if (window[nome]) return true;
+      await new Promise(resolve => setTimeout(resolve, intervalo));
+    }
+    return false;
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const supabaseOk = await aguardarGlobal("supabase", 80, 50);
+      if (!supabaseOk) {
+        throw new Error("SDK do Supabase não carregou pela CDN.");
+      }
+
+      await carregarScriptSequencial("cco-metricas.js?v=20260720-novo-banco-principal-v1");
+      await carregarScriptSequencial("utils.js?v=20260718-grafico-moedas-financeiro-v2");
+      await carregarScriptSequencial("cco-fixes.js?v=20260720-novo-banco-principal-v1");
+      await carregarScriptSequencial("cco-importacao-principal.js?v=20260720-raw-dias-p12-v3");
+      await carregarScriptSequencial("painel.js");
+      await carregarScriptSequencial("painel-geral.js?v=20260721-p9-dias-acumulados-v4");
+      await window.carregarRegrasServicosCCO();
+
+      console.log("⚡ CCO-Engine: scripts locais carregados em ordem segura.");
+
+      const cliente = window.supabaseClient;
+      if (!cliente || !cliente.auth) {
+        console.warn("Cliente Supabase não inicializado adequadamente.");
+        window.location.replace("login.html");
+        return;
+      }
+
+      const { data, error } = await cliente.auth.getUser();
+      if (error || !data?.user) {
+        localStorage.removeItem("usuarioLogado");
+        window.location.replace("login.html");
+        return;
+      }
+
+      if (typeof inicializarPainelGeralAposLogin === "function") {
+        await inicializarPainelGeralAposLogin();
+      } else if (typeof carregarBaseSupabase === "function") {
+        await carregarBaseSupabase();
+      } else if (typeof carregarDadosPainel === "function") {
+        await carregarDadosPainel();
+      } else {
+        throw new Error("Nenhuma função de inicialização do Painel Geral foi encontrada.");
+      }
+    } catch (erro) {
+      console.error("Erro crítico na inicialização do Painel Geral", {
+        message: erro?.message, code: erro?.code, details: erro?.details, hint: erro?.hint
+      });
+      const nomeArquivo = document.getElementById("nomeArquivo");
+      if (nomeArquivo) nomeArquivo.textContent = "Não foi possível carregar algumas métricas opcionais. Os dados disponíveis continuarão sendo exibidos.";
+    }
+  });
+</script>
+  <script src="js/theme.js?v=20260718-enterprise-v1"></script>
+  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/layout.js?v=20260720-painel-layout-correto-v1"></script>
+  <script src="js/animations.js?v=20260718-enterprise-v1"></script>
+  <script src="js/cco-v2-data.js?v=20260720-v2"></script>
+</body>
+</html>

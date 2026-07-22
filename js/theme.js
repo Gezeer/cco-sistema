@@ -1,0 +1,1 @@
+(function(){"use strict";window.CCOTheme={get:()=>localStorage.getItem('cco_theme')||'light',set(theme){localStorage.setItem('cco_theme',theme);document.documentElement.dataset.theme=theme}};const saved=window.CCOTheme.get();if(saved!=='light')document.documentElement.dataset.theme=saved})();
