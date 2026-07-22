@@ -15,9 +15,10 @@
   <link rel="stylesheet" href="css/tables.css?v=20260718-cco-enterprise-ui-v1">
   <link rel="stylesheet" href="css/animations.css?v=20260718-enterprise-v1">
   <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
-  <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260722-graficos-mobile-runtime-v1">
   <link rel="stylesheet" href="css/cco-green-command.css?v=20260720-cores-execucao-v4">
-  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260721-execucao-evolucao-tendencia-v1">
+  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260722-graficos-mobile-runtime-v1">
+  <link rel="stylesheet" href="css/execucao.css?v=20260722-graficos-mobile-runtime-v1">
 </head>
 <body class="execution-page">
   <div class="layout">
@@ -157,6 +158,13 @@
           <div id="servico-detalhe" class="servico-painel">
             <div id="detalheServico"></div>
           </div>
+          <div id="cardsPermanentesExecucao" hidden>
+            <div id="cardKmExecutado" class="card execucao-metrica-card" aria-hidden="false">
+              <span class="execucao-metrica-card__titulo">KM Executado</span>
+              <strong id="valorKmExecutado" class="execucao-metrica-card__valor">0,00</strong>
+              <small class="execucao-metrica-card__descricao">quilometragem</small>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -174,18 +182,20 @@
 <script src="js/supabase.js?v=20260720-conexao-diagnostico-v3"></script>
 <script>window.CCO_PAGE = "execucao";</script>
 <script src="js/cco-regras-negocio.js?v=20260720-dias-centralizados-v1" defer></script>
+<script src="js/cco-p1-km-total.js?v=20260722-p1-km-total-literal-v6" defer></script>
 <script src="js/regras-servicos.js?v=20260720-valores-oficiais-v1" defer></script>
 <script src="services/cache.js?v=20260720-arquitetura-v2" defer></script>
 <script src="services/painelService.js?v=20260720-arquitetura-v2" defer></script>
 <script src="services/kpiService.js?v=20260720-arquitetura-v2" defer></script>
-<script src="services/execucaoService.js?v=20260721-execucao-filtro-2025-v1" defer></script>
+<script src="services/execucaoService.js?v=20260722-p1-km-total-literal-v6" defer></script>
   <script src="cco-metricas.js?v=20260720-novo-banco-principal-v1" defer></script>
-  <script src="js/cco-graficos-3d.js?v=20260721-graficos-3d-direto-v4" defer></script>
-<script src="utils.js?v=20260721-execucao-filtro-2025-v1" defer></script>
-<script src="cco-fixes.js?v=20260721-execucao-filtro-2025-v1" defer></script>
-  <script src="execucao.js?v=20260721-execucao-evolucao-tendencia-v1" defer></script>
+  <script src="js/cco-chart-runtime.js?v=20260722-graficos-mobile-runtime-v1" defer></script>
+  <script src="js/cco-graficos-3d.js?v=20260722-graficos-mobile-runtime-v1" defer></script>
+<script src="utils.js?v=20260722-p1-km-total-literal-v6" defer></script>
+<script src="cco-fixes.js?v=20260722-p1-km-total-literal-v6" defer></script>
+  <script src="execucao.js?v=20260722-p1-km-total-literal-v6" defer></script>
   <script src="js/theme.js?v=20260718-enterprise-v1"></script>
-  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/navbar.js?v=20260722-graficos-mobile-runtime-v1"></script>
   <script src="js/layout.js?v=20260718-cco-enterprise-ui-v1"></script>
   <script src="js/animations.js?v=20260718-enterprise-v1"></script>
   <script src="js/cco-v2-data.js?v=20260720-v2"></script>

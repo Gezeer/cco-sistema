@@ -15,9 +15,9 @@
   <link rel="stylesheet" href="css/tables.css?v=20260718-cco-enterprise-ui-v1">
   <link rel="stylesheet" href="css/animations.css?v=20260718-enterprise-v1">
   <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
-  <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
+  <link rel="stylesheet" href="css/responsive.css?v=20260722-graficos-mobile-runtime-v1">
   <link rel="stylesheet" href="css/cco-green-command.css?v=20260718-kpi-fundo-verde-v4">
-  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260721-kpi-percurso-velocidade-v1">
+  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260722-graficos-mobile-runtime-v1">
 </head>
 <body class="kpi-page">
   <div class="layout">
@@ -137,7 +137,7 @@
               <span>Evolução diária</span>
               <h2>Execução diária do serviço</h2>
             </div>
-            <div id="graficoKpiServicoDiario" class="cco-chart-3d cco-chart-3d--principal" role="img" aria-label="Execução diária do serviço"></div>
+            <div id="graficoKpiServicoDiario" class="cco-chart-host cco-chart-3d cco-chart-3d--principal" role="img" aria-label="Execução diária do serviço"></div>
           </div>
 
           <div class="section chart-card">
@@ -145,7 +145,7 @@
               <span>Previsto x executado</span>
               <h2>Comparativo contratual</h2>
             </div>
-            <div id="graficoKpiPrevistoExecutado" class="cco-chart-3d" role="img" aria-label="Comparativo contratual"></div>
+            <div id="graficoKpiPrevistoExecutado" class="cco-chart-host cco-chart-3d" role="img" aria-label="Comparativo contratual"></div>
           </div>
         </section>
 
@@ -155,7 +155,7 @@
               <span>Evolução mensal</span>
               <h2>Produção mensal do serviço</h2>
             </div>
-            <div id="graficoKpiServicoMensal" class="cco-chart-3d" role="img" aria-label="Produção mensal do serviço"></div>
+            <div id="graficoKpiServicoMensal" class="cco-chart-host cco-chart-3d" role="img" aria-label="Produção mensal do serviço"></div>
           </div>
 
           <div class="section chart-card">
@@ -169,7 +169,7 @@
               <div title="Viagens"><svg viewBox="0 0 64 48" aria-hidden="true"><path d="M5 13h34v25H5zM39 22h10l9 10v6H39zM14 38a5 5 0 1 0 10 0m22 0a5 5 0 1 0 10 0"/><path class="plane-mark" d="m13 25 17-7-5 7 5 7-17-7 7-2v4Z"/></svg><span>Viagens</span><strong id="kpiCompositionViagens">—</strong></div>
               <div title="Equipes"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="18" cy="17" r="6"/><circle cx="32" cy="19" r="5"/><path d="M7 39c1-10 21-10 22 0m-3-8c7-4 15 1 15 8"/></svg><span>Equipes</span><strong id="kpiCompositionEquipes">—</strong></div>
             </div>
-            <div class="kpi-composition-chart"><div id="graficoKpiServicoIndicadores" class="cco-chart-3d" role="img" aria-label="Indicadores operacionais"></div></div>
+            <div class="kpi-composition-chart"><div id="graficoKpiServicoIndicadores" class="cco-chart-host cco-chart-3d" role="img" aria-label="Indicadores operacionais"></div></div>
           </div>
         </section>
 
@@ -180,7 +180,7 @@
               <span>Comparação mensal</span>
               <h2>Previsto x Executado por mês</h2>
             </div>
-            <div id="graficoKpiComparativoMensal" class="cco-chart-3d" role="img" aria-label="Previsto e executado por mês"></div>
+            <div id="graficoKpiComparativoMensal" class="cco-chart-host cco-chart-3d" role="img" aria-label="Previsto e executado por mês"></div>
           </div>
 
         </section>
@@ -190,7 +190,7 @@
             <span>Produtividade</span>
             <h2>Ton/viagem e KM/viagem por mês</h2>
           </div>
-          <div id="graficoKpiProdutividadeMensal" class="cco-chart-3d" role="img" aria-label="Produtividade mensal"></div>
+          <div id="graficoKpiProdutividadeMensal" class="cco-chart-host cco-chart-3d" role="img" aria-label="Produtividade mensal"></div>
         </section>
 
         <section class="section chart-card">
@@ -385,7 +385,7 @@
           </div>
 
           <div class="section chart-card">
-            <div id="graficoFiltroDoisMeses" class="cco-chart-3d" role="img" aria-label="Comparação entre dois meses"></div>
+            <div id="graficoFiltroDoisMeses" class="cco-chart-host cco-chart-3d" role="img" aria-label="Comparação entre dois meses"></div>
           </div>
         </section>
 
@@ -410,12 +410,13 @@
 <script src="services/painelService.js?v=20260720-arquitetura-v2" defer></script>
 <script src="services/kpiService.js?v=20260720-arquitetura-v2" defer></script>
 <script src="cco-metricas.js?v=20260720-novo-banco-principal-v1" defer></script>
-<script src="js/cco-graficos-3d.js?v=20260721-kpi-indicadores-espacamento-v1" defer></script>
+<script src="js/cco-chart-runtime.js?v=20260722-graficos-mobile-runtime-v1" defer></script>
+<script src="js/cco-graficos-3d.js?v=20260722-graficos-mobile-runtime-v1" defer></script>
 <script src="utils.js?v=20260720-valores-oficiais-v1" defer></script>
 <script src="cco-fixes.js?v=20260720-novo-banco-principal-v1" defer></script>
-<script src="kpi.js?v=20260721-kpi-previsto-executado-v1" defer></script>
+<script src="kpi.js?v=20260722-graficos-mobile-runtime-v1" defer></script>
   <script src="js/theme.js?v=20260718-enterprise-v1"></script>
-  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/navbar.js?v=20260722-graficos-mobile-runtime-v1"></script>
   <script src="js/layout.js?v=20260718-cco-enterprise-ui-v1"></script>
   <script src="js/animations.js?v=20260718-enterprise-v1"></script>
   <script src="js/cco-v2-data.js?v=20260720-v2"></script>

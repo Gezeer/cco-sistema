@@ -1,0 +1,51 @@
+const fs = require("node:fs");
+const vm = require("node:vm");
+const assert = require("node:assert/strict");
+
+const contexto = { window: {} };
+vm.createContext(contexto);
+vm.runInContext(fs.readFileSync("js/cco-p1-km-total.js", "utf8"), contexto);
+
+const { normalizarCabecalhoCCO, obterKmTotalP1CCO, obterKmTotalP1DoRawCCO, numeroPlanilhaCCO, auditarCamposKmP1CCO } = contexto.window.CCO_P1_KM_TOTAL;
+assert.equal(normalizarCabecalhoCCO("Km_Total"), "KM_TOTAL");
+assert.equal(normalizarCabecalhoCCO("KM Total"), "KM_TOTAL");
+assert.equal(normalizarCabecalhoCCO(" KM_TOTAL "), "KM_TOTAL");
+assert.equal(numeroPlanilhaCCO("142,61"), 142.61);
+assert.equal(numeroPlanilhaCCO("109,3"), 109.3);
+assert.equal(numeroPlanilhaCCO("1.234,56"), 1234.56);
+assert.equal(numeroPlanilhaCCO(126), 126);
+assert.equal(obterKmTotalP1CCO({ km_total: 12, dados: { Km_Total: 99 } }), 12, "uma única fonte deve ser usada por linha");
+assert.equal(obterKmTotalP1CCO({ km_total: 0, dados: { Km_Total: 99 } }), 0, "km_total normalizado tem prioridade inclusive quando zero");
+assert.equal(obterKmTotalP1CCO({ dados: { Km_Total: "1.234,50", KM: 9000 } }), 1234.5);
+assert.equal(obterKmTotalP1CCO({ dados_originais: { "KM Total": 18, Quilometragem: 999 } }), 18);
+assert.equal(obterKmTotalP1CCO({ km: 50, quilometragem: 80, distancia: 90, km_executado: 100 }), 0, "aliases genéricos são proibidos para P1");
+assert.equal(obterKmTotalP1DoRawCCO({ km_total: 999, dados: { Km_Total: 21 }, dados_originais: { Km_Total: 18 } }).valor, 18, "o RAW original é a fonte oficial durante a auditoria");
+assert.equal(obterKmTotalP1DoRawCCO({ dados: { KM_TOTAL: "2.500,75" } }).valor, null, "KM_TOTAL genérico não é fallback permitido para P1");
+assert.equal(obterKmTotalP1DoRawCCO({ dados: { KM: 10, KM_EXECUTADO: 20 } }).valor, null, "RAW sem chave literal não pode inventar fallback");
+const linhaConflito={dados_originais:{"KM Total":69,"Km_Total":66.9},dados:{km_total:69,km_total_2:66.9}};
+const resultadoConflito=obterKmTotalP1DoRawCCO(linhaConflito);
+assert.equal(resultadoConflito.valor,66.9);assert.equal(resultadoConflito.campo,"Km_Total");assert.equal(resultadoConflito.fonte,"dados_originais");
+const resultadoFallback=obterKmTotalP1DoRawCCO({dados:{km_total:69,km_total_2:66.9}});
+assert.equal(resultadoFallback.valor,66.9);assert.equal(resultadoFallback.campo,"km_total_2");assert.equal(resultadoFallback.fonte,"dados");
+const linhasTeste=[{dados_originais:{Km_Total:"142,61"}},{dados_originais:{Km_Total:"109,3"}},{dados_originais:{Km_Total:90.3}},{dados_originais:{Km_Total:"78,59"}}];
+const somaTeste=linhasTeste.map(obterKmTotalP1DoRawCCO).filter(item=>Number.isFinite(item.valor)).reduce((s,item)=>s+item.valor,0);
+assert.ok(Math.abs(somaTeste-420.8)<0.001);
+assert.equal(contexto.window.normalizarAbaP1CCO(" P1 "), "P1");
+assert.notEqual(contexto.window.normalizarAbaP1CCO("P10"), "P1");
+const auditoria = auditarCamposKmP1CCO([{ dados: { Km_Total: 2, KM: 3, "Distância Média": 4 } }]);
+assert.deepEqual([...auditoria.camposEncontrados], ["Km_Total"]);
+assert.ok(auditoria.camposIgnorados.includes("KM"));
+assert.ok(auditoria.camposIgnorados.includes("Distância Média"));
+
+const utils = fs.readFileSync("utils.js", "utf8");
+assert.doesNotMatch(utils, /codigo === "P1" \|\| totalKm > 0 \? criarCard\("KM Executado"/, "o card fixo do P1 não pode depender do template condicional");
+const servicoExecucao = fs.readFileSync("services/execucaoService.js", "utf8");
+assert.match(servicoExecucao, /porChave\.get\(item\.chave_operacao\)/, "Execução deve vincular RAW e operação pela chave persistida");
+assert.match(servicoExecucao, /km_total:null/, "P1 sem RAW confiável não pode exibir o km_total contaminado");
+const htmlExecucao = fs.readFileSync("execucao.html", "utf8");
+assert.match(htmlExecucao, /id="cardKmExecutado"/);
+assert.match(htmlExecucao, /id="valorKmExecutado"/);
+assert.match(utils, /function atualizarCardKmExecutadoCCO\(valor\)/);
+assert.match(utils, /card\.hidden = false/);
+
+console.log("P1 KM_TOTAL: leitura exclusiva, prioridade e ausência de duplicação aprovadas.");

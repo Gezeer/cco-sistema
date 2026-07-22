@@ -1,7 +1,9 @@
+.cco-chart-host{display:block;position:relative;width:100%;max-width:100%;min-width:0;height:380px;min-height:380px;overflow:hidden}
 .cco-chart-3d,.cco-echarts-3d{display:block;width:100%;height:340px;min-height:340px;border:1px solid rgba(167,243,208,.08);border-radius:11px;background:rgba(3,17,14,.42);overflow:hidden}
 .cco-chart-3d--principal,.kpi-single-chart .cco-chart-3d,.grafico-linha-full .cco-chart-3d{height:420px;min-height:420px}
 .kpi-composition-chart .cco-chart-3d,.kpi-speed-chart .cco-chart-3d{height:340px;min-height:340px}
-canvas[aria-hidden="true"]{display:none!important}
+canvas[data-cco-chartjs-antigo="true"]{display:none!important}
+.cco-chart-host canvas{display:block!important;visibility:visible!important;opacity:1!important}
 @media(max-width:768px){.cco-chart-3d,.cco-chart-3d--principal,.cco-echarts-3d,.kpi-single-chart .cco-chart-3d,.grafico-linha-full .cco-chart-3d{height:300px;min-height:300px}}
 
 /* Execução: evolução histórica abaixo da operação por turno. */
@@ -54,3 +56,37 @@ body.kpi-page .cco-veiculo-rota circle{fill:#052e2b;stroke:#67e8f9}body.kpi-page
 @media(max-width:1024px){body.kpi-page .cco-velocidade-percurso{width:calc(68% - 18px)}}
 @media(max-width:768px){body.kpi-page .kpi-speed-chart{height:360px;min-height:360px}body.kpi-page .cco-velocidade-percurso{top:72px;right:8px;bottom:auto;left:8px;width:calc(100% - 16px);height:205px;min-height:205px}body.kpi-page .cco-velocidade-percurso>span,body.kpi-page .cco-rota-texto{display:none}body.kpi-page .kpi-speedometer-drawing{top:auto;right:auto;bottom:8px;left:50%;transform:translateX(-50%) scale(.78);transform-origin:bottom center}}
 @media(prefers-reduced-motion:reduce){body.kpi-page .cco-rota-progresso,body.kpi-page .cco-rota-particulas circle{animation:none}body.kpi-page .cco-veiculo-rota{display:none}}
+
+/* Gráficos responsivos CCO: dimensões comuns sem alterar o desktop. */
+.cco-chart,.cco-chart-3d,.cco-echarts-3d{width:100%;max-width:100%;min-width:0;overflow:hidden}
+@media(max-width:900px){.cco-chart,.cco-chart-3d,.cco-chart-3d--principal,.cco-echarts-3d,.kpi-single-chart .cco-chart-3d,.grafico-linha-full .cco-chart-3d{height:var(--cco-chart-mobile-height,310px)!important;min-height:var(--cco-chart-mobile-height,310px)!important;max-height:none!important}.section.chart-card{min-width:0;padding-left:14px;padding-right:14px}}
+@media(max-width:900px){.cco-chart-host{height:310px!important;min-height:310px!important;max-height:310px!important}}
+@media(max-width:680px){.cco-chart,.cco-chart-3d,.cco-chart-3d--principal,.cco-echarts-3d,.kpi-single-chart .cco-chart-3d,.grafico-linha-full .cco-chart-3d{height:var(--cco-chart-mobile-height,280px)!important;min-height:var(--cco-chart-mobile-height,280px)!important}body.kpi-page .kpi-composition-chart,body.kpi-page #graficoKpiServicoIndicadores{height:280px!important;min-height:280px!important;max-height:280px!important}body.kpi-page .kpi-speed-chart{height:330px;min-height:330px}body.kpi-page .kpi-speedometer-drawing{transform:translateX(-50%) scale(.68)}}
+@media(max-width:680px){.cco-chart-host{height:280px!important;min-height:280px!important;max-height:280px!important}}
+@media(max-width:430px){.cco-chart,.cco-chart-3d,.cco-chart-3d--principal,.cco-echarts-3d,.kpi-single-chart .cco-chart-3d,.grafico-linha-full .cco-chart-3d{height:var(--cco-chart-mobile-height,250px)!important;min-height:var(--cco-chart-mobile-height,250px)!important}.section.chart-card{padding-left:10px;padding-right:10px}body.kpi-page .kpi-composition-chart,body.kpi-page #graficoKpiServicoIndicadores{height:250px!important;min-height:250px!important;max-height:250px!important}body.kpi-page .kpi-speed-chart{height:310px;min-height:310px}}
+@media(max-width:430px){.cco-chart-host{height:260px!important;min-height:260px!important;max-height:260px!important}}
+
+@media(max-width:900px){
+  .card-grafico,.chart-card,.cco-chart-card{min-width:0;padding:14px 12px!important;border-radius:16px;overflow:hidden}
+  .card-grafico .section-title h2,.chart-card .section-title h2,.cco-chart-card .section-title h2{font-size:1rem!important}
+  .card-grafico .section-title p,.chart-card .section-title p,.cco-chart-card .section-title p{font-size:.78rem!important}
+  body.kpi-page .kpi-speed-chart,body.kpi-page #graficoKpiVelocidadeMediaMensal{height:260px!important;min-height:260px!important;max-height:260px!important}
+  body.kpi-page .cco-velocidade-percurso{top:68px;right:8px;bottom:auto;left:8px;width:calc(100% - 16px);height:155px;min-height:155px}
+  body.kpi-page .cco-rota-texto{display:block;font-size:10px}
+  body.kpi-page .kpi-speedometer-drawing{top:auto;right:8px;bottom:4px;left:auto;transform:scale(.58);transform-origin:bottom right}
+}
+@media(max-width:430px){body.kpi-page .cco-rota-marcas,body.kpi-page .cco-rota-particulas{display:none}body.kpi-page .cco-rota-texto{display:block;font-size:9px}body.kpi-page .kpi-speedometer-drawing{transform:scale(.52)}}
+
+/* KPI mobile estável: dimensões explícitas antes da inicialização ECharts. */
+@media(max-width:900px){
+  body.kpi-page .kpi-card-grafico{width:100%;min-width:0;padding:14px 12px!important;overflow:hidden}
+  body.kpi-page .kpi-card-grafico h2,body.kpi-page .kpi-card-grafico h3{font-size:1.05rem!important}
+  body.kpi-page .kpi-card-grafico p{font-size:.78rem!important}
+  body.kpi-page #graficoKpiServicoDiario{width:100%!important;min-width:0!important;height:300px!important;min-height:300px!important;max-height:300px!important}
+  body.kpi-page #graficoKpiPrevistoExecutado{width:100%!important;min-width:0!important;height:270px!important;min-height:270px!important;max-height:270px!important}
+  body.kpi-page .kpi-composition-chart,body.kpi-page #graficoKpiServicoIndicadores{width:100%!important;min-width:0!important;height:330px!important;min-height:330px!important;max-height:330px!important;overflow:hidden!important}
+  body.kpi-page #graficoKpiServicoMensal,body.kpi-page #graficoKpiComparativoMensal,body.kpi-page #graficoKpiProdutividadeMensal{width:100%!important;min-width:0!important;height:290px!important;min-height:290px!important;max-height:290px!important}
+  body.kpi-page .kpi-speed-chart,body.kpi-page #graficoKpiVelocidadeMediaMensal{height:250px!important;min-height:250px!important;max-height:250px!important}
+  body.kpi-page .kpi-speedometer-drawing{width:110px;max-width:110px}
+}
+@media(max-width:430px){body.kpi-page #graficoKpiServicoDiario{height:270px!important;min-height:270px!important;max-height:270px!important}}

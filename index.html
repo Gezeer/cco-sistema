@@ -17,7 +17,8 @@
   <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
   <link rel="stylesheet" href="css/responsive.css?v=20260718-cco-enterprise-ui-v1">
   <link rel="stylesheet" href="css/cco-green-command.css?v=20260720-painel-layout-correto-v1">
-  <link rel="stylesheet" href="css/painel-geral.css?v=20260720-financeiro-monitor-v2">
+  <link rel="stylesheet" href="css/painel-geral.css?v=20260722-graficos-mobile-v1">
+  <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260722-graficos-mobile-v1">
 </head>
 <body class="painel-geral-page">
   <div class="layout">
@@ -216,12 +217,14 @@
         throw new Error("SDK do Supabase não carregou pela CDN.");
       }
 
+      await carregarScriptSequencial("js/cco-p1-km-total.js?v=20260722-p1-km-total-literal-v6");
       await carregarScriptSequencial("cco-metricas.js?v=20260720-novo-banco-principal-v1");
-      await carregarScriptSequencial("utils.js?v=20260718-grafico-moedas-financeiro-v2");
+      await carregarScriptSequencial("js/cco-graficos-3d.js?v=20260722-graficos-mobile-v1");
+      await carregarScriptSequencial("utils.js?v=20260722-p1-km-total-literal-v6");
       await carregarScriptSequencial("cco-fixes.js?v=20260720-novo-banco-principal-v1");
-      await carregarScriptSequencial("cco-importacao-principal.js?v=20260720-raw-dias-p12-v3");
+      await carregarScriptSequencial("cco-importacao-principal.js?v=20260722-p1-km-total-literal-v6");
       await carregarScriptSequencial("painel.js");
-      await carregarScriptSequencial("painel-geral.js?v=20260721-p9-dias-acumulados-v4");
+      await carregarScriptSequencial("painel-geral.js?v=20260722-graficos-mobile-v1");
       await window.carregarRegrasServicosCCO();
 
       console.log("⚡ CCO-Engine: scripts locais carregados em ordem segura.");
@@ -259,7 +262,7 @@
   });
 </script>
   <script src="js/theme.js?v=20260718-enterprise-v1"></script>
-  <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
+  <script src="js/navbar.js?v=20260722-painel-mobile-menu-grafico-v2"></script>
   <script src="js/layout.js?v=20260720-painel-layout-correto-v1"></script>
   <script src="js/animations.js?v=20260718-enterprise-v1"></script>
   <script src="js/cco-v2-data.js?v=20260720-v2"></script>

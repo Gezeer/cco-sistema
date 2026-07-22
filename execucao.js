@@ -2,10 +2,12 @@
 (function iniciarPaginaExecucao(){
   window.CCO_PAGE = "execucao";
   const n=valor=>{const numero=Number(valor);return Number.isFinite(numero)?numero:0;};
+  const IDS_GRAFICOS_EXECUCAO=Object.freeze(["graficoExecDetalheEvolucao","graficoExecDetalhePeso","graficoExecDetalheViagens","graficoExecDetalheKm","graficoExecDetalheEquipe","graficoExecDetalheHoras","graficoExecDetalheDistancia","graficoExecDetalheTempo"]);
+  window.IDS_GRAFICOS_EXECUCAO=IDS_GRAFICOS_EXECUCAO;
   function instalarRenderizacaoDiretaExecucao(){
-    window.ccoFinalSecaoGrafico=function(tag,titulo,id){return`<section class="section chart-card" id="secao-${id}"><div class="section-title"><span>${tag}</span><h2>${titulo}</h2></div><div id="${id}" class="cco-chart-3d cco-chart-3d--principal" role="img" aria-label="${titulo}"></div></section>`;};
+    window.ccoFinalSecaoGrafico=function(tag,titulo,id){return`<section class="section chart-card" id="secao-${id}"><div class="section-title"><span>${tag}</span><h2>${titulo}</h2></div><div class="cco-chart-wrapper"><div id="${id}" class="cco-chart-host cco-chart-3d cco-chart-3d--principal" role="img" aria-label="${titulo}"></div><div class="cco-chart-state" hidden></div></div></section>`;};
     window.ccoFinalDestruirGraficoCanvas=function(id){window.CCO_GRAFICOS_3D?.destruirGrafico?.(document.getElementById(id));};
-    window.ccoFinalCriarBarra=function(id,label,labels,valores){const container=document.getElementById(id),temDados=(valores||[]).some(valor=>n(valor)>0),secao=container?.closest?.(".section, .chart-card");if(secao)secao.style.display=temDados?"":"none";window.CCO_GRAFICOS_3D?.destruirGrafico?.(container);if(!container||!temDados)return null;return window.CCO_GRAFICOS_3D?.criarBarrasCilindricas?.({container,categorias:labels,valores:(valores||[]).map(n),nomeSerie:label,formatarRotulo:window.ccoFinalFormatarNumero});};
+    window.ccoFinalCriarBarra=function(id,label,labels,valores){const container=document.getElementById(id),temDados=(valores||[]).some(valor=>n(valor)>0),secao=container?.closest?.(".section, .chart-card");if(secao)secao.style.display=temDados?"":"none";window.CCO_GRAFICOS_3D?.destruirGrafico?.(container);if(!container||!temDados)return null;return window.CCO_GRAFICOS_3D?.renderizarDireto?.(container,{tipo:cfg=>cfg.mobile?"horizontal":"cilindro",categorias:labels,valores:(valores||[]).map(n),nomeSerie:label,formatarRotulo:window.ccoFinalFormatarNumero,altura:Math.max(250,(labels||[]).length*38)});};
     window.ccoFinalCriarLinha=function(id,label,labels,valores){const container=document.getElementById(id),temDados=(valores||[]).some(valor=>n(valor)!==0),secao=container?.closest?.(".section, .chart-card");if(secao)secao.style.display=temDados?"":"none";window.CCO_GRAFICOS_3D?.destruirGrafico?.(container);if(!container||!temDados)return null;return window.CCO_GRAFICOS_3D?.criarLinhaComProfundidade?.({container,categorias:labels,valores:(valores||[]).map(n),nomeSerie:label});};
   }
   instalarRenderizacaoDiretaExecucao();
@@ -146,7 +148,7 @@
     const container=garantirContainerEvolucao(servico);if(!container)return null;
     const ativo=window.obterServicoAtivo?.();if(ativo&&String(ativo).toUpperCase()!==servico)return null;
     const formatar=valor=>n(valor).toLocaleString("pt-BR",{maximumFractionDigits:2});
-    const grafico=window.CCO_GRAFICOS_3D?.renderizarDireto?.(container,{tipo:"cilindro",categorias,series:[{nome:"Executado",valores,formatarRotulo:(valor,indice)=>valores[indice]==null?"":formatar(valor)}],tooltip:{formatter:parametros=>{const item=(Array.isArray(parametros)?parametros:[parametros])[0],indice=item?.dataIndex??0;return valores[indice]==null?`${categorias[indice]}<br>Sem dados válidos`:`${categorias[indice]}<br>Executado: ${formatar(valores[indice])}`;}}});
+    const grafico=window.CCO_GRAFICOS_3D?.renderizarDireto?.(container,{tipo:cfg=>cfg.mobile?"linha":"cilindro",categorias,series:[{nome:"Executado",valores,formatarRotulo:(valor,indice)=>valores[indice]==null?"":formatar(valor)}],tooltip:{formatter:parametros=>{const item=(Array.isArray(parametros)?parametros:[parametros])[0],indice=item?.dataIndex??0;return valores[indice]==null?`${categorias[indice]}<br>Sem dados válidos`:`${categorias[indice]}<br>Executado: ${formatar(valores[indice])}`;}}});
     posicionarSecoesDetalheExecucao();atualizarTendenciaEvolucaoCCO(categorias,valores);return grafico;
   }
   window.renderizarEvolucaoHistoricaCCO=renderizarEvolucaoHistoricaCCO;

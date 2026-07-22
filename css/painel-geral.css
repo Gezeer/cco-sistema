@@ -31,3 +31,19 @@
 @media(max-width:760px){.painel-geral-page .cco-kpi-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important}.painel-geral-page .cco-ranking-item{grid-template-columns:auto 34px minmax(0,1fr)!important}.painel-geral-page .cco-ranking-value{grid-column:3;text-align:left}.painel-geral-page .cco-monitor-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:460px){.painel-geral-page .cco-kpi-strip{grid-template-columns:minmax(0,1fr)!important}}
 @media(max-width:520px){.painel-geral-page .cco-main{padding:12px}.painel-geral-page .cco-filter-panel .filter-grid{grid-template-columns:minmax(0,1fr)!important}.painel-geral-page .cco-panel-card{padding:14px!important}.painel-geral-page .cco-chart-container{min-height:320px!important;height:320px!important}.painel-geral-page #graficoFinanceiro,.painel-geral-page .cco-chart-financeiro .cco-chart-container{height:390px!important;min-height:390px!important}.painel-geral-page .cco-monitor-screen{padding:12px!important}.painel-geral-page .cco-monitor-header{align-items:flex-start;flex-direction:column}.painel-geral-page .cco-monitor-status{align-self:flex-end;margin-top:-30px}}
+
+/* Painel Geral: menu sólido e gráfico financeiro contido no mobile. */
+@media(max-width:1360px){
+  body.painel-geral-page{--cco-header-mobile-height:72px}
+  body.painel-geral-page.cco-menu-aberto{overflow:hidden}
+  body.painel-geral-page.cco-menu-aberto::before{content:"";position:fixed;inset:var(--cco-header-mobile-height) 0 0;z-index:10000;background:rgba(0,10,8,.82)}
+  body.painel-geral-page .cco-nav-mobile .cco-nav-backdrop{display:none!important}
+  body.painel-geral-page .cco-nav-mobile.menu-open .cco-nav-backdrop{display:block!important}
+  body.painel-geral-page .cco-nav-mobile .cco-nav-mobile__lista{position:fixed;z-index:10001;top:var(--cco-header-mobile-height);right:0;left:0;bottom:auto;display:grid;grid-template-columns:minmax(0,1fr);width:100%;max-height:calc(100dvh - var(--cco-header-mobile-height));margin:0;padding:12px 14px 18px;gap:6px;overflow-x:hidden;overflow-y:auto;border:0;border-bottom:1px solid rgba(71,231,178,.24);background:linear-gradient(180deg,#05251e 0%,#031b17 100%)!important;box-shadow:0 18px 34px rgba(0,0,0,.48);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-12px)}
+  body.painel-geral-page .cco-nav-mobile.menu-open .cco-nav-mobile__lista{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0)}
+  body.painel-geral-page .cco-nav-mobile__link{position:relative!important;inset:auto!important;display:flex!important;width:100%;min-height:44px;height:auto!important;margin:0;padding:10px 14px!important;align-items:center;justify-content:flex-start;gap:10px;border:1px solid rgba(71,225,174,.16)!important;border-radius:11px;background:rgba(10,64,51,.92)!important;color:#dff7ed!important;transform:none!important}
+}
+@media(max-width:900px){
+  body.painel-geral-page .cco-chart-financeiro{min-width:0;overflow:hidden;padding:12px 10px 14px!important}
+  body.painel-geral-page #graficoFinanceiro,body.painel-geral-page .cco-chart-financeiro .cco-chart-container{width:100%!important;max-width:100%!important;min-width:0!important;height:var(--cco-chart-mobile-height,310px)!important;min-height:var(--cco-chart-mobile-height,310px)!important;max-height:none!important;overflow:hidden!important}
+}

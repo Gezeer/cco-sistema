@@ -8185,8 +8185,28 @@ function ccoTempoProdutivoLinha(item) {
 }
 
 function ccoKmTotalLinha(item) {
-  return numero(item.km || 0);
+  const servico = String(item?.servico || item?.servico_p || "").trim().toUpperCase();
+  if (servico === "P1") return window.obterKmTotalP1CCO ? window.obterKmTotalP1CCO(item) : numero(item?.km_total || 0);
+  return numero(item?.km_total ?? item?.km ?? 0);
 }
+
+function atualizarCardKmExecutadoCCO(valor) {
+  const elemento = document.getElementById("valorKmExecutado");
+  if (!elemento) {
+    console.error("[P1 KM TOTAL] elemento do card não encontrado");
+    return;
+  }
+  const numeroKm = Number(valor);
+  const valorSeguro = Number.isFinite(numeroKm) ? numeroKm : 0;
+  elemento.textContent = valorSeguro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const card = document.getElementById("cardKmExecutado");
+  if (card) {
+    card.hidden = false;
+    card.style.removeProperty("display");
+    card.setAttribute("aria-hidden", "false");
+  }
+}
+window.atualizarCardKmExecutadoCCO = atualizarCardKmExecutadoCCO;
 
 function ccoPegarCampoTempoRD(item) {
   return item.tempo_rd_excel || item.tempo_rd_horas || 0;
@@ -10624,6 +10644,9 @@ function ccoFinalCriarLinha(canvasId, label, labels, valores, beginZero = true) 
 function renderDetalheServicoMensal(codigo) {
   const detalhe = document.getElementById("detalheServico");
   if (!detalhe) return;
+  const cardKmPermanente = document.getElementById("cardKmExecutado");
+  const reservatorioCards = document.getElementById("cardsPermanentesExecucao");
+  if (cardKmPermanente && reservatorioCards && cardKmPermanente.parentElement !== reservatorioCards) reservatorioCards.appendChild(cardKmPermanente);
 
   const { painel, periodo } = gerarPainelExecucaoMensal();
   const dadosPainel = painel.find(item => item.servico === codigo);
@@ -10654,7 +10677,26 @@ function renderDetalheServicoMensal(codigo) {
 
   const totalPeso = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.peso), 0);
   const totalViagens = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.viagens), 0);
-  const totalKm = dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km)), 0);
+  const importacaoAtivaId = window.__CCO_IMPORTACAO_ATIVA__?.importacao_id || window.__CCO_IMPORTACAO_ATIVA__?.id || periodo?.importacao_id;
+  const rawP1Atual = window.__CCO_P1_KM_RAW__;
+  const totalKmOperacoes = dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km_total)), 0);
+  const totalKm = codigo === "P1" && rawP1Atual && String(rawP1Atual.importacaoId) === String(importacaoAtivaId)
+    ? ccoFinalNumero(rawP1Atual.somaKmTotal)
+    : totalKmOperacoes;
+  if (codigo === "P1") {
+    const auditoriaKm = window.auditarCamposKmP1CCO?.(dadosServico) || { camposEncontrados: [], camposIgnorados: [] };
+    console.log("[P1 KM TOTAL]", {
+      periodo: periodo?.periodo || window.__CCO_PERIODO_ATUAL__ || "",
+      registros: dadosServico.length,
+      somaKmTotal: totalKm,
+      amostra: dadosServico.slice(0, 5).map(item => ({
+        km_total: item?.km_total,
+        dadosKmTotal: item?.dados?.Km_Total,
+        originalKmTotal: item?.dados_originais?.Km_Total
+      })),
+      ...auditoriaKm
+    });
+  }
   const totalEquipes = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.equipe), 0);
   const totalHoras = dadosServico.reduce((s, i) => s + (typeof ccoTempoProdutivoLinha === "function" ? ccoTempoProdutivoLinha(i) : ccoFinalNumero(i.tempo_produtivo_h)), 0);
   const totalTempoRD = dadosServico.reduce((s, i) => s + (typeof ccoTempoRDHorasCorrigido === "function" ? ccoTempoRDHorasCorrigido(i) : ccoFinalNumero(i.tempo_rd_horas)), 0);
@@ -10711,7 +10753,7 @@ function renderDetalheServicoMensal(codigo) {
       ${diasComDados > 0 ? criarCard("Dias com Dados", ccoFinalFormatarNumero(diasComDados), "dias lançados", false) : ""}
       ${totalPeso > 0 ? criarCard("Peso", `${ccoFinalFormatarNumero(totalPeso)} t`, "toneladas lançadas") : ""}
       ${totalViagens > 0 ? criarCard("Viagens", ccoFinalFormatarNumero(totalViagens), "operações") : ""}
-      ${totalKm > 0 ? criarCard("KM Executado", ccoFinalFormatarNumero(totalKm), "quilometragem") : ""}
+      ${codigo !== "P1" && totalKm > 0 ? criarCard("KM Executado", ccoFinalFormatarNumero(totalKm), "quilometragem") : ""}
       ${totalEquipes > 0 ? criarCard("Equipes", ccoFinalFormatarNumero(totalEquipes), "equipes lançadas") : ""}
       ${totalHoras > 0 ? criarCard("Horas Produtivas", `${ccoFinalFormatarNumero(totalHoras)} h`, "tempo produtivo") : ""}
       ${produtividade > 0 ? criarCard("Produtividade", `${ccoFinalFormatarNumero(produtividade)} t/viagem`, "média operacional") : ""}
@@ -10719,6 +10761,12 @@ function renderDetalheServicoMensal(codigo) {
       ${tempoMedio > 0 ? criarCard("Tempo Médio/Viagem", `${ccoFinalFormatarNumero(tempoMedio)} h/viagem`, "Tempo RD/viagem") : ""}
     </section>
   `;
+
+  if (codigo === "P1" && cardKmPermanente) {
+    const gradeCards = detalhe.querySelector(":scope > .cards");
+    if (gradeCards) gradeCards.insertBefore(cardKmPermanente, gradeCards.children[7] || null);
+    atualizarCardKmExecutadoCCO(totalKm);
+  }
 
   const labelsMes = mensal.map(i => i.mesBrasil);
   ccoGraficoExecDetalheEvolucaoFinal = ccoFinalCriarBarra("graficoExecDetalheEvolucao", "Executado", labelsMes, mensal.map(i => i.executado));

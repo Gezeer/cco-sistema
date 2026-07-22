@@ -110,7 +110,7 @@
       importacao_id: item.importacao_id, rd: String(item.rd || ""), data: item.data_operacao || "",
       data_operacao: item.data_operacao || "", data_normalizada: String(item.data_operacao || "").slice(0, 10), turno: item.turno || "",
       ra: item.ra || "", setor: "", peso: numeroOpcional(item.peso_t),
-      viagens: numeroOpcional(item.viagens), km: numeroOpcional(item.km_total),
+      viagens: numeroOpcional(item.viagens), km: numeroOpcional(item.km_total), km_total: numeroOpcional(item.km_total),
       equipe: numeroOpcional(item.equipe ?? item.qtd_equipe), executado: numeroOpcional(item.executado), velocidade_media: numeroOpcional(item.velocidade_media),
       tempo_produtivo_h: numeroOpcional(item.tempo_produtivo_minutos) == null ? null : numeroSeguro(item.tempo_produtivo_minutos) / 60,
       status: "Com dados", dados_originais:item.dados_originais || null

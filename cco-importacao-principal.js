@@ -182,12 +182,16 @@
         if (SERVICOS.has(servico)) {
           if (!data) erros.push({aba:nomeAba,numero_linha:numeroLinha,codigo:"DATA_INVALIDA",mensagem:"Linha operacional sem data válida.",dados:jsonSeguro(original)});
           const executado=normalizarNumero(campo(linha,"executado")),extracaoP9=servico==="P9"?extrairValorOperacionalP9({...original,...linha}):{valor:null,campo:null},valorP9=extracaoP9.valor;
+          const resultadoKmP1=servico==="P1"?window.obterKmTotalP1DoRawCCO({dados_originais:original,dados:linha}):null;
+          const kmTotal=servico==="P1"?resultadoKmP1.valor:normalizarNumero(campo(linha,"km_total"));
+          if(servico==="P1")rawAtual.dados={...rawAtual.dados,campo_origem_km_total:resultadoKmP1.campo,valor_original_km_total:resultadoKmP1.valorOriginal};
           if(servico==="P12"&&executado===null){
             erros.push({aba:nomeAba,numero_linha:numeroLinha,codigo:"P12_EXECUTADO_AUSENTE",mensagem:"Linha P12 sem valor Executado válido; preservada no RAW e excluída de operacoes.",dados:jsonSeguro(original)});
           }else if(servico==="P9"&&valorP9===null){
             erros.push({aba:nomeAba,numero_linha:numeroLinha,codigo:"P9_VALOR_AUSENTE",mensagem:"Linha P9 sem quantidade de equipe positiva; preservada no RAW e excluída de operacoes.",dados:jsonSeguro(original)});
           }else{
-            operacoes.push({aba:nomeAba,numero_linha:numeroLinha,rd,servico,tipo_servico:texto(campo(linha,"tipo_servico"))||null,data_operacao:data,hora:texto(campo(linha,"hora"))||null,turno:texto(campo(linha,"turno"))||null,ra:texto(campo(linha,"ra"))||null,setor:texto(campo(linha,"setor"))||null,circuito:texto(campo(linha,"circuito"))||null,veiculo:texto(campo(linha,"veiculo"))||null,equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"equipe")),qtd_equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"qtd_equipe")),peso_t:normalizarNumero(campo(linha,"peso_t")),viagens:normalizarNumero(campo(linha,"viagens")),km_total:normalizarNumero(campo(linha,"km_total")),executado:servico==="P9"?valorP9:executado,velocidade_media:normalizarNumero(campo(linha,"velocidade_media")),tempo_produtivo_minutos:normalizarNumero(campo(linha,"tempo_produtivo_minutos")),tempo_total_minutos:normalizarNumero(campo(linha,"tempo_total_minutos")),tempo_parada_minutos:normalizarNumero(campo(linha,"tempo_parada_minutos")),km_produtivo:normalizarNumero(campo(linha,"km_produtivo")),km_improdutivo:normalizarNumero(campo(linha,"km_improdutivo")),valor_abastecido:normalizarNumero(campo(linha,"valor_abastecido")),valor_original:jsonSeguro(servico==="P9"?{...original,campo_origem_p9:extracaoP9.campo}:original),chave_operacao:chave(nomeAba,numeroLinha,servico,data,rd)});
+            const diagnosticoOriginal=servico==="P9"?{...original,campo_origem_p9:extracaoP9.campo}:servico==="P1"?{...original,campo_origem_km_total:resultadoKmP1.campo,valor_original_km_total:resultadoKmP1.valorOriginal}:original;
+            operacoes.push({aba:nomeAba,numero_linha:numeroLinha,rd,servico,tipo_servico:texto(campo(linha,"tipo_servico"))||null,data_operacao:data,hora:texto(campo(linha,"hora"))||null,turno:texto(campo(linha,"turno"))||null,ra:texto(campo(linha,"ra"))||null,setor:texto(campo(linha,"setor"))||null,circuito:texto(campo(linha,"circuito"))||null,veiculo:texto(campo(linha,"veiculo"))||null,equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"equipe")),qtd_equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"qtd_equipe")),peso_t:normalizarNumero(campo(linha,"peso_t")),viagens:normalizarNumero(campo(linha,"viagens")),km_total:kmTotal,executado:servico==="P9"?valorP9:executado,velocidade_media:normalizarNumero(campo(linha,"velocidade_media")),tempo_produtivo_minutos:normalizarNumero(campo(linha,"tempo_produtivo_minutos")),tempo_total_minutos:normalizarNumero(campo(linha,"tempo_total_minutos")),tempo_parada_minutos:normalizarNumero(campo(linha,"tempo_parada_minutos")),km_produtivo:normalizarNumero(campo(linha,"km_produtivo")),km_improdutivo:normalizarNumero(campo(linha,"km_improdutivo")),valor_abastecido:normalizarNumero(campo(linha,"valor_abastecido")),valor_original:jsonSeguro(diagnosticoOriginal),chave_operacao:chave(nomeAba,numeroLinha,servico,data,rd)});
           }
         }
         const abaNorm=normalizarCabecalho(nomeAba);
@@ -462,6 +466,62 @@
     } finally { if(overlay)overlay.style.display="none";if(input)input.value=""; }
   }
 
+  async function buscarTudoPaginado(criarConsulta,tamanho=1000){
+    const resultado=[];
+    for(let inicio=0;;inicio+=tamanho){
+      const{data,error}=await criarConsulta().range(inicio,inicio+tamanho-1);
+      if(error)throw error;
+      const lote=data||[];resultado.push(...lote);
+      if(lote.length<tamanho)break;
+    }
+    return resultado;
+  }
+
+  async function reprocessarKmTotalP1Ativo(){
+    const cliente=banco();if(!cliente)throw new Error("Supabase indisponível.");
+    await usuarioAutorizado();
+    const importacoes=await buscarTudoPaginado(()=>cliente.from("importacoes").select("id,ano,mes,ativa,status").eq("ativa",true).order("ano").order("mes"));
+    const resumos=[];
+    for(const importacao of importacoes){
+      const rawConsulta=await buscarTudoPaginado(()=>cliente.from("planilha_linhas").select("chave_linha,aba,servico,dados,dados_originais").eq("importacao_id",importacao.id).order("chave_linha"));
+      const raw=rawConsulta.filter(item=>window.normalizarAbaP1CCO(item.aba)==="P1");
+      const operacoesAntes=await buscarTudoPaginado(()=>cliente.from("operacoes").select("id,chave_operacao,km_total").eq("importacao_id",importacao.id).eq("servico","P1").order("id"));
+      const mapaRaw=new Map(),chavesDuplicadas=[];
+      for(const linha of raw){if(!linha.chave_linha)throw new Error(`RAW P1 sem chave_linha na importação ${importacao.id}.`);if(mapaRaw.has(linha.chave_linha))chavesDuplicadas.push(linha.chave_linha);mapaRaw.set(linha.chave_linha,linha);}
+      if(chavesDuplicadas.length)throw new Error(`RAW P1 possui chaves duplicadas na importação ${importacao.id}; reprocessamento abortado.`);
+      const chavesOperacoes=new Set();
+      for(const operacao of operacoesAntes){if(!operacao.chave_operacao||chavesOperacoes.has(operacao.chave_operacao))throw new Error(`Vínculo chave_operacao inválido ou duplicado na importação ${importacao.id}.`);chavesOperacoes.add(operacao.chave_operacao);}
+      const semRaw=operacoesAntes.filter(item=>!mapaRaw.has(item.chave_operacao));
+      const semOperacao=raw.filter(item=>!chavesOperacoes.has(item.chave_linha));
+      if(semRaw.length||semOperacao.length)throw new Error(`Vínculo P1 incompleto na importação ${importacao.id}: ${semRaw.length} operação(ões) sem RAW e ${semOperacao.length} RAW sem operação. Nenhum update foi feito.`);
+      let atualizados=0,somaRaw=0;
+      const auditoria=window.auditarCamposKmP1CCO?.(raw)||{camposEncontrados:[],camposIgnorados:[]};
+      const correcoes=operacoesAntes.map(operacao=>({operacao,resultadoKm:window.obterKmTotalP1DoRawCCO(mapaRaw.get(operacao.chave_operacao))}));
+      const semKmTotal=correcoes.filter(item=>!Number.isFinite(item.resultadoKm.valor));
+      if(semKmTotal.length)throw new Error(`Km_Total ausente em ${semKmTotal.length} linha(s) RAW da importação ${importacao.id}; nenhum update foi feito.`);
+      somaRaw=correcoes.reduce((s,item)=>s+item.resultadoKm.valor,0);
+      if(raw.length>0&&correcoes.length===0)throw new Error("Nenhum campo KM_TOTAL localizado no RAW P1. Reprocessamento cancelado.");
+      if(somaRaw<=0)throw new Error("Soma KM_TOTAL inválida. Nenhuma atualização foi realizada.");
+      for(const {operacao,resultadoKm} of correcoes){
+        const kmTotal=resultadoKm.valor;
+        const{data,error}=await cliente.from("operacoes").update({km_total:kmTotal}).eq("id",operacao.id).eq("importacao_id",importacao.id).eq("servico","P1").select("id");
+        if(error)throw Object.assign(new Error(`Falha ao atualizar P1 em ${importacao.ano}-${String(importacao.mes).padStart(2,"0")}: ${error.message}`),{cause:error});
+        if((data||[]).length!==1)throw new Error(`Update não confirmou exatamente uma operação P1 para ${operacao.chave_operacao}.`);
+        atualizados+=(data||[]).length;
+      }
+      const operacoesDepois=await buscarTudoPaginado(()=>cliente.from("operacoes").select("id,km_total").eq("importacao_id",importacao.id).eq("servico","P1").order("id"));
+      const somaAntes=operacoesAntes.reduce((s,item)=>s+(normalizarNumero(item.km_total)||0),0),somaDepois=operacoesDepois.reduce((s,item)=>s+(normalizarNumero(item.km_total)||0),0);
+      if(Math.abs(somaDepois-somaRaw)>0.000001)throw new Error(`Verificação final divergente na importação ${importacao.id}: RAW ${somaRaw}, operações ${somaDepois}.`);
+      const periodo=`${importacao.ano}-${String(importacao.mes).padStart(2,"0")}`;
+      const resumo={periodo,importacaoId:importacao.id,registros:raw.length,somaAntes,somaRawCorreta:somaRaw,somaDepois,diferenca:somaRaw-somaAntes,registrosAtualizados:atualizados,...auditoria};resumos.push(resumo);
+    }
+    window.CCOMetricas?.invalidarCaches?.();window.CCO_CACHE?.limpar?.();window.invalidarCacheEvolucaoExecucaoCCO?.();
+    console.table(resumos);
+    window.dispatchEvent(new CustomEvent("cco:p1-km-total-reprocessado",{detail:resumos}));
+    if(window.CCO_PAGE==="execucao"&&window.__CCO_IMPORTACAO_ATIVA__&&typeof window.carregarPeriodoCCO==="function")await window.carregarPeriodoCCO(window.__CCO_IMPORTACAO_ATIVA__);
+    return resumos;
+  }
+
   async function desativarBaseAtual() {
     if(!confirm("Deseja desativar a base atual? O histórico e todos os dados serão preservados."))return false;
     const usuario=await usuarioAutorizado();
@@ -478,9 +538,10 @@
     const novo=antigo.cloneNode(true);antigo.replaceWith(novo);novo.dataset.importadorPrincipal=BUILD;novo.addEventListener("change",importarPlanilhas);
   }
 
-  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,normalizarCabecalho,normalizarCabecalhoCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,reprocessarP9Ativos,importarArquivo,importarPlanilhas});
+  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,normalizarCabecalho,normalizarCabecalhoCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,reprocessarP9Ativos,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
   window.reprocessarP9AtivosCCO=reprocessarP9Ativos;
   window.reprocessarP9Ativo=reprocessarP9Ativos;
+  window.reprocessarKmTotalP1Ativo=reprocessarKmTotalP1Ativo;
   window.importarPlanilhas=importarPlanilhas;
   window.limparBanco=desativarBaseAtual;
   try{limparBanco=desativarBaseAtual;}catch(_){}
