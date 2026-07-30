@@ -5683,6 +5683,7 @@ function linhaMesCorrespondeDiasOperacao(valorMes, ano, mes) {
 }
 
 function obterTotalDiasMesDiasOperacao(ano, mes, fallback = 0) {
+  if (!(Number(ano) >= 1900 && Number(mes) >= 1 && Number(mes) <= 12)) return numero(fallback);
   const aba = obterAbaDiasOperacaoFinal();
 
   if (!aba || !Array.isArray(aba.dadosNormalizados)) {
@@ -5947,6 +5948,7 @@ function valorMesCorrespondeFinal(valorMes, ano, mes) {
 }
 
 function obterTotalDiasMesOficial(ano, mes, fallback = 0) {
+  if (!(Number(ano) >= 1900 && Number(mes) >= 1 && Number(mes) <= 12)) return numero(fallback);
   const aba = obterAbaDiasOperacaoFinal();
 
   if (!aba || !Array.isArray(aba.dadosNormalizados)) {
@@ -6270,6 +6272,7 @@ function converterValorMesParaAnoMes(valor) {
 }
 
 function obterTotalDiasMesDaAbaDiasOperacao(ano, mes, fallback = 0) {
+  if (!(Number(ano) >= 1900 && Number(mes) >= 1 && Number(mes) <= 12)) return numero(fallback);
   const aba = encontrarAbaDiasOperacao();
 
   if (!aba || !Array.isArray(aba.dadosNormalizados)) {
@@ -15824,7 +15827,7 @@ async function sair() {
   };
   const MESES = {"01":"Janeiro","02":"Fevereiro","03":"Março","04":"Abril","05":"Maio","06":"Junho","07":"Julho","08":"Agosto","09":"Setembro","10":"Outubro","11":"Novembro","12":"Dezembro"};
   function totalDiasOficialV122(ano, mes){
-    return window.CCO_REGRAS.obterDiasOperacao(ano,mes);
+    return Number(ano)>=1900&&Number(mes)>=1&&Number(mes)<=12?window.CCO_REGRAS.obterDiasOperacao(ano,mes):0;
   }
 
   function previstoOficialV122(servico, ano, mes, meta){
@@ -16195,11 +16198,11 @@ async function sair() {
   window.ccoDiasOficiaisPorPeriodo = DIAS_OFICIAIS_POR_PERIODO;
 
   window.ccoObterTotalDiasOperacao = function(ano, mes){
-    return window.CCO_REGRAS.obterDiasOperacao(ano,mes);
+    return Number(ano)>=1900&&Number(mes)>=1&&Number(mes)<=12?window.CCO_REGRAS.obterDiasOperacao(ano,mes):0;
   };
 
   calcularTotalDiasMes = function(ano, mes){
-    return window.CCO_REGRAS.obterDiasOperacao(ano,mes);
+    return Number(ano)>=1900&&Number(mes)>=1&&Number(mes)<=12?window.CCO_REGRAS.obterDiasOperacao(ano,mes):0;
   };
 
   function aplicarDiasOficialPainelAtual(){
@@ -16250,7 +16253,7 @@ async function sair() {
     return Number.isFinite(x) ? x : 0;
   }
   function diasPeriodo(ano, mes, fallback){
-    return window.CCO_REGRAS.obterDiasOperacao(ano,mes);
+    return Number(ano)>=1900&&Number(mes)>=1&&Number(mes)<=12?window.CCO_REGRAS.obterDiasOperacao(ano,mes):num(fallback);
   }
   window.ccoCalcularPrevistoOficial = function(servico, ano, mes, previstoOriginal, totalDiasOriginal){
     const s = String(servico || '').trim().toUpperCase();
