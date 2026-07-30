@@ -311,11 +311,60 @@
     return inseridos;
   }
 
+  function deduplicarDiasOperacao(dias,importacaoId) {
+    const mapa=new Map(),duplicidades=[];
+    for(const item of dias||[]){
+      const registro={...item,importacao_id:importacaoId};
+      const chave=`${registro.importacao_id}|${registro.ano}|${registro.mes}`;
+      if(mapa.has(chave))duplicidades.push({chave,descartado:mapa.get(chave),mantido:registro});
+      mapa.set(chave,registro);
+    }
+    return{payload:[...mapa.values()],duplicidades};
+  }
+
+  function detectarChaveUnicaDiasOperacao(resposta) {
+    const erro=resposta?.error||{},diagnostico=[erro.code,erro.details,erro.hint,erro.message,resposta?.statusText].filter(Boolean).join(" ");
+    if(String(erro.code)==="23505"&&(/dias_operacao_ano_mes_uidx/i.test(diagnostico)||/Key\s*\(ano,\s*mes\)/i.test(diagnostico)))return"ano,mes";
+    if(/dias_operacao.*importacao_id.*ano.*mes/i.test(diagnostico)||/Key\s*\(importacao_id,\s*ano,\s*mes\)/i.test(diagnostico))return"importacao_id,ano,mes";
+    return null;
+  }
+
+  function registrarRespostaDiasOperacao(resposta,chaveUsada) {
+    console.log("[IMPORTAÇÃO][dias_operacao] resposta completa do Supabase",resposta);
+    console.log("[IMPORTAÇÃO][dias_operacao] diagnóstico",{
+      onConflict:chaveUsada,
+      status:resposta?.status??null,
+      code:resposta?.error?.code??null,
+      details:resposta?.error?.details??null,
+      hint:resposta?.error?.hint??null,
+      message:resposta?.error?.message??null
+    });
+  }
+
+  async function executarUpsertDiasOperacao(payload,onConflict) {
+    console.table(payload);
+    console.log("onConflict",onConflict);
+    const resposta=await banco().from("dias_operacao").upsert(payload,{onConflict,ignoreDuplicates:false}).select();
+    registrarRespostaDiasOperacao(resposta,onConflict);
+    return resposta;
+  }
+
   async function gravarDiasOperacao(dias,importacaoId) {
-    if(dias.length!==1)throw new Error("Cada período deve possuir exatamente um registro de Dias_Operação.");
-    const registro={...dias[0],importacao_id:importacaoId};
-    const {error}=await banco().from("dias_operacao").upsert(registro,{onConflict:"importacao_id,ano,mes",ignoreDuplicates:false});
-    if(error)throw error;
+    const{payload,duplicidades}=deduplicarDiasOperacao(dias,importacaoId);
+    console.log("[IMPORTAÇÃO][dias_operacao] duplicidades no payload",duplicidades);
+    if(payload.length!==1)throw new Error(`Cada período deve possuir exatamente um registro único de Dias_Operação; encontrados ${payload.length}.`);
+    let chaveUsada="importacao_id,ano,mes";
+    let resposta=await executarUpsertDiasOperacao(payload,chaveUsada);
+    if(resposta.error){
+      const chaveDetectada=detectarChaveUnicaDiasOperacao(resposta);
+      console.log("[IMPORTAÇÃO][dias_operacao] chave única detectada pelo banco",chaveDetectada);
+      if(chaveDetectada&&chaveDetectada!==chaveUsada){
+        chaveUsada=chaveDetectada;
+        resposta=await executarUpsertDiasOperacao(payload,chaveUsada);
+      }
+    }
+    if(resposta.error)throw resposta.error;
+    return{payload,quantidade:payload.length,duplicidades,chaveUsada,resposta};
   }
 
   async function obterContagensReais(importacaoId,contagensLocais) {
@@ -594,7 +643,7 @@
     const novo=antigo.cloneNode(true);antigo.replaceWith(novo);novo.dataset.importadorPrincipal=BUILD;novo.addEventListener("change",importarPlanilhas);
   }
 
-  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,reprocessarP9Ativos,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
+  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
   window.reprocessarP9AtivosCCO=reprocessarP9Ativos;
   window.reprocessarP9Ativo=reprocessarP9Ativos;
   window.reprocessarKmTotalP1Ativo=reprocessarKmTotalP1Ativo;

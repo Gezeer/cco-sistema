@@ -51,5 +51,20 @@ assert.equal(relatorioP5.camposOficiaisLocalizados[0].percentualChave,"km_execut
 assert.throws(()=>api.preValidarCabecalhosCCO("P1","P1",[
   {ordem:0,original:"KM Total",normalizado:"km_total",chave:"km_total"}
 ]),/Pré-validação/);
+const diasDeduplicados=api.deduplicarDiasOperacao([
+  {ano:2026,mes:7,total_dias:26,dados:{linha:1}},
+  {ano:2026,mes:7,total_dias:27,dados:{linha:2}}
+],"importacao-teste");
+assert.equal(diasDeduplicados.payload.length,1);
+assert.equal(diasDeduplicados.duplicidades.length,1);
+assert.equal(diasDeduplicados.payload[0].total_dias,27);
+assert.equal(api.detectarChaveUnicaDiasOperacao({
+  status:409,
+  error:{code:"23505",details:"Key (ano, mes)=(2026, 7) already exists.",message:'duplicate key value violates unique constraint "dias_operacao_ano_mes_uidx"'}
+}),"ano,mes");
+assert.equal(api.detectarChaveUnicaDiasOperacao({
+  status:409,
+  error:{code:"23505",details:"Key (importacao_id, ano, mes)=(x, 2026, 7) already exists."}
+}),"importacao_id,ano,mes");
 
 console.log("Importador CCO: cabeçalhos únicos e campos literais P1/P5/P6 aprovados.");
