@@ -29,7 +29,7 @@
   const SERVICOS_KM_TOTAL_LITERAL = ["P1","P2.1","P2.2","P3","P4","P7","P8","P10","P11","P12"];
   const CAMPOS_PLANILHA_CCO = Object.freeze({
     ...Object.fromEntries(SERVICOS_KM_TOTAL_LITERAL.map(servico => [servico,Object.freeze({
-      km_total:Object.freeze({literal:"Km_Total",fallbackNormalizado:"km_total_2"})
+      km_total:Object.freeze({literal:"Km_Total"})
     })])),
     P5:Object.freeze({
       km_executado:Object.freeze({literal:"Km Executado",percentualLiteral:"Km Executado (%)"})
@@ -151,16 +151,16 @@
     return Object.fromEntries(cabecalhos.map(item => [item[chave], valores?.[item.ordem] ?? null]));
   }
 
-  function obterCampoLiteralCCO(linhaOriginal,linhaNormalizada,configuracao) {
+  function obterCampoLiteralCCO(linhaOriginal,linhaNormalizada,configuracao,metadadosCabecalhos={}) {
     const literal=configuracao?.literal;
     if(literal&&Object.prototype.hasOwnProperty.call(linhaOriginal||{},literal))return{valor:linhaOriginal[literal],campo:literal,fonte:"original"};
-    const fallback=configuracao?.fallbackNormalizado;
-    if(fallback&&Object.prototype.hasOwnProperty.call(linhaNormalizada||{},fallback))return{valor:linhaNormalizada[fallback],campo:fallback,fonte:"normalizada"};
+    const chaveUnica=metadadosCabecalhos?.[literal];
+    if(chaveUnica&&Object.prototype.hasOwnProperty.call(linhaNormalizada||{},chaveUnica))return{valor:linhaNormalizada[chaveUnica],campo:chaveUnica,fonte:"normalizada"};
     return{valor:null,campo:null,fonte:null};
   }
 
-  function obterCampoOperacionalCCO(servico,linhaOriginal,linhaNormalizada) {
-    if(SERVICOS_KM_TOTAL_LITERAL.includes(servico))return obterCampoLiteralCCO(linhaOriginal,linhaNormalizada,CAMPOS_PLANILHA_CCO[servico].km_total);
+  function obterCampoOperacionalCCO(servico,linhaOriginal,linhaNormalizada,metadadosCabecalhos={}) {
+    if(SERVICOS_KM_TOTAL_LITERAL.includes(servico))return obterCampoLiteralCCO(linhaOriginal,linhaNormalizada,CAMPOS_PLANILHA_CCO[servico].km_total,metadadosCabecalhos);
     if(servico==="P5")return obterCampoLiteralCCO(linhaOriginal,linhaNormalizada,CAMPOS_PLANILHA_CCO.P5.km_executado);
     if(servico==="P6")return obterCampoLiteralCCO(linhaOriginal,linhaNormalizada,CAMPOS_PLANILHA_CCO.P6.total_pagamento_km);
     return{valor:null,campo:null,fonte:null};
@@ -223,6 +223,7 @@
       const matriz = XLSX.utils.sheet_to_json(workbook.Sheets[nomeAba],{header:1,raw:true,defval:null,blankrows:false});
       if (!matriz.length) { abas.push({nome:nomeAba,total_linhas:0}); return; }
       const indiceCabecalho = detectarCabecalho(matriz), headers = criarCabecalhos(matriz[indiceCabecalho]);
+      const metadadosCabecalhos=Object.fromEntries(headers.map(item=>[item.original,item.chave]));
       const abaP9PorDescricao=ehAbaP9CatacaoAreaVerde(nomeAba),servicoAba = abaP9PorDescricao?"P9":servicoDaAba(nomeAba),abaPersistida=abaP9PorDescricao?"P9":nomeAba;
       const chaveData = headers.find(item => ALIASES.data_operacao.includes(item.normalizado))?.chave || null;
       if(SERVICOS.has(servicoAba))preValidacao.push(preValidarCabecalhosCCO(nomeAba,servicoAba,headers));
@@ -242,11 +243,15 @@
         totalAba++;
         if (SERVICOS.has(servico)) {
           if (!data) erros.push({aba:nomeAba,numero_linha:numeroLinha,codigo:"DATA_INVALIDA",mensagem:"Linha operacional sem data válida.",dados:jsonSeguro(original)});
-          const campoOficial=obterCampoOperacionalCCO(servico,original,linha);
+          const campoOficial=obterCampoOperacionalCCO(servico,original,linha,metadadosCabecalhos);
           const executado=normalizarNumero(servico==="P5"?campoOficial.valor:campo(linha,"executado")),extracaoP9=servico==="P9"?extrairValorOperacionalP9({...original,...linha}):{valor:null,campo:null},valorP9=extracaoP9.valor;
+          if(SERVICOS_KM_TOTAL_LITERAL.includes(servico)){
+            linha.cabecalho_origem_km_total="Km_Total";
+            linha.chave_origem_km_total=metadadosCabecalhos.Km_Total||null;
+          }
           const resultadoKmP1=servico==="P1"?window.obterKmTotalP1DoRawCCO({dados_originais:original,dados:linha}):null;
           const kmTotal=servico==="P1"?resultadoKmP1.valor:normalizarNumero(["P5","P6",...SERVICOS_KM_TOTAL_LITERAL].includes(servico)?campoOficial.valor:campo(linha,"km_total"));
-          if(servico==="P1")rawAtual.dados={...rawAtual.dados,campo_origem_km_total:resultadoKmP1.campo,valor_original_km_total:resultadoKmP1.valorOriginal};
+          if(servico==="P1")rawAtual.dados={...rawAtual.dados,cabecalho_origem_km_total:"Km_Total",chave_origem_km_total:metadadosCabecalhos.Km_Total||null,campo_origem_km_total:resultadoKmP1.campo,valor_original_km_total:resultadoKmP1.valorOriginal};
           if(servico==="P12"&&executado===null){
             erros.push({aba:nomeAba,numero_linha:numeroLinha,codigo:"P12_EXECUTADO_AUSENTE",mensagem:"Linha P12 sem valor Executado válido; preservada no RAW e excluída de operacoes.",dados:jsonSeguro(original)});
           }else if(servico==="P9"&&valorP9===null){
@@ -269,6 +274,14 @@
         if (abaNorm.includes("painel_executivo")) painel.push({numero_linha:numeroLinha,ano:data?Number(data.slice(0,4)):normalizarNumero(linha.ano),mes:data?Number(data.slice(5,7)):normalizarNumero(linha.mes),servico:SERVICOS.has(servico)?servico:null,descricao:texto(linha.descricao || linha.nome_servico)||null,nome_servico:texto(linha.nome_servico || linha.descricao)||null,medicao:texto(linha.medicao || linha.unidade)||null,previsto:normalizarNumero(linha.previsto ?? linha.previsto_mes),acumulado:normalizarNumero(linha.acumulado ?? linha.acumulado_mes),dias_acumulados:normalizarNumero(linha.dias_acumulados ?? linha.dias_acumulado),total_dias_mes:normalizarNumero(linha.total_dias_mes ?? linha.total_de_dias_no_mes),valor_unitario:normalizarNumero(linha.valor_unitario),valor_total:normalizarNumero(linha.valor_total ?? linha.valor),dados:jsonSeguro(original)});
       });
       const operacoesAba = operacoes.filter(item => item.aba === abaPersistida);
+      if(servicoAba==="P1"){
+        const chaveUnica=metadadosCabecalhos.Km_Total||null,exemplo=operacoesAba.find(item=>item.km_total!==null)?.km_total??null;
+        console.log("[P1 KM TOTAL][ORIGEM]",{cabecalhoLiteral:"Km_Total",chaveUnica,valorExemplo:exemplo,colunaRejeitada:"KM Total"});
+        if(!chaveUnica)console.warn("[P1 KM TOTAL] coluna literal Km_Total não encontrada");
+        const porPeriodo=new Map();
+        for(const item of operacoesAba){const periodo=String(item.data_operacao||"").slice(0,7)||"sem período",atual=porPeriodo.get(periodo)||{registros:0,somaKmTotal:0};atual.registros++;atual.somaKmTotal+=normalizarNumero(item.km_total)||0;porPeriodo.set(periodo,atual);}
+        for(const[periodo,resumo]of porPeriodo)console.log("[P1 KM TOTAL][SOMA]",{periodo,registros:resumo.registros,somaKmTotal:resumo.somaKmTotal,origem:"Km_Total"});
+      }
       if(servicoAba==="P9")console.log("[P9 Parser]",{linhas_lidas:totalAba,linhas_convertidas:operacoesAba.length,linhas_descartadas:linhasP9Descartadas});
       const periodosAba = [...new Set(operacoesAba.map(item => item.data_operacao?.slice(0,7)).filter(Boolean))].sort();
       console.info("[IMPORTAÇÃO][ABA]", {

@@ -12,6 +12,7 @@ const contexto = {
 };
 contexto.window.window=contexto.window;
 vm.createContext(contexto);
+vm.runInContext(fs.readFileSync("js/cco-p1-km-total.js","utf8"),contexto);
 vm.runInContext(fs.readFileSync("cco-importacao-principal.js","utf8"),contexto);
 
 const api=contexto.window.CCOImportacaoPrincipal;
@@ -50,10 +51,25 @@ assert.deepEqual(
   {valor:66.9,campo:"Km_Total",fonte:"original"}
 );
 assert.deepEqual(
-  {...api.obterCampoOperacionalCCO("P1",{},normalizado)},
+  {...api.obterCampoOperacionalCCO("P1",{},normalizado,{Km_Total:"km_total_2"})},
   {valor:66.9,campo:"km_total_2",fonte:"normalizada"}
 );
 assert.equal(api.obterCampoOperacionalCCO("P1",{"KM Total":69},{km_total:69}).valor,null);
+const workbookP1={
+  SheetNames:["P1"],
+  Sheets:{P1:[
+    ["Data","KM Total","Km_Total"],
+    ["01/07/2026",100,25],
+    ["02/07/2026",200,30]
+  ]}
+};
+const resultadoP1=api.analisarWorkbook(workbookP1,"p1.xlsx");
+assert.equal(resultadoP1.operacoes.map(item=>item.km_total).join(","),"25,30");
+assert.equal(resultadoP1.operacoes.reduce((s,item)=>s+item.km_total,0),55);
+assert.equal(resultadoP1.raw[0].dados.km_total,100);
+assert.equal(resultadoP1.raw[0].dados.km_total_2,25);
+assert.equal(resultadoP1.raw[0].dados.cabecalho_origem_km_total,"Km_Total");
+assert.equal(resultadoP1.raw[0].dados.chave_origem_km_total,"km_total_2");
 
 const p5Original={"Km Executado":41,"Km Executado (%)":92};
 assert.equal(api.obterCampoOperacionalCCO("P5",p5Original,{}).valor,41);

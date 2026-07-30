@@ -38,12 +38,7 @@
   function obterKmTotalP1CCO(linha) {
     const valorNormalizado = Number(linha?.km_total);
     if (Number.isFinite(valorNormalizado)) return valorNormalizado;
-    const fontes = [linha?.dados, linha?.dados_originais].filter(Boolean);
-    for (const fonte of fontes) {
-      for (const [chave, valor] of Object.entries(fonte)) {
-        if (normalizarCabecalhoCCO(chave) === "KM_TOTAL") return numeroSeguroCCO(valor);
-      }
-    }
+    console.warn("[P1 KM TOTAL] coluna literal Km_Total não encontrada");
     return 0;
   }
 
@@ -54,12 +49,14 @@
   function obterKmTotalP1DoRawCCO(linha) {
     const original = linha?.dados_originais || {};
     if (Object.prototype.hasOwnProperty.call(original, "Km_Total")) {
-      return { valor:numeroPlanilhaCCO(original.Km_Total),campo:"Km_Total",campoNormalizado:"KM_TOTAL",fonte:"dados_originais",valorOriginal:original.Km_Total };
+      return { valor:numeroPlanilhaCCO(original.Km_Total),campo:"Km_Total",chaveUnica:linha?.dados?.chave_origem_km_total||null,fonte:"dados_originais",valorOriginal:original.Km_Total };
     }
     const dados = linha?.dados || {};
-    if (Object.prototype.hasOwnProperty.call(dados, "km_total_2")) {
-      return { valor:numeroPlanilhaCCO(dados.km_total_2),campo:"km_total_2",campoNormalizado:"KM_TOTAL_2",fonte:"dados",valorOriginal:dados.km_total_2 };
+    const chaveUnica=String(dados.chave_origem_km_total||"");
+    if(dados.cabecalho_origem_km_total==="Km_Total"&&chaveUnica&&Object.prototype.hasOwnProperty.call(dados,chaveUnica)){
+      return { valor:numeroPlanilhaCCO(dados[chaveUnica]),campo:chaveUnica,chaveUnica,fonte:"dados",valorOriginal:dados[chaveUnica] };
     }
+    console.warn("[P1 KM TOTAL] coluna literal Km_Total não encontrada");
     return { valor:null,campo:null,campoNormalizado:null,fonte:null,valorOriginal:null };
   }
 

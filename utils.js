@@ -7148,6 +7148,12 @@ function ccoDataOperacaoLinhaVM(item) {
 }
 
 function ccoKmLinhaVM(item) {
+  const servico=String(item?.servico||item?.servico_p||"").trim().toUpperCase();
+  if(servico==="P1"){
+    if(Object.prototype.hasOwnProperty.call(item||{},"Km_Total"))return numero(item.Km_Total);
+    console.warn("[P1 KM TOTAL] coluna literal Km_Total não encontrada");
+    return 0;
+  }
   return ccoNumeroCampoVM(item, [
     "Km Executado",
     "KM Executado",
@@ -8075,7 +8081,9 @@ function gerarOperacoes() {
         setor: item.setor || item.local || "",
         peso: ccoNumFinal(item, ["Peso_T", "Peso T", "Peso", "peso_t", "pesot", "peso_total", "tonelada", "toneladas"]),
         viagens: ccoNumFinal(item, ["Viagens", "viagens", "Qtd Viagem", "qtd_viagem", "Qtd Viagens", "qtd_viagens", "Quantidade de Viagens", "viagem"]),
-        km: ccoNumFinal(item, ["Km Total", "KM Total", "KM_Total", "km_total", "kmtotal", "Km Executado", "KM Executado", "km_executado", "km", "quilometragem"]),
+        km: codigoAba==="P1"
+          ? (Object.prototype.hasOwnProperty.call(item,"Km_Total") ? numero(item.Km_Total) : (console.warn("[P1 KM TOTAL] coluna literal Km_Total não encontrada"),0))
+          : ccoNumFinal(item, ["Km Total", "KM Total", "KM_Total", "km_total", "kmtotal", "Km Executado", "KM Executado", "km_executado", "km", "quilometragem"]),
         equipe: ccoNumFinal(item, ["Equipe", "equipe", "Qdt_Equipe", "qdt_equipe", "Qtd Equipe", "qtd_equipe", "Equipes", "equipes"]),
         executado: ccoNumFinal(item, ["Executado", "executado"]),
         velocidade_media: ccoNumFinal(item, ["Velocidade Média", "Velocidade Media", "velocidade_media", "VM km/h", "VM_KM_H", "VM_KMH", "VM"]),

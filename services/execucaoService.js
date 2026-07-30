@@ -18,7 +18,9 @@
       const somaRaw=valoresRaw.reduce((s,item)=>s+item.valor,0);
       const chavesRaw={dados:Object.keys(raw[0]?.dados||{}),dadosOriginais:Object.keys(raw[0]?.dados_originais||{})};
       global.__CCO_P1_KM_RAW__={importacaoId,linhasRaw:raw.length,camposEncontrados:valoresRaw.length,linhasSemCampo:raw.length-valoresRaw.length,somaKmTotal:somaRaw,chavesRaw};
-      console.log("[P1 Km_Total CORRETO]",{importacaoId,linhasRaw:raw.length,linhasValidas:valoresRaw.length,campo:"Km_Total",fallback:"km_total_2",soma:somaRaw});
+      const origemExemplo=valoresRaw[0]||null;
+      console.log("[P1 KM TOTAL][ORIGEM]",{cabecalhoLiteral:"Km_Total",chaveUnica:origemExemplo?.chaveUnica||null,valorExemplo:origemExemplo?.valor??null,colunaRejeitada:"KM Total"});
+      if(!valoresRaw.length)console.warn("[P1 KM TOTAL] coluna literal Km_Total não encontrada");
       const porChave=new Map(),duplicadas=new Set();
       for(const linha of raw){if(porChave.has(linha.chave_linha))duplicadas.add(linha.chave_linha);porChave.set(linha.chave_linha,linha);}
       if(duplicadas.size)throw new Error(`RAW P1 possui ${duplicadas.size} chave(s) duplicada(s).`);
@@ -30,6 +32,7 @@
         vinculadas++;return{...item,km_total:resultado.valor};
       });
       console.log("[P1 KM TOTAL][RAW]",{importacaoId,registros:p1.length,linhasRaw:raw.length,vinculadas,semVinculo,somaRaw});
+      console.log("[P1 KM TOTAL][SOMA]",{periodo:`${ano}-${String(mes).padStart(2,"0")}`,registros:vinculadas,somaKmTotal:somaRaw,origem:"Km_Total"});
       return resultado;
     }catch(error){
       global.__CCO_P1_KM_RAW__={importacaoId,linhasRaw:0,somaKmTotal:0,error:error?.message||String(error)};
