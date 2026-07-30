@@ -75,7 +75,7 @@ async function testarFallbackDiasOperacao() {
       return{upsert(payload,opcoes){
         chamadas.push({payload,opcoes});
         return{select:async()=>chamadas.length===1
-          ?{data:null,status:409,statusText:"Conflict",error:{code:"23505",details:null,hint:null,message:'duplicate key value violates unique constraint "dias_operacao_ano_mes_unique"'}}
+          ?{data:null,status:409,statusText:"Conflict",error:{code:"23505",constraint:null,details:null,hint:null,message:'duplicate key value violates unique constraint "dias_operacao_ano_mes_unique"'}}
           :{data:payload,status:201,statusText:"Created",error:null}};
       }};
     }

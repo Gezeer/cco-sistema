@@ -367,13 +367,16 @@
       const resposta=await executarUpsertDiasOperacao(payload,"importacao_id,ano,mes");
       return{payload,quantidade:payload.length,duplicidades,chaveUsada:"importacao_id,ano,mes",resposta};
     }catch(error){
-      const chaveDetectada=detectarChaveUnicaDiasOperacao(error);
-      console.log("[IMPORTAÇÃO][dias_operacao] chave única detectada pelo banco",chaveDetectada);
-      if(chaveDetectada==="ano,mes"){
-        console.warn("Constraint legada detectada",error);
-        console.log("[IMPORTAÇÃO] tentando fallback ano,mes");
+      const mensagem=String(error?.message||"");
+      const ehConstraintLegada=error?.code==="23505"&&(
+        mensagem.includes("dias_operacao_ano_mes_unique")||
+        mensagem.includes("dias_operacao_ano_mes_uidx")||
+        mensagem.includes("(ano, mes)")
+      );
+      if(ehConstraintLegada){
+        console.warn("[IMPORTAÇÃO] tentando fallback ano,mes");
         const respostaFallback=await executarUpsertDiasOperacao(payload,"ano,mes");
-        console.log("[IMPORTAÇÃO] fallback concluído");
+        console.info("[IMPORTAÇÃO] fallback concluído");
         return{payload,quantidade:payload.length,duplicidades,chaveUsada:"ano,mes",resposta:respostaFallback,fallback:true};
       }
       throw error;
