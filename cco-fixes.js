@@ -318,10 +318,20 @@
 
   async function iniciarKpi() {
     const periodos = await obterPeriodos();
+    console.log("[KPI] catálogo recebido", periodos);
     const escolhido = periodos[0];
-    await carregarPeriodo(escolhido);
-    window.carregarFiltrosKpiServicoCompleto?.();
     preencherKpiPeriodos(periodos, escolhido);
+    console.log("[KPI] período inicial", escolhido || null);
+    try {
+      await carregarPeriodo(escolhido);
+      window.carregarFiltrosKpiServicoCompleto?.();
+    } catch(error) {
+      console.error("[KPI] falha ao carregar dados do período; catálogo permanece disponível", {
+        status:error?.status, code:error?.code, details:error?.details, hint:error?.hint, message:error?.message
+      });
+      const status=document.getElementById("nomeArquivo");
+      if(status)status.textContent="❌ Não foi possível carregar os dados do KPI. Selecione outro período ou tente novamente.";
+    }
     return true; /* kpi.js faz a única primeira renderização após o await. */
   }
 
@@ -335,6 +345,12 @@
     const meses = periodos.filter(p => p.ano === escolhido.ano);
     mesEl.innerHTML = meses.map(p => `<option value="${p.mes}">${MESES[p.mes] || p.mes}</option>`).join("");
     mesEl.value = escolhido.mes;
+    console.log("[KPI] opções inseridas no select", {
+      periodosNoCatalogo: periodos.length,
+      opcoesAno: anoEl.options.length,
+      opcoesMes: mesEl.options.length,
+      anoExibido: anoEl.value
+    });
   }
 
   async function trocarKpi() {

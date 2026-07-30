@@ -11227,9 +11227,18 @@ function carregarFiltrosKpiServicoCompleto() {
   };
 
   const base = obterKpiMensalDisponivel();
+  const catalogo = window.__CCO_CATALOGO_PERIODOS__ || [];
   const servicos = [...new Set(base.map(i => i.servico).filter(Boolean))].sort(ccoOrdenarServicos);
-  const anos = [...new Set(base.map(i => String(i.ano)).filter(a => a && a !== "0"))].sort();
-  const meses = [...new Set(base.map(i => String(i.mes).padStart(2, "0")).filter(m => m && m !== "00"))].sort();
+  const anos = catalogo.length
+    ? [...new Set(catalogo.map(i => String(i.ano)).filter(a => a && a !== "0"))].sort()
+    : [...new Set(base.map(i => String(i.ano)).filter(a => a && a !== "0"))].sort();
+  const anoSelecionado = anos.includes(atual.ano) ? atual.ano : anos.at(-1);
+  const meses = catalogo.length
+    ? [...new Set(catalogo
+      .filter(i => String(i.ano) === String(anoSelecionado))
+      .map(i => String(i.mes).padStart(2, "0"))
+      .filter(m => m && m !== "00"))].sort()
+    : [...new Set(base.map(i => String(i.mes).padStart(2, "0")).filter(m => m && m !== "00"))].sort();
 
   const dias = [...new Set((operacoesOriginal || []).map(i => String(i.data_normalizada || "").substring(8, 10)).filter(Boolean))]
     .sort((a, b) => Number(a) - Number(b));
@@ -11240,7 +11249,7 @@ function carregarFiltrosKpiServicoCompleto() {
   selectDia.innerHTML = `<option value="">Todos os dias</option>` + dias.map(d => `<option value="${d}">${d}</option>`).join("");
 
   if (servicos.includes(atual.servico)) selectServico.value = atual.servico;
-  if (anos.includes(atual.ano)) selectAno.value = atual.ano;
+  if (anos.includes(anoSelecionado)) selectAno.value = anoSelecionado;
   if (meses.includes(atual.mes)) selectMes.value = atual.mes;
   if (dias.includes(atual.dia)) selectDia.value = atual.dia;
 }

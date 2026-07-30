@@ -84,6 +84,47 @@
   window.verificarGraficosKPIMobile=function verificarGraficosKPIMobile(){const resultado=IDS_GRAFICOS_KPI.map(id=>{const el=$(id);return{id,largura:el?.clientWidth||0,altura:el?.clientHeight||0,instancia:Boolean(el&&window.echarts?.getInstanceByDom?.(el)),filhos:el?.children.length||0,conectado:Boolean(el?.isConnected)};});console.table(resultado);return resultado;};
   window.addEventListener("cco:menu-fechado",()=>setTimeout(()=>{document.querySelectorAll(".kpi-chart,.cco-chart").forEach(container=>window.echarts?.getInstanceByDom?.(container)?.resize?.());recalcularCarrinho();},100));
 
-  async function iniciar(){if(window.__CCO_KPI_INIT_PROMISE__)return window.__CCO_KPI_INIT_PROMISE__;window.__CCO_KPI_INIT_PROMISE__=(async()=>{try{if(!await window.CCOSupabase.exigirSessao())return false;if(typeof atualizarData==="function")atualizarData();if(typeof aplicarRestricoesPerfil==="function")aplicarRestricoesPerfil();if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","🔄 Carregando período do KPI...");const periodo=await window.CCOPainelService.ultimoPeriodo();if(!periodo)throw new Error("Nenhum período ativo disponível para o KPI.");periodo.total_dias_mes=window.CCO_REGRAS.obterDiasOperacao(periodo.ano,periodo.mes);const[dadosPeriodo,linhasPainel]=await Promise.all([window.CCOKpiService.carregar(periodo.importacao_id),window.CCOPainelService.porImportacao(periodo.importacao_id),window.carregarRegrasServicosCCO()]);window.__CCO_IMPORTACAO_ATIVA__=periodo;window.__CCO_PERIODO_ATUAL__=periodo.periodo;window.operacoes=dadosPeriodo.operacoes;window.operacoesOriginal=dadosPeriodo.operacoes;window.__CCO_KPI_PAINEL_POR_SERVICO__=new Map((linhasPainel||[]).map(item=>[chavePainel(item.importacao_id,item.ano,item.mes,item.servico),item]));window.kpiMensal=dadosPeriodo.kpis.map(item=>{const linhaPainel=window.__CCO_KPI_PAINEL_POR_SERVICO__.get(chavePainel(item.importacao_id,item.ano,item.mes,item.servico))||null;return{...item,linhaPainel,peso_t:n(item.total_peso_t),viagens:n(item.total_viagens),km_total:n(item.total_km),executado:n(item.total_peso_t||item.total_km||item.total_viagens)};});if(typeof carregarFiltrosKpiServicoCompleto==="function")carregarFiltrosKpiServicoCompleto();if(typeof renderPaginaKpiPorServicoCompleto==="function")renderPaginaKpiPorServicoCompleto();}catch(error){console.error("Erro ao iniciar KPI:",error);if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","❌ Não foi possível carregar o KPI.");}})();return window.__CCO_KPI_INIT_PROMISE__;}
+  function preencherCatalogoKpi(catalogo,periodo){
+    const selectAno=$("filtroKpiAno"),selectMes=$("filtroKpiMes");
+    if(!selectAno||!selectMes||!periodo)return;
+    const anos=[...new Set(catalogo.map(item=>String(item.ano)))].sort();
+    const meses=catalogo.filter(item=>String(item.ano)===String(periodo.ano));
+    selectAno.innerHTML=anos.map(ano=>`<option value="${ano}">${ano}</option>`).join("");
+    selectAno.value=String(periodo.ano);
+    selectMes.innerHTML=meses.map(item=>{const mes=String(item.mes).padStart(2,"0");return`<option value="${mes}">${window.MESES_BR?.[mes]||mes}</option>`;}).join("");
+    selectMes.value=String(periodo.mes).padStart(2,"0");
+    console.log("[KPI] opções inseridas no select",{periodosNoCatalogo:catalogo.length,opcoesAno:selectAno.options.length,opcoesMes:selectMes.options.length,anoExibido:selectAno.value});
+  }
+  async function iniciar(){if(window.__CCO_KPI_INIT_PROMISE__)return window.__CCO_KPI_INIT_PROMISE__;window.__CCO_KPI_INIT_PROMISE__=(async()=>{
+    if(!await window.CCOSupabase.exigirSessao())return false;
+    if(typeof atualizarData==="function")atualizarData();
+    if(typeof aplicarRestricoesPerfil==="function")aplicarRestricoesPerfil();
+    if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","🔄 Carregando catálogo do KPI...");
+    let catalogo;
+    try{
+      catalogo=await window.CCOPainelService.getCatalogoPeriodos();
+      window.__CCO_CATALOGO_PERIODOS__=catalogo;
+      console.log("[KPI] catálogo recebido",catalogo);
+      const periodo=catalogo[0];
+      console.log("[KPI] período inicial",periodo||null);
+      if(!periodo)throw new Error("Nenhum período ativo disponível para o KPI.");
+      preencherCatalogoKpi(catalogo,periodo);
+      if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","🔄 Carregando dados do período do KPI...");
+      try{
+        periodo.total_dias_mes=window.CCO_REGRAS.obterDiasOperacao(periodo.ano,periodo.mes);
+        const[dadosPeriodo,linhasPainel]=await Promise.all([window.CCOKpiService.carregar(periodo.importacao_id),window.CCOPainelService.porImportacao(periodo.importacao_id),window.carregarRegrasServicosCCO()]);
+        window.__CCO_IMPORTACAO_ATIVA__=periodo;window.__CCO_PERIODO_ATUAL__=periodo.periodo;window.operacoes=dadosPeriodo.operacoes;window.operacoesOriginal=dadosPeriodo.operacoes;window.__CCO_KPI_PAINEL_POR_SERVICO__=new Map((linhasPainel||[]).map(item=>[chavePainel(item.importacao_id,item.ano,item.mes,item.servico),item]));window.kpiMensal=dadosPeriodo.kpis.map(item=>{const linhaPainel=window.__CCO_KPI_PAINEL_POR_SERVICO__.get(chavePainel(item.importacao_id,item.ano,item.mes,item.servico))||null;return{...item,linhaPainel,peso_t:n(item.total_peso_t),viagens:n(item.total_viagens),km_total:n(item.total_km),executado:n(item.total_peso_t||item.total_km||item.total_viagens)};});
+        if(typeof carregarFiltrosKpiServicoCompleto==="function")carregarFiltrosKpiServicoCompleto();
+        if(typeof renderPaginaKpiPorServicoCompleto==="function")renderPaginaKpiPorServicoCompleto();
+      }catch(error){
+        console.error("[KPI] falha ao carregar dados do período; seletor permanece disponível",{status:error?.status,code:error?.code,details:error?.details,hint:error?.hint,message:error?.message});
+        if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","❌ Não foi possível carregar os dados do KPI. Selecione outro período ou tente novamente.");
+      }
+    }catch(error){
+      console.error("Erro ao montar catálogo do KPI:",error);
+      if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","❌ Não foi possível carregar os períodos do KPI.");
+    }
+    return Boolean(catalogo?.length);
+  })();return window.__CCO_KPI_INIT_PROMISE__;}
   document.readyState==="loading"?document.addEventListener("DOMContentLoaded",iniciar,{once:true}):iniciar();
 })();
