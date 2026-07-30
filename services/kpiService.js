@@ -1,6 +1,6 @@
 (function criarKpiService(global) {
   "use strict";
-  const CAMPOS = "importacao_id,servico,data_operacao,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media";
+  const CAMPOS = "importacao_id,servico,tipo_servico,data_operacao,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media";
   const db = () => { const cliente=global.CCOSupabase?.getClient?.();if(!cliente)throw new Error("Supabase indisponível.");return cliente; };
   async function operacoes(importacaoId, filtros = {}) {
     const ano=Number(filtros.ano),mes=Number(filtros.mes);

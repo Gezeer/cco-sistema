@@ -21,6 +21,16 @@ assert.notEqual(m.normalizarServico("P1"),m.normalizarServico("P10"));
 assert.notEqual(m.normalizarServico("P1"),m.normalizarServico("P11"));
 assert.notEqual(m.normalizarServico("P1"),m.normalizarServico("P12"));
 assert.notEqual(m.normalizarServico("P2.1"),m.normalizarServico("P2.2"));
+assert.equal(m.normalizarServico("Catação Em Área Verde"),"P9");
+assert.equal(m.normalizarServico("Catação em Área Verde"),"P9");
+assert.equal(m.normalizarServico("CATAÇÃO EM ÁREA VERDE"),"P9");
+const equipesComparaveis=[
+  {data_operacao:"2026-07-01",equipe:2,executado:2},
+  {data_operacao:"2026-07-02",equipe:3,executado:3}
+];
+assert.equal(m.calcularAcumuladoServico("P3",equipesComparaveis),5);
+assert.equal(m.calcularAcumuladoServico("P9",equipesComparaveis),5);
+assert.equal(m.consolidarServico({servico:"P9",registros:equipesComparaveis,previstoMensal:11,diasOperacaoMes:diasJulho}).acumuladoReal,5);
 
 const status = m.consolidarServico({servico:"P5",registros:[{data_operacao:"2026-06-01",km_total:10}],previstoMensal:0,diasOperacaoMes:diasJunho});
 assert.equal(status.status,"com_dados");
@@ -32,6 +42,20 @@ const junho = registros.filter(x=>x.data_operacao.startsWith("2026-06"));
 const julho = [{servico:"P5",data_operacao:"2026-07-01",km_total:500}];
 assert.equal(m.calcularAcumuladoServico("P5",junho),10);
 assert.equal(m.calcularAcumuladoServico("P5",julho),500);
+const p1DoisPeriodos=[
+  {importacao_id:"importacao-julho",servico:"P1",data_operacao:"2026-07-05",peso_t:40,km_total:999},
+  {importacao_id:"importacao-julho",servico:"P1",data_operacao:"2026-07-06",peso_t:60,km_total:888},
+  {importacao_id:"importacao-junho",servico:"P1",data_operacao:"2026-06-05",peso_t:200,km_total:777}
+];
+const acumuladoP1Julho=m.calcularAcumuladoP1Periodo({ano:2026,mes:7,importacaoId:"importacao-julho",registros:p1DoisPeriodos});
+const acumuladoP1Junho=m.calcularAcumuladoP1Periodo({ano:2026,mes:6,importacaoId:"importacao-junho",registros:p1DoisPeriodos});
+assert.equal(acumuladoP1Julho,100);
+assert.equal(acumuladoP1Junho,200);
+assert.equal(m.consolidarServico({servico:"P1",ano:2026,mes:7,importacaoId:"importacao-julho",registros:p1DoisPeriodos,previstoMensal:300,diasOperacaoMes:diasJulho}).acumuladoReal,acumuladoP1Julho);
+assert.equal(m.consolidarServico({servico:"P1",ano:2026,mes:6,importacaoId:"importacao-junho",registros:p1DoisPeriodos,previstoMensal:300,diasOperacaoMes:diasJunho}).acumuladoReal,acumuladoP1Junho);
+const fonteUtils=require("node:fs").readFileSync("utils.js","utf8");
+assert.match(fonteUtils,/window\.CCOMetricas\.calcularAcumuladoP1Periodo\(/);
+assert.doesNotMatch(fonteUtils,/const totalKm = codigo === "P1" && rawP1Atual/);
 
 perto(m.calcularPercentualCumprimento({acumuladoReal:"1.320,08",previstoAcumulado:"9.040"}),14.602654867256636);
 

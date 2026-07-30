@@ -133,6 +133,7 @@
     const painelConvertido = SERVICOS_OFICIAIS.map(servico => {
       const item = metas.get(servico) || {};
       const registros = linhas.filter(linha => normalizarServico(linha.servico ?? linha.servico_p ?? linha.tipo_servico) === servico);
+      if(servico==="P9")console.log("[P9 EXECUÇÃO]",{registrosRecebidos:linhas.length,registrosFiltrados:registros.length,executadoCalculado:registros.reduce((t,x)=>t+numeroSeguro(x.executado),0),valorFinal:metricas.calcularAcumuladoServico("P9",registros)});
       const diasOperacao = window.CCO_REGRAS.obterDiasOperacao(periodo.ano,periodo.mes);
       const valoresOficiais = window.CCO_VALORES_FIXOS || (typeof VALORES_FIXOS !== "undefined" ? VALORES_FIXOS : {});
       const valorUnitario = numeroSeguro(item.valor_unitario) || numeroSeguro(valoresOficiais[servico]);
@@ -153,7 +154,7 @@
         linha={acumulado_mes:colunaExecutado?acumulado:null,metrica_disponivel:colunaExecutado,previsto_mes:previsto,previsto_acumulado:previstoAcumulado,porcentagem_execucao:colunaExecutado?metricas.calcularPercentualCumprimento({acumuladoReal:acumulado,previstoAcumulado}):null,valor:colunaExecutado?acumulado*valorUnitario:null,status:!registros.length?"Sem dados":temExecutadoPreenchido?"Com dados":"Executado ausente",fonte_metricas:"operacoes.executado"};
         if(PAGINA==="painel"){console.log("[P12] registros encontrados:",registros.length);console.log("[P12][SUPABASE] chaves do registro:",Object.keys(registros[0]||{}));console.log("[P12][SUPABASE] amostra:",registros.slice(0,3));console.log("[P12] coluna Executado encontrada:",chaveExecutadoEncontrada);console.table(registros.slice(0,20).map(r=>({data:r.data_operacao??r.data??null,executadoBruto:obterExecutadoBruto(r)??null,executadoNormalizado:obterExecutado(r)})));console.log("[P12] soma final:",acumulado);}
       }else{
-        consolidado=metricas.consolidarServico({servico,registros,previstoMensal:item.previsto,diasOperacaoMes:diasOperacao,valorUnitario,nome:item.nome_servico||"",unidade:obterMedicaoOficial(servico)});
+        consolidado=metricas.consolidarServico({servico,registros,previstoMensal:item.previsto,diasOperacaoMes:diasOperacao,valorUnitario,nome:item.nome_servico||"",unidade:obterMedicaoOficial(servico),ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
         linha={acumulado_mes:metricaDisponivel?consolidado.acumuladoReal:null,metrica_disponivel:metricaDisponivel,previsto_mes:consolidado.previstoMensal,previsto_acumulado:metricaDisponivel?consolidado.previstoAcumulado:null,porcentagem_execucao:metricaDisponivel?consolidado.percentualCumprimento:null,valor:metricaDisponivel?consolidado.valorAcumulado:null,status:metricaDisponivel&&consolidado.status==="com_dados"?"Com dados":"Sem dados",fonte_metricas:"operacoes + painel_executivo + dias_operacao"};
       }
       return {servico,nome_servico:item.nome_servico||"",medicao:obterMedicaoOficial(servico),dias_acumulados:diasAcumulados,total_dias_mes:diasOperacao,quantidade_equipes:consolidado?.quantidadeEquipes??null,produtividade:consolidado?.produtividade??null,avisos_consistencia:consolidado?.avisos||[],...linha};

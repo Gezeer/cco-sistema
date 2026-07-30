@@ -10590,6 +10590,7 @@ function renderDetalheServicoMensal(codigo) {
 
   const previsto = ccoFinalNumero(dadosPainel.previsto_mes);
   const executado = ccoFinalNumero(dadosPainel.acumulado_mes);
+  if(codigo==="P9")console.log("[P9 RENDER]",{valorRecebido:dadosPainel.acumulado_mes,valorRenderizado:ccoFinalFormatarNumero(executado)});
   const percentual = ccoFinalNumero(dadosPainel.porcentagem_execucao);
   const status = typeof obterStatusExecucao === "function"
     ? obterStatusExecucao(percentual, executado)
@@ -10600,13 +10601,17 @@ function renderDetalheServicoMensal(codigo) {
   const importacaoAtivaId = window.__CCO_IMPORTACAO_ATIVA__?.importacao_id || window.__CCO_IMPORTACAO_ATIVA__?.id || periodo?.importacao_id;
   const rawP1Atual = window.__CCO_P1_KM_RAW__;
   const periodoAtivo=window.__CCO_IMPORTACAO_ATIVA__||{};
-  const totalKmOperacoes = codigo==="P1"&&typeof window.somarKmTotalP1PeriodoCCO==="function"
-    ? window.somarKmTotalP1PeriodoCCO(dadosServico,{ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId}).somaKmTotal
+  const totalKmOperacoes = codigo==="P1"&&window.CCOMetricas?.calcularAcumuladoP1Periodo
+    ? window.CCOMetricas.calcularAcumuladoP1Periodo({ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId,registros:dadosServico})
     : dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km_total)), 0);
-  const totalKm = codigo === "P1" && rawP1Atual && String(rawP1Atual.importacaoId) === String(importacaoAtivaId)
+  const valorKmAnterior = codigo === "P1" && rawP1Atual && String(rawP1Atual.importacaoId) === String(importacaoAtivaId)
     ? ccoFinalNumero(rawP1Atual.somaKmTotal)
     : totalKmOperacoes;
+  const totalKm = codigo==="P1"?totalKmOperacoes:valorKmAnterior;
   if (codigo === "P1") {
+    const periodoChave=periodo?.periodo||window.__CCO_PERIODO_ATUAL__||"";
+    console.log("[P1 ACUMULADO][COMPARAÇÃO]",{periodo:periodoChave,valorAcumuladoMesAtual:executado,valorKmAtual:valorKmAnterior,mesmaFonte:false,mesmaQuantidadeRegistros:Number(rawP1Atual?.linhasRaw||0)===dadosServico.length,diferenca:valorKmAnterior-executado});
+    console.log("[P1 KM][FONTE OFICIAL]",{periodo:periodoChave,origem:"mesma regra do Acumulado do Mês do P1",valor:totalKm});
     const auditoriaKm = window.auditarCamposKmP1CCO?.(dadosServico) || { camposEncontrados: [], camposIgnorados: [] };
     console.log("[P1 KM TOTAL]", {
       periodo: periodo?.periodo || window.__CCO_PERIODO_ATUAL__ || "",

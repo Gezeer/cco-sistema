@@ -282,7 +282,7 @@
         for(const item of operacoesAba){const periodo=String(item.data_operacao||"").slice(0,7)||"sem período",atual=porPeriodo.get(periodo)||{registros:0,somaKmTotal:0};atual.registros++;atual.somaKmTotal+=normalizarNumero(item.km_total)||0;porPeriodo.set(periodo,atual);}
         for(const[periodo,resumo]of porPeriodo)console.log("[P1 KM TOTAL][SOMA]",{periodo,registros:resumo.registros,somaKmTotal:resumo.somaKmTotal,origem:"Km_Total"});
       }
-      if(servicoAba==="P9")console.log("[P9 Parser]",{linhas_lidas:totalAba,linhas_convertidas:operacoesAba.length,linhas_descartadas:linhasP9Descartadas});
+      if(servicoAba==="P9"){console.log("[P9 Parser]",{linhas_lidas:totalAba,linhas_convertidas:operacoesAba.length,linhas_descartadas:linhasP9Descartadas});console.log("[P9 IMPORTAÇÃO]",{descricaoOriginal:nomeAba,servicoNormalizado:"P9",linhasEncontradas:totalAba,linhasConvertidas:operacoesAba.length});}
       const periodosAba = [...new Set(operacoesAba.map(item => item.data_operacao?.slice(0,7)).filter(Boolean))].sort();
       console.info("[IMPORTAÇÃO][ABA]", {
         aba: nomeAba,

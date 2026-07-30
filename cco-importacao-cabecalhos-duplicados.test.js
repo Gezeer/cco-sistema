@@ -17,6 +17,9 @@ vm.runInContext(fs.readFileSync("cco-importacao-principal.js","utf8"),contexto);
 
 const api=contexto.window.CCOImportacaoPrincipal;
 assert.equal(api.ehAbaP9CatacaoAreaVerde("Catação Em Área Verde"),true);
+assert.equal(api.ehAbaP9CatacaoAreaVerde("Catação em Área Verde"),true);
+assert.equal(api.ehAbaP9CatacaoAreaVerde("CATAÇÃO EM ÁREA VERDE"),true);
+assert.equal(api.ehAbaP9CatacaoAreaVerde("  Catação-em Área Verde  "),true);
 assert.equal(api.ehAbaP9CatacaoAreaVerde("P8"),false);
 contexto.XLSX={utils:{sheet_to_json:folha=>folha}};
 const workbookP9={
