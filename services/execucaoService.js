@@ -1,21 +1,21 @@
 (function criarExecucaoService(global) {
   "use strict";
   async function carregar(importacaoId, filtros = {}) {
-    if (!importacaoId) throw new Error("importacao_id é obrigatório para consultar Execução.");
     const ano=Number(filtros.ano),mes=Number(filtros.mes);
+    if(!importacaoId&&(!ano||!mes))throw new Error("importacao_id ou período válido é obrigatório para consultar Execução.");
     if(!ano||!mes)return global.CCOKpiService.operacoes(importacaoId,filtros);
     const inicio=`${ano}-${String(mes).padStart(2,"0")}-01`,fim=mes===12?`${ano+1}-01-01`:`${ano}-${String(mes+1).padStart(2,"0")}-01`;
     const campos="id,importacao_id,chave_operacao,rd,servico,tipo_servico,data_operacao,turno,ra,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media";
     const banco=global.supabaseClient;
     if(!banco)throw new Error("Supabase indisponível.");
-    const operacoes=await global.CCOSupabase.paginar(()=>banco.from("operacoes").select(campos).eq("importacao_id",importacaoId).gte("data_operacao",inicio).lt("data_operacao",fim).order("id"));
+    const operacoes=await global.CCOSupabase.paginar(()=>{let consulta=banco.from("operacoes").select(campos).gte("data_operacao",inicio).lt("data_operacao",fim).order("id");if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);return consulta;});
     const p1=operacoes.filter(item=>String(item.servico||"").trim().toUpperCase()==="P1");
     if(!p1.length){global.__CCO_P1_KM_RAW__={importacaoId,linhasRaw:0,somaKmTotal:0};return operacoes;}
     try{
-      const raw=await global.carregarRawP1CCO(importacaoId);
+      const raw=await global.carregarRawP1CCO(importacaoId,{ano,mes});
       const resultadosKmP1=raw.map(linha=>global.obterKmTotalP1DoRawCCO(linha));
       const valoresRaw=resultadosKmP1.filter(item=>Number.isFinite(item.valor));
-      const somaRaw=valoresRaw.reduce((s,item)=>s+item.valor,0);
+      const somaRaw=global.somarKmTotalP1PeriodoCCO(raw,{ano,mes,importacaoId},global.obterKmTotalP1DoRawCCO).somaKmTotal;
       const chavesRaw={dados:Object.keys(raw[0]?.dados||{}),dadosOriginais:Object.keys(raw[0]?.dados_originais||{})};
       global.__CCO_P1_KM_RAW__={importacaoId,linhasRaw:raw.length,camposEncontrados:valoresRaw.length,linhasSemCampo:raw.length-valoresRaw.length,somaKmTotal:somaRaw,chavesRaw};
       const origemExemplo=valoresRaw[0]||null;

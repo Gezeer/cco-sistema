@@ -10599,7 +10599,10 @@ function renderDetalheServicoMensal(codigo) {
   const totalViagens = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.viagens), 0);
   const importacaoAtivaId = window.__CCO_IMPORTACAO_ATIVA__?.importacao_id || window.__CCO_IMPORTACAO_ATIVA__?.id || periodo?.importacao_id;
   const rawP1Atual = window.__CCO_P1_KM_RAW__;
-  const totalKmOperacoes = dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km_total)), 0);
+  const periodoAtivo=window.__CCO_IMPORTACAO_ATIVA__||{};
+  const totalKmOperacoes = codigo==="P1"&&typeof window.somarKmTotalP1PeriodoCCO==="function"
+    ? window.somarKmTotalP1PeriodoCCO(dadosServico,{ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId}).somaKmTotal
+    : dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km_total)), 0);
   const totalKm = codigo === "P1" && rawP1Atual && String(rawP1Atual.importacaoId) === String(importacaoAtivaId)
     ? ccoFinalNumero(rawP1Atual.somaKmTotal)
     : totalKmOperacoes;

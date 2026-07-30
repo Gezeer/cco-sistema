@@ -112,7 +112,7 @@
       if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","🔄 Carregando dados do período do KPI...");
       try{
         periodo.total_dias_mes=window.CCO_REGRAS.obterDiasOperacao(periodo.ano,periodo.mes);
-        const[dadosPeriodo,linhasPainel]=await Promise.all([window.CCOKpiService.carregar(periodo.importacao_id),window.CCOPainelService.porImportacao(periodo.importacao_id),window.carregarRegrasServicosCCO()]);
+        const[dadosPeriodo,linhasPainel]=await Promise.all([window.CCOKpiService.carregar(periodo.importacao_id,{ano:periodo.ano,mes:periodo.mes}),window.CCOPainelService.porImportacao(periodo.importacao_id),window.carregarRegrasServicosCCO()]);
         window.__CCO_IMPORTACAO_ATIVA__=periodo;window.__CCO_PERIODO_ATUAL__=periodo.periodo;window.operacoes=dadosPeriodo.operacoes;window.operacoesOriginal=dadosPeriodo.operacoes;window.__CCO_KPI_PAINEL_POR_SERVICO__=new Map((linhasPainel||[]).map(item=>[chavePainel(item.importacao_id,item.ano,item.mes,item.servico),item]));window.kpiMensal=dadosPeriodo.kpis.map(item=>{const linhaPainel=window.__CCO_KPI_PAINEL_POR_SERVICO__.get(chavePainel(item.importacao_id,item.ano,item.mes,item.servico))||null;return{...item,linhaPainel,peso_t:n(item.total_peso_t),viagens:n(item.total_viagens),km_total:n(item.total_km),executado:n(item.total_peso_t||item.total_km||item.total_viagens)};});
         if(typeof carregarFiltrosKpiServicoCompleto==="function")carregarFiltrosKpiServicoCompleto();
         if(typeof renderPaginaKpiPorServicoCompleto==="function")renderPaginaKpiPorServicoCompleto();

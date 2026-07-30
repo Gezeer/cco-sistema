@@ -84,7 +84,7 @@
     if(!importacao?.id)throw new Error("Período sem importacao_id ativo.");
     const linhas=PAGINA==="execucao"
       ?await window.CCOExecucaoService.carregar(importacao.id,{ano:periodo.ano,mes:periodo.mes})
-      :await window.CCOKpiService.operacoes(importacao.id);
+      :await window.CCOKpiService.operacoes(importacao.id,{ano:periodo.ano,mes:periodo.mes});
     resultado.push(...linhas);
     periodo.importacao_id_usado=importacao?.id||null;
     console.log("[DIAS] período selecionado:",periodo.ano,periodo.mes);console.log("[DIAS] importacao_id usado:",periodo.importacao_id_usado);console.log("[DIAS] total de registros:",resultado.length);

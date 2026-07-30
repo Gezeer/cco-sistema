@@ -54,7 +54,7 @@ assert.match(utils,/window\.__CCO_CATALOGO_PERIODOS__/);
 assert.match(kpi,/\[KPI\] catálogo recebido/);
 assert.match(kpi,/\[KPI\] período inicial/);
 assert.match(kpi,/\[KPI\] opções inseridas no select/);
-assert.ok(kpi.indexOf("preencherCatalogoKpi(catalogo,periodo)")<kpi.indexOf("window.CCOKpiService.carregar(periodo.importacao_id)"));
+assert.ok(kpi.indexOf("preencherCatalogoKpi(catalogo,periodo)")<kpi.indexOf("window.CCOKpiService.carregar(periodo.importacao_id,{ano:periodo.ano,mes:periodo.mes})"));
 assert.match(kpiService,/const CAMPOS = "importacao_id,servico,data_operacao,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media"/);
 assert.doesNotMatch(kpiService,/const CAMPOS = "[^"]*\b(?:id|rd|tipo_servico|turno|ra)\b/);
 console.log("Catálogo: 9 períodos derivados de operacoes.data_operacao aprovados.");

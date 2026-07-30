@@ -6,7 +6,7 @@ const contexto = { window: {} };
 vm.createContext(contexto);
 vm.runInContext(fs.readFileSync("js/cco-p1-km-total.js", "utf8"), contexto);
 
-const { normalizarCabecalhoCCO, obterKmTotalP1CCO, obterKmTotalP1DoRawCCO, numeroPlanilhaCCO, auditarCamposKmP1CCO } = contexto.window.CCO_P1_KM_TOTAL;
+const { normalizarCabecalhoCCO, obterKmTotalP1CCO, obterKmTotalP1DoRawCCO, numeroPlanilhaCCO, auditarCamposKmP1CCO, somarKmTotalP1PeriodoCCO } = contexto.window.CCO_P1_KM_TOTAL;
 assert.equal(normalizarCabecalhoCCO("Km_Total"), "KM_TOTAL");
 assert.equal(normalizarCabecalhoCCO("KM Total"), "KM_TOTAL");
 assert.equal(normalizarCabecalhoCCO(" KM_TOTAL "), "KM_TOTAL");
@@ -40,6 +40,12 @@ const auditoria = auditarCamposKmP1CCO([{ dados: { Km_Total: 2, KM: 3, "Distânc
 assert.deepEqual([...auditoria.camposEncontrados], ["Km_Total"]);
 assert.ok(auditoria.camposIgnorados.includes("KM"));
 assert.ok(auditoria.camposIgnorados.includes("Distância Média"));
+const periodosMisturados=[
+  {importacao_id:"julho",servico:"P1",data_operacao:"2026-07-10",km_total:100},
+  {importacao_id:"junho",servico:"P1",data_operacao:"2026-06-10",km_total:200}
+];
+assert.equal(somarKmTotalP1PeriodoCCO(periodosMisturados,{ano:2026,mes:7,importacaoId:"julho"}).somaKmTotal,100);
+assert.equal(somarKmTotalP1PeriodoCCO(periodosMisturados,{ano:2026,mes:7}).somaKmTotal,100);
 
 const utils = fs.readFileSync("utils.js", "utf8");
 assert.doesNotMatch(utils, /codigo === "P1" \|\| totalKm > 0 \? criarCard\("KM Executado"/, "o card fixo do P1 não pode depender do template condicional");

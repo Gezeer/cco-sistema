@@ -42,6 +42,33 @@
     return 0;
   }
 
+  function intervaloMesCCO(ano,mes) {
+    const a=Number(ano),m=Number(mes);
+    if(!a||m<1||m>12)return{inicio:null,fim:null};
+    return{inicio:`${a}-${String(m).padStart(2,"0")}-01`,fim:m===12?`${a+1}-01-01`:`${a}-${String(m+1).padStart(2,"0")}-01`};
+  }
+
+  function filtrarRegistrosP1PeriodoCCO(registros,{ano,mes,importacaoId}={}) {
+    const{inicio,fim}=intervaloMesCCO(ano,mes);
+    return(registros||[]).filter(item=>{
+      if(String(item?.servico||"P1").trim().toUpperCase()!=="P1")return false;
+      if(importacaoId&&String(item?.importacao_id||"")!==String(importacaoId))return false;
+      const data=String(item?.data_operacao||item?.data_normalizada||item?.data||"").slice(0,10);
+      if(inicio&&fim&&(!data||data<inicio||data>=fim))return false;
+      return Boolean(importacaoId||(inicio&&fim));
+    });
+  }
+
+  function somarKmTotalP1PeriodoCCO(registros,periodo={},obterValor=obterKmTotalP1CCO) {
+    const considerados=filtrarRegistrosP1PeriodoCCO(registros,periodo);
+    const somaKmTotal=considerados.reduce((soma,item)=>{
+      const valor=obterValor(item),numero=typeof valor==="object"?valor?.valor:valor;
+      return soma+(Number.isFinite(Number(numero))?Number(numero):0);
+    },0);
+    console.log("[P1 KM TOTAL][PERÍODO]",{ano:Number(periodo.ano)||null,mes:Number(periodo.mes)||null,importacaoId:periodo.importacaoId||null,registrosConsiderados:considerados.length,somaKmTotal});
+    return{somaKmTotal,registrosConsiderados:considerados.length,registros:considerados};
+  }
+
   function ehKmTotalP1Correto(chave) {
     return String(chave ?? "").trim() === "Km_Total";
   }
@@ -75,16 +102,17 @@
     return String(valor || "").toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9.]/g, "");
   }
 
-  async function carregarRawP1CCO(importacaoId) {
-    if (!importacaoId) throw new Error("importacao_id é obrigatório para consultar o RAW do P1.");
+  async function carregarRawP1CCO(importacaoId,{ano,mes}={}) {
+    const{inicio,fim}=intervaloMesCCO(ano,mes);
+    if(!importacaoId&&(!inicio||!fim))throw new Error("importacao_id ou período válido é obrigatório para consultar o RAW do P1.");
     const banco = global.supabaseClient;
     if (!banco) throw new Error("Supabase indisponível.");
     const linhas = [];
     for (let inicio = 0; ; inicio += 1000) {
-      const { data, error } = await banco.from("planilha_linhas")
-        .select("chave_linha,aba,dados,dados_originais")
-        .eq("importacao_id", importacaoId)
-        .range(inicio, inicio + 999);
+      let consulta=banco.from("planilha_linhas").select("chave_linha,importacao_id,aba,servico,data_operacao,dados,dados_originais");
+      if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);
+      if(ano&&mes)consulta=consulta.gte("data_operacao",intervaloMesCCO(ano,mes).inicio).lt("data_operacao",intervaloMesCCO(ano,mes).fim);
+      const { data, error } = await consulta.range(inicio, inicio + 999);
       if (error) throw error;
       const lote = data || [];
       linhas.push(...lote);
@@ -110,6 +138,8 @@
 
   global.normalizarCabecalhoCCO = normalizarCabecalhoCCO;
   global.obterKmTotalP1CCO = obterKmTotalP1CCO;
+  global.filtrarRegistrosP1PeriodoCCO = filtrarRegistrosP1PeriodoCCO;
+  global.somarKmTotalP1PeriodoCCO = somarKmTotalP1PeriodoCCO;
   global.obterKmTotalP1DoRawCCO = obterKmTotalP1DoRawCCO;
   global.ehKmTotalP1Correto = ehKmTotalP1Correto;
   global.numeroPlanilhaCCO = numeroPlanilhaCCO;
@@ -120,6 +150,8 @@
   global.CCO_P1_KM_TOTAL = Object.freeze({
     normalizarCabecalhoCCO,
     obterKmTotalP1CCO,
+    filtrarRegistrosP1PeriodoCCO,
+    somarKmTotalP1PeriodoCCO,
     obterKmTotalP1DoRawCCO,
     ehKmTotalP1Correto,
     numeroPlanilhaCCO,
