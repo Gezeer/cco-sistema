@@ -15,6 +15,23 @@ vm.createContext(contexto);
 vm.runInContext(fs.readFileSync("cco-importacao-principal.js","utf8"),contexto);
 
 const api=contexto.window.CCOImportacaoPrincipal;
+assert.equal(api.ehAbaP9CatacaoAreaVerde("Catação Em Área Verde"),true);
+assert.equal(api.ehAbaP9CatacaoAreaVerde("P8"),false);
+contexto.XLSX={utils:{sheet_to_json:folha=>folha}};
+const workbookP9={
+  SheetNames:["Catação Em Área Verde"],
+  Sheets:{"Catação Em Área Verde":[
+    ["Data","Equipe","Descrição","Nome Serviço"],
+    ["01/07/2026",4,"Catação Em Área Verde","Catação Em Área Verde"]
+  ]}
+};
+const resultadoP9=api.analisarWorkbook(workbookP9,"p9.xlsx");
+assert.equal(resultadoP9.operacoes.length,1);
+assert.equal(resultadoP9.operacoes[0].servico,"P9");
+assert.equal(resultadoP9.operacoes[0].aba,"P9");
+assert.equal(resultadoP9.operacoes[0].valor_original.descricao,"Catação Em Área Verde");
+assert.equal(resultadoP9.operacoes[0].valor_original.nome_servico,"Catação Em Área Verde");
+assert.equal(resultadoP9.raw[0].dados_originais._aba_original,"Catação Em Área Verde");
 const cabecalhos=api.criarMapaCabecalhosUnicos(["KM Total","Km_Total","Km Executado","Km Executado (%)"]);
 assert.deepEqual(
   cabecalhos.map(item=>({indice:item.indice,literal:item.literal,normalizado:item.normalizado,chave:item.chave})),
@@ -89,6 +106,9 @@ async function testarFallbackDiasOperacao() {
 }
 
 testarFallbackDiasOperacao().then(()=>{
+  const painelGeral=fs.readFileSync("painel-geral.js","utf8");
+  assert.match(painelGeral,/colunas:"aba,dados,dados_originais".*coluna:"importacao_id".*coluna:"aba",valor:"P9"/s);
+  assert.match(painelGeral,/colunas:"id,dados".*coluna:"importacao_id".*coluna:"aba",valor:"P9"/s);
   console.log("Importador CCO: cabeçalhos únicos, campos literais e fallback de dias_operacao aprovados.");
 }).catch(error=>{
   console.error(error);
