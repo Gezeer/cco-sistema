@@ -5684,32 +5684,8 @@ function linhaMesCorrespondeDiasOperacao(valorMes, ano, mes) {
 
 function obterTotalDiasMesDiasOperacao(ano, mes, fallback = 0) {
   if (!(Number(ano) >= 1900 && Number(mes) >= 1 && Number(mes) <= 12)) return numero(fallback);
-  const aba = obterAbaDiasOperacaoFinal();
-
-  if (!aba || !Array.isArray(aba.dadosNormalizados)) {
-     console.warn("Aba Dias_Operação não encontrada. Usando fallback:", fallback);
-    return numero(fallback);
-  }
-
-  const linha = aba.dadosNormalizados.find(item =>
-    linhaMesCorrespondeFinal(obterMesLinhaDiasFinal(item), ano, mes)
-  );
-
-  if (!linha) {
-    console.warn(`Linha de Dias_Operação não encontrada para ${String(mes).padStart(2, "0")}/${ano}.`,
-      aba.nomeOriginal,
-      aba.dadosNormalizados.slice(0, 5)
-    );
-    return numero(fallback);
-  }
- const dias = obterDiasLinhaDiasFinal(linha);
-
-  if (!dias) {
-    console.warn("Coluna Dias_Operação encontrada sem valor válido:", linha);
-    return numero(fallback);
-  }
-
-  return dias;
+  const oficial=window.CCOPainelService?.obterDiasOperacao?.(ano,mes,window.__CCO_IMPORTACAO_ATIVA__?.importacao_id);
+  return numero(oficial||fallback);
 }
 
 
@@ -5949,34 +5925,8 @@ function valorMesCorrespondeFinal(valorMes, ano, mes) {
 
 function obterTotalDiasMesOficial(ano, mes, fallback = 0) {
   if (!(Number(ano) >= 1900 && Number(mes) >= 1 && Number(mes) <= 12)) return numero(fallback);
-  const aba = obterAbaDiasOperacaoFinal();
-
-  if (!aba || !Array.isArray(aba.dadosNormalizados)) {
-    console.warn("Aba Dias_Operação não encontrada. Usando fallback:", fallback);
-    return numero(fallback);
-  }
-
-  const linha = aba.dadosNormalizados.find(item =>
-    valorMesCorrespondeFinal(obterMesLinhaDiasFinal(item), ano, mes)
-  );
-
-  if (!linha) {
-    console.warn(
-      `Linha de Dias_Operação não encontrada para ${String(mes).padStart(2, "0")}/${ano}.`,
-      aba.nomeOriginal,
-      aba.dadosNormalizados.slice(0, 5)
-    );
-    return numero(fallback);
-  }
-
-  const dias = obterDiasLinhaDiasFinal(linha);
-
-  if (!dias) {
-    console.warn("Coluna Dias_Operação encontrada sem valor válido:", linha);
-    return numero(fallback);
-  }
-
-  return dias;
+  const oficial=window.CCOPainelService?.obterDiasOperacao?.(ano,mes,window.__CCO_IMPORTACAO_ATIVA__?.importacao_id);
+  return numero(oficial||fallback);
 }
 
 function obterReferenciaAnoMesFinal(dados) {
@@ -6271,51 +6221,10 @@ function converterValorMesParaAnoMes(valor) {
   return null;
 }
 
-function obterTotalDiasMesDaAbaDiasOperacao(ano, mes, fallback = 0) {
+function obterTotalDiasMesTabelaOficial(ano, mes, fallback = 0) {
   if (!(Number(ano) >= 1900 && Number(mes) >= 1 && Number(mes) <= 12)) return numero(fallback);
-  const aba = encontrarAbaDiasOperacao();
-
-  if (!aba || !Array.isArray(aba.dadosNormalizados)) {
-    console.warn("Aba Dias_Operação não encontrada. Usando fallback:", fallback);
-    return numero(fallback);
-  }
-
-  const anoAlvo = String(ano || "");
-  const mesAlvo = String(mes || "").padStart(2, "0");
-
-  const linha = aba.dadosNormalizados.find(item => {
-    const valorMes = pegarCampoNormalizado(item, ["Mês", "mês", "Mes", "mes"]);
-    const convertido = converterValorMesParaAnoMes(valorMes);
-
-    return convertido &&
-      convertido.ano === anoAlvo &&
-      convertido.mes === mesAlvo;
-  });
-
-  if (!linha) {
-    console.warn(
-      `Não encontrei Dias_Operação para ${mesAlvo}/${anoAlvo}.`,
-      "Aba:",
-      aba.nomeOriginal,
-      "Primeiras linhas:",
-      aba.dadosNormalizados.slice(0, 5)
-    );
-
-    return numero(fallback);
-  }
-
-  const dias = numero(
-    pegarCampoNormalizado(linha, [
-      "Dias_Operação",
-      "Dias Operação",
-      "Dias_Operacao",
-      "Dias Operacao",
-      "dias_operacao",
-      "dias_operação"
-    ])
-  );
-
-  return dias || numero(fallback);
+  const oficial=window.CCOPainelService?.obterDiasOperacao?.(ano,mes,window.__CCO_IMPORTACAO_ATIVA__?.importacao_id);
+  return numero(oficial||fallback);
 }
 
 function obterAnoMesReferenciaParaDiasOperacao(dados) {
@@ -6421,7 +6330,7 @@ function gerarPainelExecutivo() {
         );
 
       const totalDiasMes =
-        obterTotalDiasMesDaAbaDiasOperacao(ref.ano, ref.mes, fallbackDias);
+        obterTotalDiasMesTabelaOficial(ref.ano, ref.mes, fallbackDias);
 
       const valorFinal =
         typeof calcularValorFinalServico === "function"
@@ -6447,7 +6356,7 @@ function gerarPainelExecutivo() {
   Filtro Painel Geral.
 */
 function recalcularPainelPorFiltro(dadosFiltro, ano, mes) {
-  const totalDiasMes = obterTotalDiasMesDaAbaDiasOperacao(ano, mes, 0);
+  const totalDiasMes = obterTotalDiasMesTabelaOficial(ano, mes, 0);
 
   painelExecutivo =
     painelExecutivoOriginal.map(item => {
@@ -6492,7 +6401,7 @@ function gerarPainelExecucaoMensal() {
       : obterAnoMesReferenciaParaDiasOperacao(periodo.dados);
 
   const totalDiasMes =
-    obterTotalDiasMesDaAbaDiasOperacao(ref.ano, ref.mes, 0);
+    obterTotalDiasMesTabelaOficial(ref.ano, ref.mes, 0);
 
   const painel =
     painelExecutivoOriginal.map(item => {
@@ -6535,7 +6444,7 @@ function gerarPainelExecucaoMensal() {
   testarDiasOperacao("2026", "04")
 */
 function testarDiasOperacao(ano = "2026", mes = "04") {
-  const dias = obterTotalDiasMesDaAbaDiasOperacao(ano, mes, 0);
+  const dias = obterTotalDiasMesTabelaOficial(ano, mes, 0);
   console.log(`Dias_Operação ${mes}/${ano}:`, dias);
   return dias;
 }

@@ -16,30 +16,13 @@
   let catalogoExecucaoPromise=null;
   const pad=valor=>String(Number(valor)).padStart(2,"0");
   const periodoChave=(ano,mes)=>`${Number(ano)}-${pad(mes)}`;
-  const concluida=status=>["concluida","concluida_com_avisos"].includes(String(status||"").toLowerCase());
-  function maisPrioritario(novo,atual){
-    const criterios=[Boolean(novo.ativa)-Boolean(atual.ativa),Number(concluida(novo.status))-Number(concluida(atual.status)),Date.parse(novo.concluido_em||0)-Date.parse(atual.concluido_em||0),Date.parse(novo.criado_em||0)-Date.parse(atual.criado_em||0)];
-    return criterios.find(valor=>valor!==0)>0;
-  }
-  function normalizarCatalogoExecucao(dados){
-    const mapa=new Map();
-    for(const bruto of dados||[]){const item={...bruto,importacao_id:bruto.importacao_id||bruto.id,ano:Number(bruto.ano),mes:Number(bruto.mes)};if(!item.importacao_id||!Number.isFinite(item.ano)||!Number.isFinite(item.mes))continue;const chave=periodoChave(item.ano,item.mes),atual=mapa.get(chave);if(!atual||maisPrioritario(item,atual))mapa.set(chave,item);}
-    return[...mapa.values()].filter(item=>item.ativa!==false&&(!item.status||concluida(item.status))).sort((a,b)=>a.ano-b.ano||a.mes-b.mes);
-  }
   async function carregarCatalogoExecucaoCCO(forcar=false){
     if(!forcar&&catalogoExecucaoPromise)return catalogoExecucaoPromise;
     catalogoExecucaoPromise=(async()=>{
-      const banco=window.supabaseClient;if(!banco)throw new Error("Supabase indisponível.");
-      let dados=[];
-      const respostaView=await banco.from("v_periodos_operacionais").select("importacao_id,ano,mes,status,ativa,total_registros,primeira_data,ultima_data,concluido_em,criado_em").order("ano",{ascending:true}).order("mes",{ascending:true});
-      if(!respostaView.error)dados=respostaView.data||[];
-      else{
-        console.warn("[EXECUÇÃO Períodos] view indisponível; usando importacoes.",{code:respostaView.error.code,message:respostaView.error.message});
-        const respostaFallback=await banco.from("importacoes").select("id,ano,mes,status,ativa,concluido_em,criado_em").eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).order("ano",{ascending:true}).order("mes",{ascending:true});
-        if(respostaFallback.error)throw respostaFallback.error;
-        dados=respostaFallback.data||[];
-      }
-      const catalogo=normalizarCatalogoExecucao(dados);console.log("[EXECUÇÃO Períodos] catálogo",catalogo);window.__CCO_CATALOGO_EXECUCAO__=catalogo;return catalogo;
+      if(!window.CCOPainelService?.getCatalogoPeriodos)throw new Error("painelService indisponível.");
+      const catalogo=await window.CCOPainelService.getCatalogoPeriodos();
+      window.__CCO_CATALOGO_EXECUCAO__=catalogo;
+      return catalogo;
     })();
     try{return await catalogoExecucaoPromise;}catch(error){catalogoExecucaoPromise=null;throw error;}
   }
@@ -56,7 +39,7 @@
     if(meses.includes(preferido))selectMes.value=pad(preferido);else if(meses.length)selectMes.value=pad(Math.max(...meses));
   }
   async function renderizarPeriodoExecucao(periodo){
-    if(!periodo)throw new Error("Período de execução não encontrado no catálogo.");
+    if(!periodo){console.warn("[EXECUÇÃO] período solicitado não existe no catálogo oficial.");return false;}
     const normalizado={...periodo,ano:String(periodo.ano),mes:pad(periodo.mes),periodo:periodoChave(periodo.ano,periodo.mes),id:periodo.importacao_id};
     console.log("[EXECUÇÃO Períodos] carregando",{ano:Number(normalizado.ano),mes:Number(normalizado.mes),importacaoId:normalizado.importacao_id});
     await window.carregarPeriodoCCO(normalizado);
@@ -131,11 +114,7 @@
     const catalogo=await carregarCatalogoExecucaoCCO(),assinatura=catalogo.map(item=>item.importacao_id).join("|"),chaveCache=`evolucao:${servico}`,armazenado=cacheEvolucaoExecucao.get(chaveCache);
     if(armazenado?.assinatura===assinatura)return{catalogo,linhas:armazenado.linhas};
     const idsAtivos=new Set(catalogo.map(item=>String(item.importacao_id))),banco=window.supabaseClient;
-    let resposta=await banco.from("painel_executivo").select("importacao_id,ano,mes,servico,acumulado,previsto,percentual,valor_total").in("importacao_id",[...idsAtivos]).eq("servico",servico).order("ano",{ascending:true}).order("mes",{ascending:true});
-    if(resposta.error){
-      console.warn("[EXECUÇÃO Evolução] campo percentual indisponível; usando campos essenciais.",{code:resposta.error.code,message:resposta.error.message});
-      resposta=await banco.from("painel_executivo").select("importacao_id,ano,mes,servico,acumulado,previsto,valor_total").in("importacao_id",[...idsAtivos]).eq("servico",servico).order("ano",{ascending:true}).order("mes",{ascending:true});
-    }
+    const resposta=await banco.from("painel_executivo").select("importacao_id,ano,mes,servico,acumulado,previsto,valor_total").in("importacao_id",[...idsAtivos]).eq("servico",servico).order("ano",{ascending:true}).order("mes",{ascending:true});
     if(resposta.error)throw resposta.error;
     const porPeriodo=new Map();
     for(const item of resposta.data||[]){if(!idsAtivos.has(String(item.importacao_id)))continue;porPeriodo.set(periodoChave(item.ano,item.mes),item);}
@@ -166,7 +145,7 @@
       const[catalogo]=await Promise.all([carregarCatalogoExecucaoCCO(),window.carregarRegrasServicosCCO()]);
       if(!catalogo.length)throw new Error("Nenhum período ativo disponível para Execução.");
       let salvo=null;try{salvo=JSON.parse(localStorage.getItem("cco_execucao_periodo")||"null");}catch(_){salvo=null;}
-      const ultimo=catalogo.at(-1),preferido=localizarPeriodoExecucao(catalogo,salvo?.ano,salvo?.mes)||ultimo,selectAno=document.getElementById("filtroExecucaoAno"),selectMes=document.getElementById("filtroExecucaoMes"),anos=[...new Set(catalogo.map(item=>Number(item.ano)))].filter(Number.isFinite).sort((a,b)=>a-b);
+      const ultimo=catalogo[0],preferido=localizarPeriodoExecucao(catalogo,salvo?.ano,salvo?.mes)||ultimo,selectAno=document.getElementById("filtroExecucaoAno"),selectMes=document.getElementById("filtroExecucaoMes"),anos=[...new Set(catalogo.map(item=>Number(item.ano)))].filter(Number.isFinite).sort((a,b)=>a-b);
       preencherFiltroAnoExecucao(selectAno,anos,preferido.ano);preencherFiltroMesExecucao(selectMes,obterMesesDoAnoExecucao(catalogo,preferido.ano),preferido.mes);
       await renderizarPeriodoExecucao(preferido);
     } catch (erro) {

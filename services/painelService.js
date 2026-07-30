@@ -3,6 +3,7 @@
   const TTL = 5 * 60 * 1000;
   const db = () => { const cliente=global.CCOSupabase?.getClient?.();if(!cliente)throw new Error("Supabase indisponível.");return cliente; };
   const validarId = id => { if (!id) throw new Error("importacao_id é obrigatório."); return String(id); };
+  const diasOperacaoCache=new Map();
 
   function montarCatalogoPorOperacoes(operacoes,importacoes) {
     const importacoesPorId=new Map((importacoes||[]).map(item=>[String(item.id),item])),candidatos=new Map();
@@ -21,22 +22,43 @@
   }
 
   async function catalogo() {
-    const chave = global.CCOCache.chave("periodos", ["operacoes-data-v1"]);
-    return global.CCOCache.lembrar(chave, async () => {
+    const chave = global.CCOCache.chave("periodos", ["operacoes-data-v2"]);
+    const catalogoCache=await global.CCOCache.lembrar(chave, async () => {
       console.log("[CATÁLOGO] consulta executada",{
         operacoes:"select importacao_id,data_operacao; data_operacao not null; paginação completa",
         importacoes:"select metadados; sem filtro ativa/ativo; paginação completa"
       });
-      const[operacoes,importacoes]=await Promise.all([
+      const[operacoes,importacoes,diasOperacao]=await Promise.all([
         global.CCOSupabase.paginar(()=>db().from("operacoes").select("importacao_id,data_operacao").not("data_operacao","is",null).order("data_operacao",{ascending:false})),
-        global.CCOSupabase.paginar(()=>db().from("importacoes").select("id,ano,mes,nome_arquivo,status,ativa,concluido_em,criado_em").order("criado_em",{ascending:false}))
+        global.CCOSupabase.paginar(()=>db().from("importacoes").select("id,ano,mes,nome_arquivo,status,ativa,concluido_em,criado_em").order("criado_em",{ascending:false})),
+        global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}))
       ]);
       const resultado=montarCatalogoPorOperacoes(operacoes,importacoes);
+      diasOperacaoCache.clear();
+      for(const item of diasOperacao||[]){
+        const periodo=`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`;
+        if(item.importacao_id)diasOperacaoCache.set(`${item.importacao_id}|${periodo}`,Number(item.total_dias)||0);
+        if(!diasOperacaoCache.has(periodo))diasOperacaoCache.set(periodo,Number(item.total_dias)||0);
+      }
       console.log("[CATÁLOGO] períodos encontrados",resultado.map(item=>item.periodo));
       console.table(resultado.map(item=>({periodo:item.periodo,importacao_id:item.importacao_id,status:item.status||null,ativa:Boolean(item.ativa),origem:item.origem})));
       console.log("[CATÁLOGO] origem dos períodos","operacoes.data_operacao",{operacoesLidas:operacoes.length,importacoesLidas:importacoes.length});
       return resultado;
     }, TTL);
+    if(!diasOperacaoCache.size){
+      const diasOperacao=await global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}));
+      for(const item of diasOperacao||[]){
+        const periodo=`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`;
+        if(item.importacao_id)diasOperacaoCache.set(`${item.importacao_id}|${periodo}`,Number(item.total_dias)||0);
+        if(!diasOperacaoCache.has(periodo))diasOperacaoCache.set(periodo,Number(item.total_dias)||0);
+      }
+    }
+    return catalogoCache;
+  }
+  const getCatalogoPeriodos=()=>catalogo();
+  function obterDiasOperacao(ano,mes,importacaoId=null){
+    const periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`;
+    return Number((importacaoId&&diasOperacaoCache.get(`${importacaoId}|${periodo}`))??diasOperacaoCache.get(periodo)??0);
   }
   async function ultimoPeriodo() { return (await catalogo())[0] || null; }
   async function porImportacao(importacaoId) {
@@ -54,5 +76,5 @@
     if(error)throw error;
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, montarCatalogoPorOperacoes });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes });
 })(window);
