@@ -322,9 +322,9 @@
     return{payload:[...mapa.values()],duplicidades};
   }
 
-  function detectarChaveUnicaDiasOperacao(resposta) {
-    const erro=resposta?.error||{},diagnostico=[erro.code,erro.details,erro.hint,erro.message,resposta?.statusText].filter(Boolean).join(" ");
-    if(String(erro.code)==="23505"&&(/dias_operacao_ano_mes_uidx/i.test(diagnostico)||/Key\s*\(ano,\s*mes\)/i.test(diagnostico)))return"ano,mes";
+  function detectarChaveUnicaDiasOperacao(respostaOuErro) {
+    const erro=respostaOuErro?.error||respostaOuErro||{},diagnostico=[erro.code,erro.details,erro.hint,erro.message,respostaOuErro?.statusText].filter(Boolean).join(" ");
+    if(String(erro.code)==="23505"&&(/dias_operacao_ano_mes_(?:uidx|unique)/i.test(diagnostico)||/\(ano,\s*mes\)/i.test(diagnostico)))return"ano,mes";
     if(/dias_operacao.*importacao_id.*ano.*mes/i.test(diagnostico)||/Key\s*\(importacao_id,\s*ano,\s*mes\)/i.test(diagnostico))return"importacao_id,ano,mes";
     return null;
   }
@@ -344,27 +344,40 @@
   async function executarUpsertDiasOperacao(payload,onConflict) {
     console.table(payload);
     console.log("onConflict",onConflict);
-    const resposta=await banco().from("dias_operacao").upsert(payload,{onConflict,ignoreDuplicates:false}).select();
-    registrarRespostaDiasOperacao(resposta,onConflict);
-    return resposta;
+    try{
+      const resposta=await banco().from("dias_operacao").upsert(payload,{onConflict,ignoreDuplicates:false}).select();
+      registrarRespostaDiasOperacao(resposta,onConflict);
+      if(resposta?.error){
+        resposta.error.status=resposta.status??resposta.error.status;
+        resposta.error.ccoRespostaRegistrada=true;
+        throw resposta.error;
+      }
+      return resposta;
+    }catch(error){
+      if(!error?.ccoRespostaRegistrada)registrarRespostaDiasOperacao({data:null,error,status:error?.status??null,statusText:error?.statusText??null},onConflict);
+      throw error;
+    }
   }
 
   async function gravarDiasOperacao(dias,importacaoId) {
     const{payload,duplicidades}=deduplicarDiasOperacao(dias,importacaoId);
     console.log("[IMPORTAÇÃO][dias_operacao] duplicidades no payload",duplicidades);
     if(payload.length!==1)throw new Error(`Cada período deve possuir exatamente um registro único de Dias_Operação; encontrados ${payload.length}.`);
-    let chaveUsada="importacao_id,ano,mes";
-    let resposta=await executarUpsertDiasOperacao(payload,chaveUsada);
-    if(resposta.error){
-      const chaveDetectada=detectarChaveUnicaDiasOperacao(resposta);
+    try{
+      const resposta=await executarUpsertDiasOperacao(payload,"importacao_id,ano,mes");
+      return{payload,quantidade:payload.length,duplicidades,chaveUsada:"importacao_id,ano,mes",resposta};
+    }catch(error){
+      const chaveDetectada=detectarChaveUnicaDiasOperacao(error);
       console.log("[IMPORTAÇÃO][dias_operacao] chave única detectada pelo banco",chaveDetectada);
-      if(chaveDetectada&&chaveDetectada!==chaveUsada){
-        chaveUsada=chaveDetectada;
-        resposta=await executarUpsertDiasOperacao(payload,chaveUsada);
+      if(chaveDetectada==="ano,mes"){
+        console.warn("Constraint legada detectada",error);
+        console.log("[IMPORTAÇÃO] tentando fallback ano,mes");
+        const respostaFallback=await executarUpsertDiasOperacao(payload,"ano,mes");
+        console.log("[IMPORTAÇÃO] fallback concluído");
+        return{payload,quantidade:payload.length,duplicidades,chaveUsada:"ano,mes",resposta:respostaFallback,fallback:true};
       }
+      throw error;
     }
-    if(resposta.error)throw resposta.error;
-    return{payload,quantidade:payload.length,duplicidades,chaveUsada,resposta};
   }
 
   async function obterContagensReais(importacaoId,contagensLocais) {
