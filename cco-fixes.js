@@ -53,7 +53,7 @@
 
       try {
         const data=await window.CCOPainelService.catalogo();
-        const catalogo=(data||[]).map(item=>({ano:String(item.ano),mes:pad(item.mes),periodo:chavePeriodo(item.ano,item.mes),importacao_id:item.importacao_id,nome_arquivo:item.nome_arquivo,status:item.status,ativa:item.ativa,origem:"v_catalogo_periodos"}));
+        const catalogo=(data||[]).map(item=>({ano:String(item.ano),mes:pad(item.mes),periodo:chavePeriodo(item.ano,item.mes),importacao_id:item.importacao_id,nome_arquivo:item.nome_arquivo,status:item.status,ativa:item.ativa,origem:item.origem||"operacoes.data_operacao"}));
         window.__CCO_IMPORTACOES_POR_PERIODO__=Object.fromEntries(catalogo.map(item=>[item.periodo,item]));
         window.__CCO_CATALOGO_PERIODOS__=catalogo;
         console.log("✅ Catálogo de períodos carregado:",catalogo);
