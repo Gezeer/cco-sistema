@@ -15782,12 +15782,15 @@ async function sair() {
       if (!supabase) { console.error('Cliente Supabase não disponível.'); return []; }
       const mapa = new Map(), tamanhoPagina = 1000;
       try {
-        for (let inicio = 0; ; inicio += tamanhoPagina) {
-          const { data, error } = await supabase.from('operacoes')
-            .select('data_operacao,importacao_id')
+        let ultimoId = null, inicio = 0;
+        for (;;) {
+          let consulta = supabase.from('operacoes')
+            .select('id,data_operacao,importacao_id')
             .not('data_operacao', 'is', null)
-            .order('data_operacao', { ascending:false })
-            .range(inicio, inicio + tamanhoPagina - 1);
+            .order('id', { ascending:true })
+            .limit(tamanhoPagina);
+          if (ultimoId !== null) consulta = consulta.gt('id', ultimoId);
+          const { data, error } = await consulta;
           if (error) {
             console.error('Erro ao carregar catálogo', { message:error?.message, code:error?.code, details:error?.details, hint:error?.hint });
             return [];
@@ -15799,7 +15802,12 @@ async function sair() {
             const ano = Number(match[1]), mes = Number(match[2]), periodo = periodoKey(ano, mes);
             if (!mapa.has(periodo)) mapa.set(periodo, { ano, mes, periodo, importacao_id:registro.importacao_id || null });
           });
-          if (registros.length < tamanhoPagina) break;
+          console.log("[PAGINAÇÃO]", {offset:inicio,quantidadeRetornada:registros.length,totalAcumulado:inicio+registros.length});
+          if (registros.length === 0 || registros.length < tamanhoPagina) break;
+          const proximoId = registros.at(-1)?.id;
+          if (proximoId === null || proximoId === undefined || String(proximoId) === String(ultimoId)) throw new Error("Paginação de operacoes sem avanço da chave id.");
+          ultimoId = proximoId;
+          inicio += registros.length;
         }
         const catalogo = [...mapa.values()].sort((a,b) => b.ano-a.ano || b.mes-a.mes);
         window.__CCO_CATALOGO_PERIODOS__ = catalogo;

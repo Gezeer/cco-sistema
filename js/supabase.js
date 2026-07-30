@@ -79,7 +79,8 @@
       const {data,error}=await criarConsulta().range(inicio,inicio+tamanhoPagina-1);
       if(error)throw error;
       const lote=data||[];resultado.push(...lote);
-      if(lote.length<tamanhoPagina)return resultado;
+      console.log("[PAGINAÇÃO]",{offset:inicio,quantidadeRetornada:lote.length,totalAcumulado:resultado.length});
+      if(lote.length===0||lote.length<tamanhoPagina)return resultado;
     }
     throw new Error("Paginação interrompida por exceder o limite de segurança.");
   }

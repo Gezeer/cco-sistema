@@ -21,15 +21,35 @@
       .sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
   }
 
+  async function paginarOperacoesCatalogo(tamanhoPagina=1000) {
+    const resultado=[];
+    let ultimoId=null,offsetLogico=0;
+    for(;;){
+      let consulta=db().from("operacoes").select("id,importacao_id,data_operacao")
+        .not("data_operacao","is",null).order("id",{ascending:true}).limit(tamanhoPagina);
+      if(ultimoId!==null)consulta=consulta.gt("id",ultimoId);
+      const{data,error}=await consulta;
+      if(error)throw error;
+      const lote=data||[];
+      resultado.push(...lote);
+      console.log("[PAGINAÇÃO]",{offset:offsetLogico,quantidadeRetornada:lote.length,totalAcumulado:resultado.length});
+      if(lote.length===0||lote.length<tamanhoPagina)return resultado;
+      const proximoId=lote.at(-1)?.id;
+      if(proximoId===null||proximoId===undefined||String(proximoId)===String(ultimoId))throw new Error("Paginação de operacoes sem avanço da chave id.");
+      ultimoId=proximoId;
+      offsetLogico+=lote.length;
+    }
+  }
+
   async function catalogo() {
     const chave = global.CCOCache.chave("periodos", ["operacoes-data-v2"]);
     const catalogoCache=await global.CCOCache.lembrar(chave, async () => {
       console.log("[CATÁLOGO] consulta executada",{
-        operacoes:"select importacao_id,data_operacao; data_operacao not null; paginação completa",
+        operacoes:"select id,importacao_id,data_operacao; data_operacao not null; paginação incremental por id",
         importacoes:"select metadados; sem filtro ativa/ativo; paginação completa"
       });
       const[operacoes,importacoes,diasOperacao]=await Promise.all([
-        global.CCOSupabase.paginar(()=>db().from("operacoes").select("importacao_id,data_operacao").not("data_operacao","is",null).order("data_operacao",{ascending:false})),
+        paginarOperacoesCatalogo(),
         global.CCOSupabase.paginar(()=>db().from("importacoes").select("id,ano,mes,nome_arquivo,status,ativa,concluido_em,criado_em").order("criado_em",{ascending:false})),
         global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}))
       ]);
@@ -76,5 +96,5 @@
     if(error)throw error;
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, paginarOperacoesCatalogo });
 })(window);
