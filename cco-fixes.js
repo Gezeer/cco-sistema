@@ -105,16 +105,19 @@
   function publicarPeriodo(linhas, painelLinhas, periodo, diasOperacaoOficial) {
     const metricas = window.CCOMetricas;
     if (!metricas) throw new Error("CCOMetricas não foi carregado antes de cco-fixes.js");
+    const p9Banco = (linhas || []).filter(item => metricas.normalizarServico(item.servico || item.tipo_servico) === "P9");
+    console.log("[P9 BANCO]", { quantidadeRegistrosRecebidos: (linhas || []).length, quantidadeP9Recebida: p9Banco.length });
     const convertidas = linhas.map(item => ({
       servico: metricas.normalizarServico(item.servico || item.tipo_servico), origem: "Banco Supabase",
       importacao_id: item.importacao_id, rd: String(item.rd || ""), data: item.data_operacao || "",
       data_operacao: item.data_operacao || "", data_normalizada: String(item.data_operacao || "").slice(0, 10), turno: item.turno || "",
       ra: item.ra || "", setor: "", peso: numeroOpcional(item.peso_t),
       viagens: numeroOpcional(item.viagens), km: numeroOpcional(item.km_total), km_total: numeroOpcional(item.km_total),
-      equipe: numeroOpcional(item.equipe ?? item.qtd_equipe), executado: numeroOpcional(item.executado), velocidade_media: numeroOpcional(item.velocidade_media),
+      qtd_equipe: numeroOpcional(item.qtd_equipe), equipe: numeroOpcional(item.qtd_equipe ?? item.equipe), executado: numeroOpcional(item.executado), velocidade_media: numeroOpcional(item.velocidade_media),
       tempo_produtivo_h: numeroOpcional(item.tempo_produtivo_minutos) == null ? null : numeroSeguro(item.tempo_produtivo_minutos) / 60,
       status: "Com dados", dados_originais:item.dados_originais || null
     }));
+    console.log("[P9 FILTRO]", { quantidadeRestanteAposNormalizacao: convertidas.filter(item => item.servico === "P9").length });
     window.operacoes = convertidas;
     window.operacoesOriginal = convertidas.slice();
     /* utils.js usa bindings globais léxicos, além das propriedades de window. */
