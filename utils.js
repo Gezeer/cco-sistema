@@ -3166,8 +3166,8 @@ function registrarEventosFiltrosGithubPages() {
     ["filtroKpiDia", renderPaginaKpiPorServicoCompleto],
     ["filtroComparativoServico", renderComparativoMensalPorServico],
     ["filtroComparativoAno", renderComparativoMensalPorServico],
-    ["filtroExecucaoMes", aplicarFiltroExecucaoMensal],
-    ["filtroExecucaoAno", aplicarFiltroExecucaoMensal],
+    ["filtroExecucaoMes", String(window.CCO_PAGE||"").toLowerCase()==="execucao"?null:aplicarFiltroExecucaoMensal],
+    ["filtroExecucaoAno", String(window.CCO_PAGE||"").toLowerCase()==="execucao"?null:aplicarFiltroExecucaoMensal],
     ["filtroExecucaoMesesComparar", renderComparativoMesesExecucao],
     ["filtroExecucaoAnoComparar", renderComparativoMesesExecucao]
   ];
@@ -8118,6 +8118,7 @@ function atualizarCardKmExecutadoCCO(valor) {
   }
   const numeroKm = Number(valor);
   const valorSeguro = Number.isFinite(numeroKm) ? numeroKm : 0;
+  window.CCODiagnosticoEscritaCard?.("[P1 CARD KM]",valorSeguro,{arquivo:"utils.js",funcao:"atualizarCardKmExecutadoCCO"});
   elemento.textContent = valorSeguro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const card = document.getElementById("cardKmExecutado");
   if (card) {
@@ -8127,6 +8128,14 @@ function atualizarCardKmExecutadoCCO(valor) {
   }
 }
 window.atualizarCardKmExecutadoCCO = atualizarCardKmExecutadoCCO;
+
+window.CCODiagnosticoEscritaCard = window.CCODiagnosticoEscritaCard || function CCODiagnosticoEscritaCard(nome,valor,origem={}) {
+  if(nome==="[P1 CARD ACUMULADO]"){window.__CCO_RENDER_EXECUCAO_CONTADOR__=(window.__CCO_RENDER_EXECUCAO_CONTADOR__||0)+1;console.log("[RENDER EXECUÇÃO]",{contador:window.__CCO_RENDER_EXECUCAO_CONTADOR__});}
+  if(nome==="[P9 PAINEL ACUMULADO]"){window.__CCO_RENDER_PAINEL_CONTADOR__=(window.__CCO_RENDER_PAINEL_CONTADOR__||0)+1;console.log("[RENDER PAINEL]",{contador:window.__CCO_RENDER_PAINEL_CONTADOR__});}
+  const registro={nome,valor,origem:origem.origem||origem.fonte||"renderização final",arquivo:origem.arquivo||"utils.js",funcao:origem.funcao||"desconhecida",horario:new Date().toISOString(),stack:new Error().stack};
+  window.__CCO_ULTIMAS_ESCRITAS__=window.__CCO_ULTIMAS_ESCRITAS__||[];window.__CCO_ULTIMAS_ESCRITAS__.push(registro);
+  console.log("[ÚLTIMA ESCRITA CCO]",registro);console.log(nome,{valor,origem:registro.origem,arquivo:registro.arquivo,funcao:registro.funcao});return registro;
+};
 
 function ccoPegarCampoTempoRD(item) {
   return item.tempo_rd_excel || item.tempo_rd_horas || 0;
@@ -10562,6 +10571,7 @@ function ccoFinalCriarLinha(canvasId, label, labels, valores, beginZero = true) 
 
 /* Execução P1 a P12: recria a área do serviço apenas com gráficos que têm dados. */
 function renderDetalheServicoMensal(codigo) {
+  window.__CCO_RENDER_EXECUCAO_CONTADOR__=(window.__CCO_RENDER_EXECUCAO_CONTADOR__||0)+1;console.log("[RENDER EXECUÇÃO]",{contador:window.__CCO_RENDER_EXECUCAO_CONTADOR__,servico:codigo});
   const detalhe = document.getElementById("detalheServico");
   if (!detalhe) return;
   const cardKmPermanente = document.getElementById("cardKmExecutado");
@@ -10634,6 +10644,11 @@ function renderDetalheServicoMensal(codigo) {
   const produtividade = totalViagens > 0 ? totalPeso / totalViagens : 0;
   const distanciaMedia = totalViagens > 0 ? totalKm / totalViagens : 0;
   if(codigo==="P1")console.log("[P1 INDICADORES]",{peso:totalPeso,km:totalKm,viagens:totalViagens,produtividade,distanciaMedia});
+  if(codigo==="P1"){
+    const origem={arquivo:"utils.js",funcao:"renderDetalheServicoMensal",origem:"última etapa antes de detalheServico.innerHTML"};
+    window.CCODiagnosticoEscritaCard?.("[P1 CARD ACUMULADO]",executado,origem);window.CCODiagnosticoEscritaCard?.("[P1 CARD PESO]",totalPeso,origem);window.CCODiagnosticoEscritaCard?.("[P1 CARD PRODUTIVIDADE]",produtividade,origem);window.CCODiagnosticoEscritaCard?.("[P1 CARD DISTANCIA]",distanciaMedia,origem);
+    console.log("[P1 FONTES FINAIS]",{pesoFonte:"operacoes.peso_t",pesoValor:totalPeso,kmFonte:"planilha_linhas.dados_originais.Km_Total",kmValor:totalKm,viagens:totalViagens,produtividade,distanciaMedia});
+  }
   const tempoMedio = totalViagens > 0 ? totalTempoRD / totalViagens : 0;
 
   const mensal = ccoFinalAgruparPorMesServico(dadosServico, codigo);
@@ -11630,6 +11645,7 @@ if (typeof mostrarServico === "function") {
 }
 
 function ccoAtivarListenersExecucaoDinamica() {
+  if(String(window.CCO_PAGE||"").toLowerCase()==="execucao")return;
   ["filtroExecucaoMes", "filtroExecucaoAno"].forEach(id => {
     const el = document.getElementById(id);
     if (!el || el.dataset.ccoListenerDinamico === "1") return;
@@ -12117,7 +12133,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setTimeout(ccoAjustarGraficosVisiveis,120);
     }catch(e){ console.warn('execução final:', e); }
   }
-  ['filtroExecucaoMes','filtroExecucaoAno'].forEach(id=>{
+  if(String(window.CCO_PAGE||'').toLowerCase()!=="execucao")['filtroExecucaoMes','filtroExecucaoAno'].forEach(id=>{
     document.addEventListener('change', ev=>{ if(ev.target && ev.target.id===id) atualizarExecucaoFinal(); }, true);
   });
 

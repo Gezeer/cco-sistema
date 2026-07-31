@@ -177,7 +177,7 @@
 <script src="services/cache.js?v=20260720-arquitetura-v2"></script>
 	<script src="services/painelService.js?v=20260730-catalogo-unificado-v2"></script>
 <script src="services/kpiService.js?v=20260720-arquitetura-v2"></script>
-<script src="services/execucaoService.js?v=20260720-arquitetura-v2"></script>
+<script src="services/execucaoService.js?v=20260731-ultima-escrita-v1"></script>
 <script src="services/analyticsService.js?v=20260720-arquitetura-v2"></script>
 <script src="services/importador.js?v=20260720-arquitetura-v2"></script>
 
@@ -185,7 +185,7 @@
   window.CCO_PAGE = "painel";
   window.__CCO_ORQUESTRADOR_ATIVO__ = true;
 
-  const VERSAO_CCO = "20260720-dias-acumulados-v1";
+  const VERSAO_CCO = "20260731-ultima-escrita-v1";
   function adicionarVersaoArquivo(caminho, versao) {
     const base = String(caminho || "").split("?")[0];
     return `${base}?v=${encodeURIComponent(versao)}`;
