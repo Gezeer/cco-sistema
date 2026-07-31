@@ -19,7 +19,7 @@
       const valoresRaw=resultadosKmP1.filter(item=>Number.isFinite(item.valor));
       const somaRaw=global.somarKmTotalP1PeriodoCCO(raw,{ano,mes,importacaoId},global.obterKmTotalP1DoRawCCO).somaKmTotal;
       const chavesRaw={dados:Object.keys(raw[0]?.dados||{}),dadosOriginais:Object.keys(raw[0]?.dados_originais||{})};
-      global.__CCO_P1_KM_RAW__={importacaoId,linhasRaw:raw.length,camposEncontrados:valoresRaw.length,linhasSemCampo:raw.length-valoresRaw.length,somaKmTotal:somaRaw,chavesRaw};
+      global.__CCO_P1_KM_RAW__={importacaoId,linhasRaw:raw.length,camposEncontrados:valoresRaw.length,linhasSemCampo:raw.length-valoresRaw.length,somaKmTotal:somaRaw,chavesRaw,registrosRaw:raw};
       const origemExemplo=valoresRaw[0]||null;
       console.log("[P1 KM TOTAL][ORIGEM]",{cabecalhoLiteral:"Km_Total",chaveUnica:origemExemplo?.chaveUnica||null,valorExemplo:origemExemplo?.valor??null,colunaRejeitada:"KM Total"});
       if(!valoresRaw.length)console.warn("[P1 KM TOTAL] coluna literal Km_Total não encontrada");

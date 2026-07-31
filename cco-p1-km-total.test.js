@@ -6,7 +6,7 @@ const contexto = { window: {} };
 vm.createContext(contexto);
 vm.runInContext(fs.readFileSync("js/cco-p1-km-total.js", "utf8"), contexto);
 
-const { normalizarCabecalhoCCO, obterKmTotalP1CCO, obterKmTotalP1DoRawCCO, numeroPlanilhaCCO, auditarCamposKmP1CCO, somarKmTotalP1PeriodoCCO } = contexto.window.CCO_P1_KM_TOTAL;
+const { normalizarCabecalhoCCO, obterKmTotalP1CCO, obterKmTotalP1DoRawCCO, numeroPlanilhaCCO, auditarCamposKmP1CCO, somarKmTotalP1PeriodoCCO, calcularKmTotalP1Periodo } = contexto.window.CCO_P1_KM_TOTAL;
 assert.equal(normalizarCabecalhoCCO("Km_Total"), "KM_TOTAL");
 assert.equal(normalizarCabecalhoCCO("KM Total"), "KM_TOTAL");
 assert.equal(normalizarCabecalhoCCO(" KM_TOTAL "), "KM_TOTAL");
@@ -46,6 +46,16 @@ const periodosMisturados=[
 ];
 assert.equal(somarKmTotalP1PeriodoCCO(periodosMisturados,{ano:2026,mes:7,importacaoId:"julho"}).somaKmTotal,100);
 assert.equal(somarKmTotalP1PeriodoCCO(periodosMisturados,{ano:2026,mes:7}).somaKmTotal,100);
+const indicadoresOficiais=[
+  {importacao_id:"julho",servico:"P1",data_operacao:"2026-07-10",peso_t:40,viagens:4,dados_originais:{Km_Total:100}},
+  {importacao_id:"julho",servico:"P1",data_operacao:"2026-07-11",peso_t:60,viagens:6,dados_originais:{Km_Total:150}},
+  {importacao_id:"junho",servico:"P1",data_operacao:"2026-06-10",peso_t:999,viagens:1,dados_originais:{Km_Total:999}}
+];
+const pesoOficial=indicadoresOficiais.filter(x=>x.importacao_id==="julho").reduce((s,x)=>s+x.peso_t,0);
+const viagensOficiais=indicadoresOficiais.filter(x=>x.importacao_id==="julho").reduce((s,x)=>s+x.viagens,0);
+const kmOficial=calcularKmTotalP1Periodo({ano:2026,mes:7,importacaoId:"julho",registrosRaw:indicadoresOficiais});
+assert.deepEqual({acumulado:pesoOficial,peso:pesoOficial,km:kmOficial,produtividade:pesoOficial/viagensOficiais,distanciaMedia:kmOficial/viagensOficiais},{acumulado:100,peso:100,km:250,produtividade:10,distanciaMedia:25});
+assert.notEqual(kmOficial,100,"KM Executado nunca pode reutilizar o peso_t");
 
 const utils = fs.readFileSync("utils.js", "utf8");
 assert.doesNotMatch(utils, /codigo === "P1" \|\| totalKm > 0 \? criarCard\("KM Executado"/, "o card fixo do P1 não pode depender do template condicional");
@@ -57,6 +67,8 @@ const htmlExecucao = fs.readFileSync("execucao.html", "utf8");
 assert.match(htmlExecucao, /id="cardKmExecutado"/);
 assert.match(htmlExecucao, /id="valorKmExecutado"/);
 assert.match(utils, /function atualizarCardKmExecutadoCCO\(valor\)/);
+assert.doesNotMatch(utils,/const totalKmOperacoes = codigo==="P1"&&window\.CCOMetricas\?\.calcularAcumuladoP1Periodo/);
+assert.match(utils,/window\.calcularKmTotalP1Periodo\(\{ano:periodoAtivo\.ano,mes:periodoAtivo\.mes,importacaoId:importacaoAtivaId,registrosRaw:rawP1Atual\?\.registrosRaw\|\|\[\]\}\)/);
 assert.match(utils, /card\.hidden = false/);
 
 console.log("P1 KM_TOTAL: leitura exclusiva, prioridade e ausência de duplicação aprovadas.");

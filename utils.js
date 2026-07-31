@@ -10596,13 +10596,15 @@ function renderDetalheServicoMensal(codigo) {
     ? obterStatusExecucao(percentual, executado)
     : (executado > 0 ? (percentual >= 100 ? "Atingido" : "Não atingido") : "Sem dados");
 
-  const totalPeso = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.peso), 0);
   const totalViagens = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.viagens), 0);
   const importacaoAtivaId = window.__CCO_IMPORTACAO_ATIVA__?.importacao_id || window.__CCO_IMPORTACAO_ATIVA__?.id || periodo?.importacao_id;
   const rawP1Atual = window.__CCO_P1_KM_RAW__;
   const periodoAtivo=window.__CCO_IMPORTACAO_ATIVA__||{};
-  const totalKmOperacoes = codigo==="P1"&&window.CCOMetricas?.calcularAcumuladoP1Periodo
+  const totalPeso = codigo==="P1"&&window.CCOMetricas?.calcularAcumuladoP1Periodo
     ? window.CCOMetricas.calcularAcumuladoP1Periodo({ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId,registros:dadosServico})
+    : dadosServico.reduce((s, i) => s + ccoFinalNumero(i.peso), 0);
+  const totalKmOperacoes = codigo==="P1"&&typeof window.calcularKmTotalP1Periodo==="function"
+    ? window.calcularKmTotalP1Periodo({ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId,registrosRaw:rawP1Atual?.registrosRaw||[]})
     : dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km_total)), 0);
   const valorKmAnterior = codigo === "P1" && rawP1Atual && String(rawP1Atual.importacaoId) === String(importacaoAtivaId)
     ? ccoFinalNumero(rawP1Atual.somaKmTotal)
@@ -10611,7 +10613,7 @@ function renderDetalheServicoMensal(codigo) {
   if (codigo === "P1") {
     const periodoChave=periodo?.periodo||window.__CCO_PERIODO_ATUAL__||"";
     console.log("[P1 ACUMULADO][COMPARAÇÃO]",{periodo:periodoChave,valorAcumuladoMesAtual:executado,valorKmAtual:valorKmAnterior,mesmaFonte:false,mesmaQuantidadeRegistros:Number(rawP1Atual?.linhasRaw||0)===dadosServico.length,diferenca:valorKmAnterior-executado});
-    console.log("[P1 KM][FONTE OFICIAL]",{periodo:periodoChave,origem:"mesma regra do Acumulado do Mês do P1",valor:totalKm});
+    console.log("[P1 KM][FONTE OFICIAL]",{periodo:periodoChave,origem:"Km_Total",valor:totalKm});
     const auditoriaKm = window.auditarCamposKmP1CCO?.(dadosServico) || { camposEncontrados: [], camposIgnorados: [] };
     console.log("[P1 KM TOTAL]", {
       periodo: periodo?.periodo || window.__CCO_PERIODO_ATUAL__ || "",
@@ -10631,6 +10633,7 @@ function renderDetalheServicoMensal(codigo) {
   const diasComDados = typeof contarDiasDistintos === "function" ? contarDiasDistintos(dadosServico) : 0;
   const produtividade = totalViagens > 0 ? totalPeso / totalViagens : 0;
   const distanciaMedia = totalViagens > 0 ? totalKm / totalViagens : 0;
+  if(codigo==="P1")console.log("[P1 INDICADORES]",{peso:totalPeso,km:totalKm,viagens:totalViagens,produtividade,distanciaMedia});
   const tempoMedio = totalViagens > 0 ? totalTempoRD / totalViagens : 0;
 
   const mensal = ccoFinalAgruparPorMesServico(dadosServico, codigo);

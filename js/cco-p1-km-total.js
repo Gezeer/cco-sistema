@@ -69,6 +69,16 @@
     return{somaKmTotal,registrosConsiderados:considerados.length,registros:considerados};
   }
 
+  function calcularKmTotalP1Periodo({ano,mes,importacaoId,registrosRaw}={}) {
+    const considerados=filtrarRegistrosP1PeriodoCCO(registrosRaw,{ano,mes,importacaoId});
+    const somaKmTotal=considerados.reduce((total,item)=>{
+      const resultado=obterKmTotalP1DoRawCCO(item);
+      return total+(Number.isFinite(resultado.valor)?resultado.valor:0);
+    },0);
+    console.log("[P1 KM OFICIAL]",{periodo:`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`,somaKmTotal,origem:"Km_Total"});
+    return somaKmTotal;
+  }
+
   function ehKmTotalP1Correto(chave) {
     return String(chave ?? "").trim() === "Km_Total";
   }
@@ -140,6 +150,7 @@
   global.obterKmTotalP1CCO = obterKmTotalP1CCO;
   global.filtrarRegistrosP1PeriodoCCO = filtrarRegistrosP1PeriodoCCO;
   global.somarKmTotalP1PeriodoCCO = somarKmTotalP1PeriodoCCO;
+  global.calcularKmTotalP1Periodo = calcularKmTotalP1Periodo;
   global.obterKmTotalP1DoRawCCO = obterKmTotalP1DoRawCCO;
   global.ehKmTotalP1Correto = ehKmTotalP1Correto;
   global.numeroPlanilhaCCO = numeroPlanilhaCCO;
@@ -152,6 +163,7 @@
     obterKmTotalP1CCO,
     filtrarRegistrosP1PeriodoCCO,
     somarKmTotalP1PeriodoCCO,
+    calcularKmTotalP1Periodo,
     obterKmTotalP1DoRawCCO,
     ehKmTotalP1Correto,
     numeroPlanilhaCCO,

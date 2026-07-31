@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 global.window = global;
 require("./js/cco-regras-negocio.js");
+require("./js/cco-p1-km-total.js");
 require("./cco-metricas.js");
 
 const m = global.CCOMetricas;
@@ -53,6 +54,15 @@ assert.equal(acumuladoP1Julho,100);
 assert.equal(acumuladoP1Junho,200);
 assert.equal(m.consolidarServico({servico:"P1",ano:2026,mes:7,importacaoId:"importacao-julho",registros:p1DoisPeriodos,previstoMensal:300,diasOperacaoMes:diasJulho}).acumuladoReal,acumuladoP1Julho);
 assert.equal(m.consolidarServico({servico:"P1",ano:2026,mes:6,importacaoId:"importacao-junho",registros:p1DoisPeriodos,previstoMensal:300,diasOperacaoMes:diasJunho}).acumuladoReal,acumuladoP1Junho);
+const p1IndicadoresOficiais=[
+  {importacao_id:"importacao-julho",servico:"P1",data_operacao:"2026-07-05",peso_t:40,viagens:4,dados_originais:{Km_Total:100}},
+  {importacao_id:"importacao-julho",servico:"P1",data_operacao:"2026-07-06",peso_t:60,viagens:6,dados_originais:{Km_Total:150}}
+];
+const pesoP1=m.calcularAcumuladoP1Periodo({ano:2026,mes:7,importacaoId:"importacao-julho",registros:p1IndicadoresOficiais});
+const kmP1=global.calcularKmTotalP1Periodo({ano:2026,mes:7,importacaoId:"importacao-julho",registrosRaw:p1IndicadoresOficiais});
+const viagensP1=p1IndicadoresOficiais.reduce((total,item)=>total+item.viagens,0);
+assert.deepEqual({acumulado:pesoP1,peso:pesoP1,kmExecutado:kmP1,produtividade:pesoP1/viagensP1,distanciaMedia:kmP1/viagensP1},{acumulado:100,peso:100,kmExecutado:250,produtividade:10,distanciaMedia:25});
+assert.notEqual(kmP1,pesoP1,"KM Executado não pode reutilizar calcularAcumuladoP1Periodo()");
 const fonteUtils=require("node:fs").readFileSync("utils.js","utf8");
 assert.match(fonteUtils,/window\.CCOMetricas\.calcularAcumuladoP1Periodo\(/);
 assert.doesNotMatch(fonteUtils,/const totalKm = codigo === "P1" && rawP1Atual/);
