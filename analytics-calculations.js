@@ -26,7 +26,7 @@
     if(["P3","P7","P8","P9","P10","P11"].includes(s))return soma(registros,"equipe")||soma(registros,"executado");
     return soma(registros,"peso_t")||soma(registros,"executado")||soma(registros,"viagens")||soma(registros,"km_total");
   }
-  function calcularAcumuladoServico(servico, registros) { return core() ? core().calcularAcumuladoServico(servico,registros) : (normalizarServico(servico)==="P12" ? soma(registros,"executado") : calcularAcumuladoPadrao(servico,registros)); }
+  function calcularAcumuladoServico(servico, registros) { return window.calcularIndicadoresServicoCCO?.({servico,operacoes:registros}).acumulado ?? (core() ? core().calcularAcumuladoServico(servico,registros) : (normalizarServico(servico)==="P12" ? soma(registros,"executado") : calcularAcumuladoPadrao(servico,registros))); }
   function calcularExecutadoTotal(registros) { return [...agrupar(registros,"servico")].reduce((total,[servico,linhas])=>total+calcularAcumuladoServico(servico,linhas),0); }
   function calcularProdutividade(registros) { const equipes=core()?core().calcularQuantidadeEquipesMensal(registros):soma(registros,"equipe"); if(equipes<=0)return{valor:null,metrica:"Sem quantidade de equipe",equipes:0};const servico=normalizarServico(registros[0]?.servico),acumulado=calcularAcumuladoServico(servico,registros);return{valor:acumulado/equipes,metrica:"Executado/equipe",equipes}; }
   function obterPrevisto(servico, contexto={}) { const chave=normalizarServico(servico); return normalizarNumero(contexto.metas?.[chave]?.previsto ?? contexto.metas?.[chave] ?? 0); }

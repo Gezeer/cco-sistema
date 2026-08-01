@@ -142,10 +142,13 @@
       const valorUnitario = numeroSeguro(item.valor_unitario) || numeroSeguro(valoresOficiais[servico]);
       const campoMetrica = metricas.METRICA_POR_SERVICO[servico];
       const metricaDisponivel = campoMetrica === "equipe"
-        ? schemaOperacoes.opcionaisDisponiveis.some(c => c === "equipe" || c === "qtd_equipe")
+        ? schemaOperacoes.opcionaisDisponiveis.some(c => c === "equipe" || c === "qtd_equipe" || c === "executado") || registros.some(r => [r.qtd_equipe,r.equipe,r.executado].some(v => numeroSeguro(v) > 0))
         : schemaOperacoes.opcionaisDisponiveis.includes(campoMetrica);
       let linha,consolidado=null,diasAcumulados=calcularDiasAcumuladosServico(registros,servico,periodo.ano,periodo.mes);
-      if(PAGINA==="painel"&&Object.prototype.hasOwnProperty.call(EQUIPES_FIXAS_PAINEL,servico)){
+      if(window.calcularIndicadoresServicoCCO){
+        consolidado=metricas.consolidarServico({servico,registros,previstoMensal:item.previsto,diasOperacaoMes:diasOperacao,valorUnitario,nome:item.nome_servico||"",unidade:obterMedicaoOficial(servico),ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
+        linha={acumulado_mes:metricaDisponivel?consolidado.acumuladoReal:null,metrica_disponivel:metricaDisponivel,previsto_mes:consolidado.previstoMensal,previsto_acumulado:metricaDisponivel?consolidado.previstoAcumulado:null,porcentagem_execucao:metricaDisponivel?consolidado.percentualCumprimento:null,valor:metricaDisponivel?consolidado.valorAcumulado:null,status:metricaDisponivel&&consolidado.status==="com_dados"?"Com dados":"Sem dados",fonte_metricas:"calcularIndicadoresServicoCCO"};
+      }else if(PAGINA==="painel"&&Object.prototype.hasOwnProperty.call(EQUIPES_FIXAS_PAINEL,servico)){
         const contrato=calcularMetricasContratuaisEquipePainel({servico,valorUnitario,previstoMensal:EQUIPES_FIXAS_PAINEL[servico],diasAcumulados,totalDiasMes:diasOperacao});
         linha={acumulado_mes:contrato.acumulado,metrica_disponivel:true,previsto_mes:contrato.previstoMensal,previsto_acumulado:contrato.previstoAcumulado,porcentagem_execucao:contrato.percentual,valor:contrato.valor,status:registros.length?"Com dados":"Regra contratual",fonte_metricas:contrato.origem};
       }else if(servico==="P12"){

@@ -10606,20 +10606,17 @@ function renderDetalheServicoMensal(codigo) {
     ? obterStatusExecucao(percentual, executado)
     : (executado > 0 ? (percentual >= 100 ? "Atingido" : "Não atingido") : "Sem dados");
 
-  const totalViagens = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.viagens), 0);
   const importacaoAtivaId = window.__CCO_IMPORTACAO_ATIVA__?.importacao_id || window.__CCO_IMPORTACAO_ATIVA__?.id || periodo?.importacao_id;
   const rawP1Atual = window.__CCO_P1_KM_RAW__;
   const periodoAtivo=window.__CCO_IMPORTACAO_ATIVA__||{};
-  const totalPeso = codigo==="P1"&&window.CCOMetricas?.calcularAcumuladoP1Periodo
-    ? window.CCOMetricas.calcularAcumuladoP1Periodo({ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId,registros:dadosServico})
-    : dadosServico.reduce((s, i) => s + ccoFinalNumero(i.peso), 0);
-  const totalKmOperacoes = codigo==="P1"&&typeof window.calcularKmTotalP1Periodo==="function"
-    ? window.calcularKmTotalP1Periodo({ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId,registrosRaw:rawP1Atual?.registrosRaw||[]})
-    : dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km_total)), 0);
+  const indicadoresOficiais=window.calcularIndicadoresServicoCCO?.({servico:codigo,ano:periodoAtivo.ano,mes:periodoAtivo.mes,importacaoId:importacaoAtivaId,operacoes:dadosServico,raw:codigo==="P1"?(rawP1Atual?.registrosRaw||[]):[],previsto:dadosPainel.previsto_mes,valorUnitario:window.CCO_REGRAS?.obterValorServico?.(codigo)})||null;
+  const totalViagens = indicadoresOficiais?.viagens??dadosServico.reduce((s, i) => s + ccoFinalNumero(i.viagens), 0);
+  const totalPeso = indicadoresOficiais?.peso??dadosServico.reduce((s, i) => s + ccoFinalNumero(i.peso), 0);
+  const totalKmOperacoes = indicadoresOficiais?.km??dadosServico.reduce((s, i) => s + (typeof ccoKmTotalLinha === "function" ? ccoKmTotalLinha(i) : ccoFinalNumero(i.km_total)), 0);
   const valorKmAnterior = codigo === "P1" && rawP1Atual && String(rawP1Atual.importacaoId) === String(importacaoAtivaId)
     ? ccoFinalNumero(rawP1Atual.somaKmTotal)
     : totalKmOperacoes;
-  const totalKm = codigo==="P1"?totalKmOperacoes:valorKmAnterior;
+  const totalKm = indicadoresOficiais?.km??(codigo==="P1"?totalKmOperacoes:valorKmAnterior);
   if (codigo === "P1") {
     const periodoChave=periodo?.periodo||window.__CCO_PERIODO_ATUAL__||"";
     console.log("[P1 ACUMULADO][COMPARAÇÃO]",{periodo:periodoChave,valorAcumuladoMesAtual:executado,valorKmAtual:valorKmAnterior,mesmaFonte:false,mesmaQuantidadeRegistros:Number(rawP1Atual?.linhasRaw||0)===dadosServico.length,diferenca:valorKmAnterior-executado});

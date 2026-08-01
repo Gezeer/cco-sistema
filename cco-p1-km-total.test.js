@@ -68,7 +68,7 @@ assert.match(htmlExecucao, /id="cardKmExecutado"/);
 assert.match(htmlExecucao, /id="valorKmExecutado"/);
 assert.match(utils, /function atualizarCardKmExecutadoCCO\(valor\)/);
 assert.doesNotMatch(utils,/const totalKmOperacoes = codigo==="P1"&&window\.CCOMetricas\?\.calcularAcumuladoP1Periodo/);
-assert.match(utils,/window\.calcularKmTotalP1Periodo\(\{ano:periodoAtivo\.ano,mes:periodoAtivo\.mes,importacaoId:importacaoAtivaId,registrosRaw:rawP1Atual\?\.registrosRaw\|\|\[\]\}\)/);
+assert.match(utils,/window\.calcularIndicadoresServicoCCO\?\.\(\{servico:codigo,ano:periodoAtivo\.ano,mes:periodoAtivo\.mes,importacaoId:importacaoAtivaId,operacoes:dadosServico,raw:codigo==="P1"\?\(rawP1Atual\?\.registrosRaw\|\|\[\]\):\[\]/);
 assert.match(utils, /card\.hidden = false/);
 
 console.log("P1 KM_TOTAL: leitura exclusiva, prioridade e ausência de duplicação aprovadas.");

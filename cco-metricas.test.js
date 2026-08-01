@@ -64,7 +64,7 @@ const viagensP1=p1IndicadoresOficiais.reduce((total,item)=>total+item.viagens,0)
 assert.deepEqual({acumulado:pesoP1,peso:pesoP1,kmExecutado:kmP1,produtividade:pesoP1/viagensP1,distanciaMedia:kmP1/viagensP1},{acumulado:100,peso:100,kmExecutado:250,produtividade:10,distanciaMedia:25});
 assert.notEqual(kmP1,pesoP1,"KM Executado não pode reutilizar calcularAcumuladoP1Periodo()");
 const fonteUtils=require("node:fs").readFileSync("utils.js","utf8");
-assert.match(fonteUtils,/window\.CCOMetricas\.calcularAcumuladoP1Periodo\(/);
+assert.match(fonteUtils,/window\.calcularIndicadoresServicoCCO\?\.\(/);
 assert.doesNotMatch(fonteUtils,/const totalKm = codigo === "P1" && rawP1Atual/);
 
 perto(m.calcularPercentualCumprimento({acumuladoReal:"1.320,08",previstoAcumulado:"9.040"}),14.602654867256636);
