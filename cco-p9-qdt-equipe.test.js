@@ -14,6 +14,7 @@ assert.deepEqual({...api.extrairValorOperacionalP9({Qdt_Catador:15,Qdt_Equipe:1}
 assert.deepEqual({...api.extrairValorOperacionalP9({qdt_catador:15,qdt_equipe:1})},{valor:1,campo:"qdt_equipe"});
 assert.equal(api.extrairValorOperacionalP9({Qdt_Catador:15}).valor,null);
 assert.equal(api.extrairValorOperacionalP9({qdt_catador:15}).valor,null);
+assert.equal(api.extrairValorOperacionalP9({Qdt_Equipe:4.5333333}).valor,null,"Qdt_Equipe fracionário não pode ser gravado");
 assert.equal(api.ehRawP9({aba:"P9"}),true);
 assert.equal(api.ehRawP9({aba:"Catação Em Área Verde",servico:null}),true);
 assert.equal(api.ehRawP9({aba:"Outra",dados_originais:{descricao:"Catação em Área Verde"}}),true);
@@ -22,6 +23,7 @@ assert.deepEqual(
   {...api.obterQdtEquipeP9({dados_originais:{Qdt_Catador:15,Qdt_Equipe:1}})},
   {valor:1,fonte:'dados_originais["Qdt_Equipe"]',valorOriginal:1,cabecalhoLiteral:"Qdt_Equipe"}
 );
+
 assert.equal(api.obterQdtEquipeP9({dados:{qdt_equipe:1}}).valor,null,"qdt_equipe sem metadado literal deve ser rejeitado");
 assert.equal(api.obterQdtEquipeP9({dados:{qdt_equipe:1,cabecalho_origem_qdt_equipe:"Qdt_Equipe"}}).valor,1);
 assert.deepEqual({...api.obterDataP9({dados_originais:{Data:"03/07/2026"}},2026,7)},{data:"2026-07-03",valorOriginal:"03/07/2026",motivo:null});
@@ -39,6 +41,11 @@ assert.deepEqual(
 assert.notEqual(resultado.operacoes[0].qtd_equipe,15);
 
 const rawBase={importacao_id:"imp-julho",aba:"Catação Em Área Verde",servico:null,rd:"RD",dados_originais:{Data:"03/07/2026",Qdt_Catador:15,Qdt_Equipe:1,Ra:"RA I",Turno:"Diurno"},dados:{}};
+const operacaoLegada={id:100,importacao_id:"imp-julho",chave_operacao:"chave-antiga",data_operacao:"2026-07-03",ra:"RA I",turno:"Diurno",numero_linha:7,qtd_equipe:4.5333333,equipe:4.5333333,executado:4.5333333};
+const preparacaoLegada=api.prepararReprocessamentoP9({raw:[{...rawBase,numero_linha:7}],ano:2026,mes:7,importacaoId:"imp-julho",chavesExistentes:[operacaoLegada]});
+assert.equal(preparacaoLegada.corrigirExistentes.length,1,"vínculo composto seguro deve localizar operação com chave antiga");
+const preparacaoAmbigua=api.prepararReprocessamentoP9({raw:[{...rawBase,numero_linha:7}],ano:2026,mes:7,importacaoId:"imp-julho",chavesExistentes:[operacaoLegada,{...operacaoLegada,id:101,chave_operacao:"outra-chave-antiga"}]});
+assert.equal(preparacaoAmbigua.ambiguidades.length,1,"mais de uma operação no vínculo composto deve abortar a linha");
 const operacao1=api.criarOperacaoP9Raw({...rawBase,id:"raw-1",numero_linha:2},{ano:2026,mes:7,importacaoId:"imp-julho"}).operacao;
 const operacao2=api.criarOperacaoP9Raw({...rawBase,id:"raw-2",numero_linha:3},{ano:2026,mes:7,importacaoId:"imp-julho"}).operacao;
 assert.notEqual(operacao1.chave_operacao,operacao2.chave_operacao,"cada linha deve possuir chave estável distinta");
@@ -82,6 +89,10 @@ assert.match(fonte,/\[P9 OPERAÇÕES GERADAS\]/);
 assert.match(fonte,/\[P9 DESCARTE\]/);
 assert.match(fonte,/\[P9 INSERT ANTES\]/);
 assert.match(fonte,/\[P9 INSERT DEPOIS\]/);
+assert.match(fonte,/\[P9 ANTES DA CORREÇÃO\]/);
+assert.match(fonte,/\[P9 CORREÇÃO PRÉVIA\]/);
+assert.match(fonte,/\[P9 DEPOIS DA CORREÇÃO\]/);
+assert.match(fonte,/AMBIGUIDADE_DE_VINCULO/);
 assert.match(fonte,/quantidadeRealmenteInserida/);
 assert.match(fonte,/primeiraLinhaEnviada/);
 assert.match(fonte,/erroSupabase/);
