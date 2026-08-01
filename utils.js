@@ -10713,6 +10713,7 @@ function renderDetalheServicoMensal(codigo) {
     if (gradeCards) gradeCards.insertBefore(cardKmPermanente, gradeCards.children[7] || null);
     atualizarCardKmExecutadoCCO(totalKm);
   }
+  window.animarCardsExecucaoCCO?.({carregando:false});
 
   const labelsMes = mensal.map(i => i.mesBrasil);
   ccoGraficoExecDetalheEvolucaoFinal = ccoFinalCriarBarra("graficoExecDetalheEvolucao", "Executado", labelsMes, mensal.map(i => i.executado));
