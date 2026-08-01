@@ -3,19 +3,22 @@
   const CAMPOS = "importacao_id,servico,tipo_servico,data_operacao,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media";
   const db = () => { const cliente=global.CCOSupabase?.getClient?.();if(!cliente)throw new Error("Supabase indisponível.");return cliente; };
   async function operacoes(importacaoId, filtros = {}) {
-    const ano=Number(filtros.ano),mes=Number(filtros.mes);
+    const ano=Number(filtros.ano),mes=Number(filtros.mes),servico=global.CCOMetricas?.normalizarServico?.(filtros.servico)||String(filtros.servico||"").trim().toUpperCase();
     if(!importacaoId&&(!ano||!mes))throw new Error("importacao_id ou período válido é obrigatório para consultar KPI.");
-    const partes = [importacaoId, filtros.ano, filtros.mes, filtros.servico, filtros.ra, filtros.turno], cacheKey = global.CCOCache.chave("kpi", partes);
+    const partes = [importacaoId, filtros.ano, filtros.mes, servico, filtros.ra, filtros.turno], cacheKey = global.CCOCache.chave("kpi", partes);
     return global.CCOCache.lembrar(cacheKey, async () => {
-      return global.CCOSupabase.paginar(() => {
+      const registros=await global.CCOSupabase.paginar(() => {
         let consulta = db().from("operacoes").select(CAMPOS).order("id");
         if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);
         if(ano&&mes){const inicio=`${ano}-${String(mes).padStart(2,"0")}-01`,fim=mes===12?`${ano+1}-01-01`:`${ano}-${String(mes+1).padStart(2,"0")}-01`;consulta=consulta.gte("data_operacao",inicio).lt("data_operacao",fim);}
-        if (filtros.servico) consulta = consulta.eq("servico", filtros.servico);
+        if (servico) consulta = consulta.eq("servico", servico);
         if (filtros.ra) consulta = consulta.eq("ra", filtros.ra);
         if (filtros.turno) consulta = consulta.eq("turno", filtros.turno);
         return consulta;
       });
+      const velocidade=global.CCOKpiVelocidade,validos=(registros||[]).filter(item=>velocidade?velocidade.normalizarNumero(item?.velocidade_media)!==null:item?.velocidade_media!==null&&item?.velocidade_media!==undefined&&item?.velocidade_media!=="");
+      console.log("[KPI VELOCIDADE][CONSULTA]",{ano,mes,periodo:ano&&mes?`${ano}-${String(mes).padStart(2,"0")}`:null,importacaoId,servico:servico||null,registrosRecebidos:registros.length,registrosComVelocidade:validos.length,primeiros20:registros.slice(0,20).map(item=>({importacao_id:item.importacao_id,servico:item.servico,data_operacao:item.data_operacao,velocidade_media:item.velocidade_media}))});
+      return registros;
     }, 5 * 60 * 1000);
   }
   async function mensal(importacaoId){
