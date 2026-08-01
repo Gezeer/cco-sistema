@@ -191,10 +191,10 @@
     return `${base}?v=${encodeURIComponent(versao)}`;
   }
 
-  function carregarScriptSequencial(src) {
+  function carregarScriptSequencial(src, versao = VERSAO_CCO) {
     return new Promise((resolve, reject) => {
       const script = document.createElement("script");
-      script.src = adicionarVersaoArquivo(src, VERSAO_CCO);
+      script.src = adicionarVersaoArquivo(src, versao);
       script.async = false;
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Falha ao carregar: " + src));
@@ -222,7 +222,7 @@
       await carregarScriptSequencial("js/cco-graficos-3d.js?v=20260730-graficos-layout-seguro-v1");
       await carregarScriptSequencial("utils.js?v=20260730-dias-tabela-oficial-v2");
       await carregarScriptSequencial("cco-fixes.js?v=20260720-novo-banco-principal-v1");
-      await carregarScriptSequencial("cco-importacao-principal.js?v=20260730-importador-cabecalhos-duplicados-v1");
+      await carregarScriptSequencial("cco-importacao-principal.js", "20260731-p9-reprocessamento-final-v1");
       await carregarScriptSequencial("painel.js");
       await carregarScriptSequencial("painel-geral.js?v=20260730-catalogo-unificado-v2");
       await window.carregarRegrasServicosCCO();

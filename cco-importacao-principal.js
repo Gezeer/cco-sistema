@@ -480,12 +480,53 @@
   }
 
   function ehRawP9(item){
-    const original=item?.dados_originais&&typeof item.dados_originais==="object"?item.dados_originais:{},dados=item?.dados&&typeof item.dados==="object"?item.dados:{},valores=[item?.servico,item?.aba,original._aba_original,original.descricao,original.nome_servico,dados.descricao,dados.nome_servico].map(normalizarCabecalhoCCO);
-    return valores.some(valor=>valor==="p9"||valor.includes("catacao")||valor.includes("area verde"));
+    const original=item?.dados_originais&&typeof item.dados_originais==="object"?item.dados_originais:{},dados=item?.dados&&typeof item.dados==="object"?item.dados:{},valores=[item?.servico,item?.aba,original._aba_original,original.descricao,original.nome_servico,dados.servico,dados.tipo_servico,dados.descricao,dados.nome_servico,JSON.stringify(original),JSON.stringify(dados)].map(normalizarCabecalhoCCO);
+    return valores.some(valor=>valor==="p9"||/(^| )p ?9( |$)/.test(valor)||valor.includes("catacao em area verde")||(valor.includes("catacao")&&valor.includes("area verde")));
   }
 
-  async function buscarRawP9(importacaoId) {
-    const colunas="id,importacao_id,aba,numero_linha,rd,servico,data_operacao,dados,dados_originais",buscar=async configurar=>{const registros=[];for(let inicio=0;;inicio+=200){let consulta=banco().from("planilha_linhas").select(colunas).eq("importacao_id",importacaoId).order("numero_linha",{ascending:true}).range(inicio,inicio+199);consulta=configurar(consulta);const{data,error}=await consulta;if(error)throw error;const lote=data||[];registros.push(...lote);if(lote.length<200)break;}return registros;},fontes=await Promise.all([buscar(consulta=>consulta.in("servico",["P9","P 9","P-9","p9"])),buscar(consulta=>consulta.ilike("aba","%P9%")),buscar(consulta=>consulta.ilike("aba","%Cata%")),buscar(consulta=>consulta.ilike("aba","%rea Verde%"))]),mapa=new Map();fontes.flat().forEach((item,indice)=>mapa.set(item.id||`${item.importacao_id}|${item.aba}|${item.numero_linha}|${indice}`,item));const candidatos=[...mapa.values()],descartados=candidatos.filter(item=>!ehRawP9(item));descartados.forEach(item=>console.log("[P9 DESCARTE]",{importacaoId,numeroLinha:item.numero_linha,aba:item.aba,servico:item.servico,motivo:"RAW_NAO_IDENTIFICADO_COMO_P9"}));return candidatos.filter(ehRawP9).sort((a,b)=>Number(a.numero_linha)-Number(b.numero_linha));
+  async function buscarRawImportacao(importacaoId) {
+    return buscarTudoPaginado(()=>banco().from("planilha_linhas").select("id,importacao_id,aba,numero_linha,rd,servico,data_operacao,dados,dados_originais").eq("importacao_id",importacaoId).order("numero_linha",{ascending:true}));
+  }
+
+  async function buscarRawP9(importacaoId){return(await buscarRawImportacao(importacaoId)).filter(ehRawP9);}
+
+  function obterQdtEquipeP9(linhaRaw){
+    const original=linhaRaw?.dados_originais&&typeof linhaRaw.dados_originais==="object"?linhaRaw.dados_originais:{},dados=linhaRaw?.dados&&typeof linhaRaw.dados==="object"?linhaRaw.dados:{};
+    let valorOriginal=null,fonte=null,cabecalhoLiteral=null;
+    if(Object.prototype.hasOwnProperty.call(original,"Qdt_Equipe")){valorOriginal=original.Qdt_Equipe;fonte='dados_originais["Qdt_Equipe"]';cabecalhoLiteral="Qdt_Equipe";}
+    else if(Object.prototype.hasOwnProperty.call(dados,"Qdt_Equipe")){valorOriginal=dados.Qdt_Equipe;fonte='dados["Qdt_Equipe"]';cabecalhoLiteral="Qdt_Equipe";}
+    else if(Object.prototype.hasOwnProperty.call(dados,"qdt_equipe")){
+      const metadados=[linhaRaw?.cabecalhos_planilha,dados?.cabecalhos_planilha,dados?.cabecalhos,dados?.cabecalho_origem_qdt_equipe].flat(Infinity).filter(Boolean).map(texto);
+      if(metadados.some(item=>item==="Qdt_Equipe"||item.includes("Qdt_Equipe"))){valorOriginal=dados.qdt_equipe;fonte="dados.qdt_equipe";cabecalhoLiteral="Qdt_Equipe";}
+    }
+    const valor=normalizarNumero(valorOriginal);
+    return{valor:valor>0?valor:null,fonte,valorOriginal,cabecalhoLiteral};
+  }
+
+  function obterDataP9(linhaRaw,ano,mes){
+    const original=linhaRaw?.dados_originais&&typeof linhaRaw.dados_originais==="object"?linhaRaw.dados_originais:{},dados=linhaRaw?.dados&&typeof linhaRaw.dados==="object"?linhaRaw.dados:{},bruto=linhaRaw?.data_operacao??original.Data??dados.Data??dados.data??null;
+    if(vazio(bruto))return{data:null,valorOriginal:bruto,motivo:"DATA_AUSENTE"};
+    const data=normalizarData(bruto);
+    if(!data)return{data:null,valorOriginal:bruto,motivo:"DATA_INVALIDA"};
+    if(!data.startsWith(`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}-`))return{data,valorOriginal:bruto,motivo:"DATA_FORA_DO_PERIODO"};
+    return{data,valorOriginal:bruto,motivo:null};
+  }
+
+  function criarOperacaoP9Raw(linhaRaw,{ano,mes,importacaoId}){
+    const equipe=obterQdtEquipeP9(linhaRaw),data=obterDataP9(linhaRaw,ano,mes),original=linhaRaw?.dados_originais&&typeof linhaRaw.dados_originais==="object"?linhaRaw.dados_originais:{},dados=linhaRaw?.dados&&typeof linhaRaw.dados==="object"?linhaRaw.dados:{};
+    if(!equipe.valor)return{operacao:null,motivo:"P9_QDT_EQUIPE_AUSENTE",equipe,data};
+    if(data.motivo)return{operacao:null,motivo:data.motivo,equipe,data};
+    const ra=original.Ra??original.RA??dados.Ra??dados.ra??null,turno=original.Turno??dados.Turno??dados.turno??null,numeroLinha=linhaRaw.numero_linha??linhaRaw.id??null;
+    if(vazio(numeroLinha))return{operacao:null,motivo:"NUMERO_LINHA_AUSENTE",equipe,data};
+    const chaveOperacao=chave("P9",importacaoId,data.data,ra,turno,numeroLinha);
+    return{motivo:null,equipe,data,operacao:{importacao_id:importacaoId,aba:"P9",numero_linha:linhaRaw.numero_linha??null,rd:linhaRaw.rd??null,servico:"P9",tipo_servico:"P9",data_operacao:data.data,ra:texto(ra)||null,turno:texto(turno)||null,qtd_equipe:equipe.valor,equipe:equipe.valor,executado:equipe.valor,peso_t:null,viagens:null,km_total:null,valor_original:jsonSeguro({...original,campo_origem_p9:equipe.fonte,cabecalho_literal_p9:equipe.cabecalhoLiteral}),chave_operacao:chaveOperacao}};
+  }
+
+  function prepararReprocessamentoP9({raw,ano,mes,importacaoId,chavesExistentes=[]}){
+    const identificadas=(raw||[]).filter(ehRawP9),rejeitadasIdentificacao=(raw||[]).filter(item=>!ehRawP9(item)),descartadas=[],geradas=[];
+    for(const linha of identificadas){const resultado=criarOperacaoP9Raw(linha,{ano,mes,importacaoId});if(resultado.operacao)geradas.push(resultado.operacao);else descartadas.push({linha,motivo:resultado.motivo,detalhes:resultado});}
+    const existentes=new Set((chavesExistentes||[]).filter(Boolean)),vistas=new Set(),classificadas=geradas.map(operacao=>{let classificacao="ACEITA_PARA_INSERT";if(operacao.chave_operacao&&existentes.has(operacao.chave_operacao))classificacao="CHAVE_OPERACAO_JA_EXISTENTE";else if(operacao.chave_operacao&&vistas.has(operacao.chave_operacao))classificacao="DUPLICADA_NO_PROPRIO_LOTE";if(operacao.chave_operacao)vistas.add(operacao.chave_operacao);return{operacao,classificacao};});
+    return{identificadas,rejeitadasIdentificacao,descartadas,geradas,classificadas,jaExistentes:classificadas.filter(item=>item.classificacao==="CHAVE_OPERACAO_JA_EXISTENTE"),duplicadasNoLote:classificadas.filter(item=>item.classificacao==="DUPLICADA_NO_PROPRIO_LOTE"),prontas:classificadas.filter(item=>item.classificacao==="ACEITA_PARA_INSERT").map(item=>item.operacao)};
   }
 
   function montarOperacaoP9DoRaw(item) {
@@ -505,36 +546,28 @@
     if(erroImportacao)throw erroImportacao;
     if(!importacao)throw new Error(`Importação ${id} não encontrada.`);
     if(Number(importacao.ano)!==anoNumero||Number(importacao.mes)!==mesNumero)throw new Error(`A importação ${id} não pertence a ${anoNumero}-${String(mesNumero).padStart(2,"0")}.`);
-    const periodo=`${anoNumero}-${String(mesNumero).padStart(2,"0")}`,filtroRaw='servico P9 OU aba contendo P9/Catação/Área Verde';
-    console.log("[P9 RAW → OPERAÇÕES]",{importacaoId:id,periodo,filtroAplicado:filtroRaw});
-    const raw=await buscarRawP9(id);
-    console.log("[P9 RAW CARREGADO]",{importacaoId:id,periodo,filtroAplicado:filtroRaw,quantidade:raw.length});
-    const linhasValidas=[],linhasSemQdtEquipe=[],erros=[];
-    for(const item of raw){
-      const linha=item?.dados&&typeof item.dados==="object"?item.dados:{},original=item?.dados_originais&&typeof item.dados_originais==="object"?item.dados_originais:{},extracao=extrairValorOperacionalP9({...original,...linha}),data=item.data_operacao||normalizarData(original.Dados??linha.dados??campo(linha,"data_operacao"));
-      if(!(extracao.valor>0)){
-        linhasSemQdtEquipe.push(item);
-        console.log("[P9 PARSER]",{numeroLinha:item.numero_linha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:null,operacaoGerada:false,motivoDescarte:"P9_QDT_EQUIPE_AUSENTE"});
-        console.log("[P9 DESCARTE]",{importacaoId:id,periodo,numeroLinha:item.numero_linha,aba:item.aba,servico:item.servico,motivo:"P9_QDT_EQUIPE_AUSENTE"});
-        continue;
-      }
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(texto(data))){erros.push({numeroLinha:item.numero_linha,codigo:"DATA_INVALIDA",mensagem:"data_operacao inválida"});console.log("[P9 DESCARTE]",{importacaoId:id,periodo,numeroLinha:item.numero_linha,aba:item.aba,servico:item.servico,motivo:"DATA_INVALIDA",dataOperacao:data||null});continue;}
-      const operacao=montarOperacaoP9DoRaw({...item,data_operacao:data});
-      linhasValidas.push(operacao);
-      console.log("[P9 PARSER]",{numeroLinha:item.numero_linha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:extracao.valor,operacaoGerada:true,motivoDescarte:null});
-    }
-    const existentes=await buscarTudoPaginado(()=>cliente.from("operacoes").select("id,chave_operacao").eq("importacao_id",id).eq("servico","P9").order("id",{ascending:true}));
-    const chavesExistentes=new Set(existentes.map(item=>item.chave_operacao).filter(Boolean)),jaExistentes=linhasValidas.filter(item=>chavesExistentes.has(item.chave_operacao)),ausentes=linhasValidas.filter(item=>!chavesExistentes.has(item.chave_operacao));
-    console.log("[P9 OPERAÇÕES CARREGADAS]",{importacaoId:id,periodo,filtroAplicado:'importacao_id = informado AND servico = "P9"',quantidade:existentes.length});
-    jaExistentes.forEach(item=>console.log("[P9 DESCARTE]",{importacaoId:id,periodo,numeroLinha:item.numero_linha,chaveOperacao:item.chave_operacao,motivo:"CHAVE_OPERACAO_JA_EXISTENTE"}));
-    const previa={periodo:`${anoNumero}-${String(mesNumero).padStart(2,"0")}`,importacaoId:id,linhasRaw:raw.length,linhasValidas:linhasValidas.length,linhasSemQdtEquipe:linhasSemQdtEquipe.length,jaExistentes:jaExistentes.length,aInserir:ausentes.length,erros:erros.length};
-    console.log("[P9 REPROCESSAMENTO PRÉVIA]",previa);
-    console.table(ausentes.slice(0,30).map(item=>({numero_linha:item.numero_linha,data_operacao:item.data_operacao,chave_operacao:item.chave_operacao,qtd_equipe:item.qtd_equipe,equipe:item.equipe,executado:item.executado})));
-    const confirmou=ausentes.length>0&&window.confirm(`Reprocessar somente ${ausentes.length} operação(ões) P9 ausente(s) de ${previa.periodo}? Nenhuma operação existente será alterada.`);
+    const periodo=`${anoNumero}-${String(mesNumero).padStart(2,"0")}`,inicio=`${periodo}-01`,fim=mesNumero===12?`${anoNumero+1}-01-01`:`${anoNumero}-${String(mesNumero+1).padStart(2,"0")}-01`,raw=await buscarRawImportacao(id),identificadas=raw.filter(ehRawP9);
+    console.log("[P9 RAW CARREGADO]",{importacaoId:id,totalRawImportacao:raw.length,totalIdentificadoComoP9:identificadas.length,exemplosIdentificados:identificadas.slice(0,10),exemplosRejeitados:raw.filter(item=>!ehRawP9(item)).slice(0,10)});
+    const existentes=await buscarTudoPaginado(()=>cliente.from("operacoes").select("id,chave_operacao,data_operacao,qtd_equipe,equipe,executado,ra,turno,numero_linha").eq("importacao_id",id).eq("servico","P9").order("id",{ascending:true})),preparacao=prepararReprocessamentoP9({raw,ano:anoNumero,mes:mesNumero,importacaoId:id,chavesExistentes:existentes.map(item=>item.chave_operacao)}),erros=[];
+    console.log("[P9 OPERAÇÕES GERADAS]",preparacao.geradas.slice(0,30));
+    console.log("[P9 OPERAÇÕES EXISTENTES]",{quantidade:existentes.length,chavesExistentes:existentes.map(item=>item.chave_operacao).filter(Boolean),primeiras20:existentes.slice(0,20)});
+    preparacao.descartadas.forEach(item=>console.log("[P9 DESCARTE]",{importacaoId:id,periodo,numeroLinha:item.linha.numero_linha,motivo:item.motivo,detalhes:item.detalhes}));
+    preparacao.classificadas.filter(item=>item.classificacao!=="ACEITA_PARA_INSERT").forEach(item=>console.log("[P9 DEDUPLICAÇÃO]",{classificacao:item.classificacao,chaveOperacao:item.operacao.chave_operacao,numeroLinha:item.operacao.numero_linha}));
+    const descartadasPorMotivo=preparacao.descartadas.reduce((mapa,item)=>(mapa[item.motivo]=(mapa[item.motivo]||0)+1,mapa),{}),linhasComDataValida=preparacao.identificadas.filter(item=>!obterDataP9(item,anoNumero,mesNumero).motivo).length,linhasComQdtEquipePositivo=preparacao.identificadas.filter(item=>obterQdtEquipeP9(item).valor>0).length;
+    const previa={ano:anoNumero,mes:mesNumero,importacaoId:id,rawTotal:raw.length,rawIdentificadoComoP9:preparacao.identificadas.length,linhasComDataValida,linhasComQdtEquipePositivo,operacoesGeradas:preparacao.geradas.length,jaExistentes:preparacao.jaExistentes.length,duplicadasNoLote:preparacao.duplicadasNoLote.length,prontasParaInserir:preparacao.prontas.length,descartadasPorMotivo};
+    console.log("[P9 REPROCESSAMENTO PRÉVIA]",previa);console.table(preparacao.prontas.slice(0,30));
+    if(preparacao.prontas.length===0)throw new Error(`P9 ${periodo}: nenhuma operação pronta para inserir. Consulte [P9 REPROCESSAMENTO PRÉVIA], descartes e deduplicação.`);
+    if(!window.confirm(`Inserir ${preparacao.prontas.length} operação(ões) P9 ausente(s) de ${periodo}? Nenhum registro existente será alterado.`))return{...previa,inseridas:0,erros:[],cancelado:true};
     let inseridas=0;
-    if(confirmou){try{inseridas=await inserirLotes("operacoes",ausentes,id);}catch(error){erros.push({codigo:error?.code||"INSERT_P9_FALHOU",mensagem:error?.message||String(error)});}}
-    const resultado={linhasRaw:raw.length,linhasValidas:linhasValidas.length,linhasSemQdtEquipe:linhasSemQdtEquipe.length,jaExistentes:jaExistentes.length,inseridas,erros,cancelado:!confirmou};
+    for(const lote of lotesAdaptativos(preparacao.prontas,50)){
+      const resposta=await cliente.from("operacoes").insert(lote).select("id,chave_operacao");
+      if(resposta.error){const erro={status:resposta.status,code:resposta.error.code,message:resposta.error.message,details:resposta.error.details,hint:resposta.error.hint};erros.push(erro);console.error("[P9 INSERT ERRO]",erro);break;}
+      inseridas+=(resposta.data||[]).length;
+    }
+    const depois=await buscarTudoPaginado(()=>cliente.from("operacoes").select("id,chave_operacao,data_operacao,qtd_equipe,equipe,executado").eq("importacao_id",id).eq("servico","P9").gte("data_operacao",inicio).lt("data_operacao",fim).order("id",{ascending:true})),diasDistintosDepois=new Set(depois.map(item=>item.data_operacao).filter(Boolean)).size,somaQtdEquipeDepois=depois.reduce((s,item)=>s+(normalizarNumero(item.qtd_equipe)||0),0),maximoEquipeNoMes=depois.reduce((max,item)=>Math.max(max,normalizarNumero(item.qtd_equipe)||0),0),resultado={tentadas:preparacao.prontas.length,inseridas,erros,operacoesP9Depois:depois.length,diasDistintosDepois,somaQtdEquipeDepois,maximoEquipeNoMes};
     console.log("[P9 REPROCESSAMENTO RESULTADO]",resultado);
+    const acumuladoPainel=window.CCOMetricas?.calcularAcumuladoServico?.("P9",depois)??null;
+    console.log("[P9 CONFIRMAÇÃO PAINEL]",{registros:depois.length,datasDistintas:diasDistintosDepois,origem:depois.length?"operacoes P9":"sem operações P9",acumulado:acumuladoPainel,valorTotal:acumuladoPainel===null?null:acumuladoPainel*122039.23});
     return resultado;
   }
 
@@ -756,10 +789,11 @@
     const novo=antigo.cloneNode(true);antigo.replaceWith(novo);novo.dataset.importadorPrincipal=BUILD;novo.addEventListener("change",importarPlanilhas);
   }
 
-  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
+  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,obterQdtEquipeP9,obterDataP9,criarOperacaoP9Raw,prepararReprocessamentoP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
   window.reprocessarP9AtivosCCO=reprocessarP9Ativos;
   window.reprocessarP9Ativo=reprocessarP9Ativos;
   window.reprocessarP9Periodo=reprocessarP9Periodo;
+  console.info("[P9 REPROCESSAMENTO DISPONÍVEL]",{tipo:typeof window.reprocessarP9Periodo,build:"20260731-p9-reprocessamento-final-v1"});
   window.reprocessarKmTotalP1Ativo=reprocessarKmTotalP1Ativo;
   window.importarPlanilhas=importarPlanilhas;
   window.limparBanco=desativarBaseAtual;
