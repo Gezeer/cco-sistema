@@ -43,9 +43,9 @@ assert.notEqual(resultado.operacoes[0].qtd_equipe,15);
 const rawBase={importacao_id:"imp-julho",aba:"Catação Em Área Verde",servico:null,rd:"RD",dados_originais:{Data:"03/07/2026",Qdt_Catador:15,Qdt_Equipe:1,Ra:"RA I",Turno:"Diurno"},dados:{}};
 const operacaoLegada={id:100,importacao_id:"imp-julho",chave_operacao:"chave-antiga",data_operacao:"2026-07-03",ra:"RA I",turno:"Diurno",numero_linha:7,qtd_equipe:4.5333333,equipe:4.5333333,executado:4.5333333};
 const preparacaoLegada=api.prepararReprocessamentoP9({raw:[{...rawBase,numero_linha:7}],ano:2026,mes:7,importacaoId:"imp-julho",chavesExistentes:[operacaoLegada]});
-assert.equal(preparacaoLegada.prontas.length,1,"chave diferente não pode ser tratada como a mesma operação");
-const chaveNova=preparacaoLegada.prontas[0].chave_operacao,preparacaoAmbigua=api.prepararReprocessamentoP9({raw:[{...rawBase,numero_linha:7}],ano:2026,mes:7,importacaoId:"imp-julho",chavesExistentes:[{...operacaoLegada,chave_operacao:chaveNova},{...operacaoLegada,id:101,chave_operacao:chaveNova}]});
-assert.equal(preparacaoAmbigua.ambiguidades.length,1,"mais de uma operação com a mesma chave deve abortar a linha");
+assert.equal(preparacaoLegada.corrigirExistentes.length,1,"a comparação canônica deve vincular a operação mesmo quando a chave persistida usa formato antigo");
+const preparacaoAmbigua=api.prepararReprocessamentoP9({raw:[{...rawBase,numero_linha:7}],ano:2026,mes:7,importacaoId:"imp-julho",chavesExistentes:[operacaoLegada,{...operacaoLegada,id:101,chave_operacao:"outra-chave-antiga"}]});
+assert.equal(preparacaoAmbigua.ambiguidades.length,1,"mais de uma operação com os mesmos componentes deve abortar a linha");
 const operacao1=api.criarOperacaoP9Raw({...rawBase,id:"raw-1",numero_linha:2},{ano:2026,mes:7,importacaoId:"imp-julho"}).operacao;
 const operacao2=api.criarOperacaoP9Raw({...rawBase,id:"raw-2",numero_linha:3},{ano:2026,mes:7,importacaoId:"imp-julho"}).operacao;
 assert.notEqual(operacao1.chave_operacao,operacao2.chave_operacao,"cada linha deve possuir chave estável distinta");
@@ -63,7 +63,7 @@ assert.equal(preparacao.prontas.length,1,"a prévia deve manter operação pront
 
 const preparacaoFracionaria=api.prepararReprocessamentoP9({
   raw:[{...rawBase,id:"raw-fracao",numero_linha:6}],ano:2026,mes:7,importacaoId:"imp-julho",
-  chavesExistentes:[{id:99,chave_operacao:"P9|imp-julho|2026-07-03|RA I|Diurno|6",qtd_equipe:0.4666667,equipe:0.4666667,executado:4.5333333}]
+  chavesExistentes:[{id:99,importacao_id:"imp-julho",chave_operacao:"P9|imp-julho|2026-07-03|RA I|Diurno|6",data_operacao:"2026-07-03",ra:"RA I",turno:"Diurno",numero_linha:6,qtd_equipe:0.4666667,equipe:0.4666667,executado:4.5333333}]
 });
 assert.equal(preparacaoFracionaria.prontas.length,0);
 assert.equal(preparacaoFracionaria.corrigirExistentes.length,1,"operação existente fracionária deve ser corrigida pelo Qdt_Equipe literal");

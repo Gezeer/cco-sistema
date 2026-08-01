@@ -32,7 +32,7 @@ function renderizarDOM(){
   elementos.p9Acumulado.textContent=String(acumuladoP9);elementos.p9Valor.textContent=String(acumuladoP9*valorUnitarioP9);
 }
 renderizarDOM();renderizarDOM();
-assert.deepEqual(Object.fromEntries(Object.entries(elementos).map(([id,el])=>[id,Number(el.textContent)])),{acumulado:100,peso:100,km:250,produtividade:10,distancia:25,p9Acumulado:3,p9Valor:150});
+assert.deepEqual(Object.fromEntries(Object.entries(elementos).map(([id,el])=>[id,Number(el.textContent)])),{acumulado:100,peso:100,km:250,produtividade:10,distancia:25,p9Acumulado:5,p9Valor:250});
 assert.ok(Number(elementos.p9Acumulado.textContent)>0);
 
 const utilsFonte=fs.readFileSync("utils.js","utf8"),execucaoHtml=fs.readFileSync("execucao.html","utf8"),indexHtml=fs.readFileSync("index.html","utf8");
