@@ -568,11 +568,23 @@
     if(!window.confirm(`Gravar ${preparacao.prontas.length} operação(ões) P9 ausente(s) e corrigir ${preparacao.corrigirExistentes.length} existente(s) de ${periodo}, sempre com o Qdt_Equipe literal?`))return{...previa,inseridas:0,corrigidas:0,erros:[],cancelado:true};
     let inseridas=0,corrigidas=0;
     for(const item of preparacao.corrigirExistentes){
-      const valorQdtEquipe=item.operacao.qtd_equipe,payload={qtd_equipe:valorQdtEquipe,equipe:valorQdtEquipe,executado:valorQdtEquipe};
-      console.log("[P9 UPDATE]",{id:item.existente.id,valor_antigo:{qtd_equipe:item.existente.qtd_equipe,equipe:item.existente.equipe,executado:item.existente.executado},valor_novo:valorQdtEquipe});
-      const resposta=await cliente.from("operacoes").update(payload).eq("id",item.existente.id).eq("importacao_id",id).eq("servico","P9").select("id");
-      if(resposta.error){const erro={etapa:"update_p9_existente",status:resposta.status,code:resposta.error.code,message:resposta.error.message,details:resposta.error.details,hint:resposta.error.hint};erros.push(erro);console.error("[P9 UPDATE ERRO]",erro);break;}
-      corrigidas+=(resposta.data||[]).length;
+      const valorQdtEquipe=item.operacao.qtd_equipe,payload={qtd_equipe:valorQdtEquipe,equipe:valorQdtEquipe,executado:valorQdtEquipe},antes={qtd_equipe:item.existente.qtd_equipe,equipe:item.existente.equipe,executado:item.existente.executado};
+      const resposta=await cliente.from("operacoes").update(payload).eq("id",item.existente.id).eq("importacao_id",id).eq("servico","P9").select("id,importacao_id,servico,chave_operacao,qtd_equipe,equipe,executado");
+      const linhasAfetadas=(resposta.data||[]).length;
+      console.log("[P9 UPDATE]",{id:item.existente.id,importacao_id:id,servico:"P9",chave_operacao:item.existente.chave_operacao,qtd_equipe_antes:item.existente.qtd_equipe,qtd_equipe_depois:valorQdtEquipe,linhas_afetadas:linhasAfetadas,retorno_supabase:{data:resposta.data??null,error:resposta.error??null,status:resposta.status??null}});
+      if(resposta.error){const erro={etapa:"update_p9_existente",status:resposta.status,code:resposta.error.code,message:resposta.error.message,details:resposta.error.details,hint:resposta.error.hint};erros.push(erro);console.error("[P9 UPDATE ERRO]",erro);throw new Error(`P9 UPDATE falhou para id ${item.existente.id}: ${resposta.error.message||resposta.error.code||"erro do Supabase"}.`);}
+      if(linhasAfetadas===0){
+        const porId=await cliente.from("operacoes").select("id,importacao_id,servico,chave_operacao").eq("id",item.existente.id),porImportacao=await cliente.from("operacoes").select("id,importacao_id,servico,chave_operacao").eq("id",item.existente.id).eq("importacao_id",id),porServico=await cliente.from("operacoes").select("id,importacao_id,servico,chave_operacao").eq("id",item.existente.id).eq("importacao_id",id).eq("servico","P9");
+        const filtroNaoEncontrado=!(porId.data||[]).length?"id":!(porImportacao.data||[]).length?"importacao_id":!(porServico.data||[]).length?"servico":"nenhum filtro; verificar RLS/policy ou permissão de UPDATE";
+        console.error("[P9 UPDATE ZERO LINHAS]",{id:item.existente.id,importacao_id:id,servico:"P9",chave_operacao:item.existente.chave_operacao,filtroNaoEncontrado,diagnostico:{porId,porImportacao,porServico}});
+        throw new Error(`P9 UPDATE não afetou linhas para id ${item.existente.id}. Filtro sem correspondência: ${filtroNaoEncontrado}.`);
+      }
+      const releitura=await cliente.from("operacoes").select("id,servico,qtd_equipe,equipe,executado").eq("id",item.existente.id).maybeSingle();
+      console.log("[P9 UPDATE VALIDAÇÃO]",{id:item.existente.id,ANTES:antes,DEPOIS:releitura.data??null,retorno_supabase:{data:releitura.data??null,error:releitura.error??null,status:releitura.status??null}});
+      if(releitura.error)throw new Error(`P9 UPDATE persistido, mas a releitura do id ${item.existente.id} falhou: ${releitura.error.message||releitura.error.code||"erro do Supabase"}.`);
+      const depoisUpdate=valoresOperacaoP9(releitura.data),persistido=Object.values(depoisUpdate).every(valor=>valor===valorQdtEquipe);
+      if(!persistido)throw new Error(`P9 UPDATE não foi persistido para id ${item.existente.id}. Antes=${JSON.stringify(antes)} Depois=${JSON.stringify(depoisUpdate)} Esperado=${valorQdtEquipe}.`);
+      corrigidas+=linhasAfetadas;
     }
     for(const lote of erros.length?[]:lotesAdaptativos(preparacao.prontas,50)){
       console.log("[P9 INSERT ANTES]",{importacaoId:id,periodo,quantidadeProntaParaInserir:preparacao.prontas.length,quantidadeDoLote:lote.length,primeiraLinhaEnviada:lote[0]||null});
