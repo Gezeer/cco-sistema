@@ -9,9 +9,10 @@ vm.runInContext(fs.readFileSync("js/cco-p1-km-total.js","utf8"),contexto);
 
 const painelFonte=fs.readFileSync("painel-geral.js","utf8");
 const primeiroFonte=painelFonte.match(/function primeiroNumeroPositivo\(\.\.\.valores\)[\s\S]*?(?=\s*function primeiroNumeroPositivoCCO)/)?.[0];
+const consolidacaoP9Fonte=painelFonte.match(/function calcularConsolidacaoP9Painel\(operacoesP9,valorAtual=0\)[\s\S]*?(?=\s*function calcularP9PorOperacoes)/)?.[0];
 const calcularP9Fonte=painelFonte.match(/function calcularP9PorOperacoes\(operacoesP9\)[\s\S]*?(?=\s*function obterAcumuladoRealP9)/)?.[0];
-assert.ok(primeiroFonte&&calcularP9Fonte,"funções finais do P9 devem permanecer rastreáveis");
-vm.runInContext(`const numero=v=>{const n=Number(v);return Number.isFinite(n)?n:0};${primeiroFonte};${calcularP9Fonte};window.calcularP9PorOperacoes=calcularP9PorOperacoes;`,contexto);
+assert.ok(primeiroFonte&&consolidacaoP9Fonte&&calcularP9Fonte,"funções finais do P9 devem permanecer rastreáveis");
+vm.runInContext(`const numero=v=>{const n=Number(v);return Number.isFinite(n)?n:0};const dataIso=v=>String(v||"").slice(0,10);${primeiroFonte};${consolidacaoP9Fonte};${calcularP9Fonte};window.calcularP9PorOperacoes=calcularP9PorOperacoes;`,contexto);
 
 const p1=[
   {importacao_id:"julho",servico:"P1",data_operacao:"2026-07-10",peso_t:40,viagens:4,dados_originais:{Km_Total:100}},
