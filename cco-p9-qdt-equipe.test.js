@@ -52,7 +52,7 @@ assert.notEqual(operacao1.chave_operacao,operacao2.chave_operacao,"cada linha de
 assert.match(operacao1.chave_operacao,/^P9\|imp-julho\|2026-07-03\|RA I\|Diurno\|2$/);
 const preparacao=api.prepararReprocessamentoP9({
   raw:[{...rawBase,id:"raw-1",numero_linha:2},{...rawBase,id:"raw-2",numero_linha:3},{...rawBase,id:"raw-3",numero_linha:3},{aba:"P9",id:"sem-equipe",numero_linha:4,dados_originais:{Data:"03/07/2026",Qdt_Catador:15}},{aba:"P8",servico:"P8",id:"p8",numero_linha:5,dados_originais:{Data:"03/07/2026",Qdt_Equipe:9}}],
-  ano:2026,mes:7,importacaoId:"imp-julho",chavesExistentes:[operacao1.chave_operacao,null]
+  ano:2026,mes:7,importacaoId:"imp-julho",chavesExistentes:[{id:1,...operacao1}]
 });
 assert.equal(preparacao.identificadas.length,4);
 assert.equal(preparacao.rejeitadasIdentificacao.length,1,"P8 não pode entrar na transformação P9");
@@ -67,6 +67,7 @@ const preparacaoFracionaria=api.prepararReprocessamentoP9({
 });
 assert.equal(preparacaoFracionaria.prontas.length,0);
 assert.equal(preparacaoFracionaria.corrigirExistentes.length,1,"operação existente fracionária deve ser corrigida pelo Qdt_Equipe literal");
+assert.equal(preparacaoFracionaria.corrigirExistentes[0].classificacao,"ATUALIZAR");
 assert.deepEqual(
   Object.fromEntries(["qtd_equipe","equipe","executado"].map(campo=>[campo,preparacaoFracionaria.corrigirExistentes[0].operacao[campo]])),
   {qtd_equipe:1,equipe:1,executado:1}
@@ -93,6 +94,7 @@ assert.match(fonte,/\[P9 ANTES DA CORREÇÃO\]/);
 assert.match(fonte,/\[P9 CORREÇÃO PRÉVIA\]/);
 assert.match(fonte,/\[P9 DEPOIS DA CORREÇÃO\]/);
 assert.match(fonte,/\[P9 UPDATE\]/);
+assert.match(fonte,/\[P9 CLASSIFICAÇÃO\]/);
 assert.match(fonte,/quantidadeAtualizada/);
 assert.match(fonte,/quantidadeInserida/);
 assert.match(fonte,/quantidadeJaCorreta/);
