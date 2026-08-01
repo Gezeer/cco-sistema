@@ -25,14 +25,18 @@ contexto.XLSX={utils:{sheet_to_json:folha=>folha}};
 const workbookP9={
   SheetNames:["Catação Em Área Verde"],
   Sheets:{"Catação Em Área Verde":[
-    ["Data","Equipe","Descrição","Nome Serviço"],
-    ["01/07/2026",4,"Catação Em Área Verde","Catação Em Área Verde"]
+    ["Data","Qdt_Catador","Qdt_Equipe","Descrição","Nome Serviço"],
+    ["01/07/2026",15,1,"Catação Em Área Verde","Catação Em Área Verde"]
   ]}
 };
 const resultadoP9=api.analisarWorkbook(workbookP9,"p9.xlsx");
 assert.equal(resultadoP9.operacoes.length,1);
 assert.equal(resultadoP9.operacoes[0].servico,"P9");
 assert.equal(resultadoP9.operacoes[0].aba,"P9");
+assert.equal(resultadoP9.operacoes[0].tipo_servico,"P9");
+assert.equal(resultadoP9.operacoes[0].qtd_equipe,1);
+assert.equal(resultadoP9.operacoes[0].equipe,1);
+assert.equal(resultadoP9.operacoes[0].executado,1);
 assert.equal(resultadoP9.operacoes[0].valor_original.descricao,"Catação Em Área Verde");
 assert.equal(resultadoP9.operacoes[0].valor_original.nome_servico,"Catação Em Área Verde");
 assert.equal(resultadoP9.raw[0].dados_originais._aba_original,"Catação Em Área Verde");
