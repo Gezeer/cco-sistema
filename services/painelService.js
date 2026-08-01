@@ -4,6 +4,8 @@
   const db = () => { const cliente=global.CCOSupabase?.getClient?.();if(!cliente)throw new Error("Supabase indisponível.");return cliente; };
   const validarId = id => { if (!id) throw new Error("importacao_id é obrigatório."); return String(id); };
   const diasOperacaoCache=new Map();
+  const contador=global.__CCO_CONTADOR_CATALOGO__=global.__CCO_CONTADOR_CATALOGO__||{consultasRPC:0,paginacaoCompleta:0,consumidores:0,promiseCompartilhada:false};
+  if(!Number.isFinite(contador.chamadasLegado))contador.chamadasLegado=0;
 
   function montarCatalogoPorOperacoes(operacoes,importacoes) {
     const importacoesPorId=new Map((importacoes||[]).map(item=>[String(item.id),item])),candidatos=new Map();
@@ -22,6 +24,8 @@
   }
 
   async function paginarOperacoesCatalogo(tamanhoPagina=1000) {
+    contador.paginacaoCompleta+=1;
+    console.warn("[CATÁLOGO] fallback pesado ativado");
     const resultado=[];
     let ultimoId=null,offsetLogico=0;
     for(;;){
@@ -32,7 +36,7 @@
       if(error)throw error;
       const lote=data||[];
       resultado.push(...lote);
-      console.log("[PAGINAÇÃO]",{offset:offsetLogico,quantidadeRetornada:lote.length,totalAcumulado:resultado.length});
+      if(global.CCO_DEBUG_PAGINACAO===true)console.log("[PAGINAÇÃO]",{offset:offsetLogico,quantidadeRetornada:lote.length,totalAcumulado:resultado.length});
       if(lote.length===0||lote.length<tamanhoPagina)return resultado;
       const proximoId=lote.at(-1)?.id;
       if(proximoId===null||proximoId===undefined||String(proximoId)===String(ultimoId))throw new Error("Paginação de operacoes sem avanço da chave id.");
@@ -41,41 +45,46 @@
     }
   }
 
-  async function catalogo() {
-    const chave = global.CCOCache.chave("periodos", ["operacoes-data-v2"]);
-    const catalogoCache=await global.CCOCache.lembrar(chave, async () => {
-      console.log("[CATÁLOGO] consulta executada",{
-        operacoes:"select id,importacao_id,data_operacao; data_operacao not null; paginação incremental por id",
-        importacoes:"select metadados; sem filtro ativa/ativo; paginação completa"
-      });
-      const[operacoes,importacoes,diasOperacao]=await Promise.all([
+  async function produzirCatalogo() {
+    const inicio=typeof performance!=="undefined"?performance.now():Date.now();
+    console.log("[CATÁLOGO] início");
+    let resultado=[],fonte="rpc";
+    contador.consultasRPC+=1;
+    const resposta=await db().rpc("cco_catalogo_periodos");
+    if(!resposta.error){
+      resultado=(resposta.data||[]).map(item=>({...item,ano:Number(item.ano),mes:Number(item.mes),periodo:item.periodo||`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`,origem:"rpc"})).sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
+    }else{
+      fonte="fallback";
+      const[operacoes,importacoes]=await Promise.all([
         paginarOperacoesCatalogo(),
-        global.CCOSupabase.paginar(()=>db().from("importacoes").select("id,ano,mes,nome_arquivo,status,ativa,concluido_em,criado_em").order("criado_em",{ascending:false})),
-        global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}))
+        global.CCOSupabase.paginar(()=>db().from("importacoes").select("id,ano,mes,nome_arquivo,status,ativa,concluido_em,criado_em").order("criado_em",{ascending:false}))
       ]);
-      const resultado=montarCatalogoPorOperacoes(operacoes,importacoes);
+      resultado=montarCatalogoPorOperacoes(operacoes,importacoes);
+    }
+    const diasOperacao=await global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}));
       diasOperacaoCache.clear();
       for(const item of diasOperacao||[]){
         const periodo=`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`;
         if(item.importacao_id)diasOperacaoCache.set(`${item.importacao_id}|${periodo}`,Number(item.total_dias)||0);
         if(!diasOperacaoCache.has(periodo))diasOperacaoCache.set(periodo,Number(item.total_dias)||0);
       }
-      console.log("[CATÁLOGO] períodos encontrados",resultado.map(item=>item.periodo));
-      console.table(resultado.map(item=>({periodo:item.periodo,importacao_id:item.importacao_id,status:item.status||null,ativa:Boolean(item.ativa),origem:item.origem})));
-      console.log("[CATÁLOGO] origem dos períodos","operacoes.data_operacao",{operacoesLidas:operacoes.length,importacoesLidas:importacoes.length});
-      return resultado;
-    }, TTL);
-    if(!diasOperacaoCache.size){
-      const diasOperacao=await global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}));
-      for(const item of diasOperacao||[]){
-        const periodo=`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`;
-        if(item.importacao_id)diasOperacaoCache.set(`${item.importacao_id}|${periodo}`,Number(item.total_dias)||0);
-        if(!diasOperacaoCache.has(periodo))diasOperacaoCache.set(periodo,Number(item.total_dias)||0);
-      }
-    }
-    return catalogoCache;
+    const duracaoMs=(typeof performance!=="undefined"?performance.now():Date.now())-inicio;
+    global.__CCO_CATALOGO_PERIODOS__=resultado;
+    global.__CCO_IMPORTACOES_POR_PERIODO__=Object.fromEntries(resultado.map(item=>[item.periodo,item]));
+    global.__CCO_PERIODOS_REAIS_V12__=resultado;
+    console.log("[CATÁLOGO] concluído",{fonte,periodos:resultado.length,duracaoMs});
+    return resultado;
   }
-  const getCatalogoPeriodos=()=>catalogo();
+  function getCatalogoPeriodos(){
+    contador.consumidores+=1;
+    const chave=global.CCOCache.chave("periodos",["rpc-v1"]);
+    if(global.__CCO_CATALOGO_RESOLVIDO__&&global.CCOCache.get?.(chave)===undefined)global.__CCO_CATALOGO_PROMISE__=null;
+    if(global.__CCO_CATALOGO_PROMISE__){contador.promiseCompartilhada=true;return global.__CCO_CATALOGO_PROMISE__;}
+    global.__CCO_CATALOGO_PROMISE__=global.CCOCache.lembrar(chave,produzirCatalogo,TTL).then(resultado=>{global.__CCO_CATALOGO_RESOLVIDO__=true;return resultado;}).catch(error=>{global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;throw error;});
+    return global.__CCO_CATALOGO_PROMISE__;
+  }
+  const catalogo=()=>getCatalogoPeriodos();
+  function invalidarCatalogo(){global.CCOCache?.invalidar("periodos");global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;}
   function obterDiasOperacao(ano,mes,importacaoId=null){
     const periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`;
     return Number((importacaoId&&diasOperacaoCache.get(`${importacaoId}|${periodo}`))??diasOperacaoCache.get(periodo)??0);
@@ -103,5 +112,5 @@
     if(data)global.CCODiagnosticoP9Etapa?.("services/painelService.js:p9PorPeriodo → painel_executivo.acumulado",data.acumulado,"leitura direta da coluna painel_executivo.acumulado");
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, paginarOperacoesCatalogo });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, paginarOperacoesCatalogo });
 })(window);

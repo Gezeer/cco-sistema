@@ -15802,55 +15802,15 @@ async function sair() {
   function limpar(sel){ if (sel) sel.innerHTML = ''; }
   function status(txt){ try { if (typeof preencherTexto === 'function') preencherTexto('nomeArquivo', txt); } catch(e){} }
 
-  let catalogoPeriodosPromiseV12 = null;
   async function carregarCatalogoPeriodosV12(forcar = false){
-    if (!forcar && catalogoPeriodosPromiseV12) return catalogoPeriodosPromiseV12;
-    catalogoPeriodosPromiseV12 = (async () => {
-      const supabase = window.supabaseClient;
-      if (!supabase) { console.error('Cliente Supabase não disponível.'); return []; }
-      const mapa = new Map(), tamanhoPagina = 1000;
-      try {
-        let ultimoId = null, inicio = 0;
-        for (;;) {
-          let consulta = supabase.from('operacoes')
-            .select('id,data_operacao,importacao_id')
-            .not('data_operacao', 'is', null)
-            .order('id', { ascending:true })
-            .limit(tamanhoPagina);
-          if (ultimoId !== null) consulta = consulta.gt('id', ultimoId);
-          const { data, error } = await consulta;
-          if (error) {
-            console.error('Erro ao carregar catálogo', { message:error?.message, code:error?.code, details:error?.details, hint:error?.hint });
-            return [];
-          }
-          const registros = Array.isArray(data) ? data : [];
-          registros.forEach(registro => {
-            const match = String(registro.data_operacao || '').slice(0,10).match(/^(\d{4})-(\d{2})-\d{2}$/);
-            if (!match) return;
-            const ano = Number(match[1]), mes = Number(match[2]), periodo = periodoKey(ano, mes);
-            if (!mapa.has(periodo)) mapa.set(periodo, { ano, mes, periodo, importacao_id:registro.importacao_id || null });
-          });
-          console.log("[PAGINAÇÃO]", {offset:inicio,quantidadeRetornada:registros.length,totalAcumulado:inicio+registros.length});
-          if (registros.length === 0 || registros.length < tamanhoPagina) break;
-          const proximoId = registros.at(-1)?.id;
-          if (proximoId === null || proximoId === undefined || String(proximoId) === String(ultimoId)) throw new Error("Paginação de operacoes sem avanço da chave id.");
-          ultimoId = proximoId;
-          inicio += registros.length;
-        }
-        const catalogo = [...mapa.values()].sort((a,b) => b.ano-a.ano || b.mes-a.mes);
-        window.__CCO_CATALOGO_PERIODOS__ = catalogo;
-        window.__CCO_IMPORTACOES_POR_PERIODO__ = Object.fromEntries(catalogo.map(item => [item.periodo, item]));
-        window.__CCO_PERIODOS_REAIS_V12__ = catalogo;
-        console.log('✅ Catálogo real carregado por data_operacao:', catalogo);
-        return catalogo;
-      } catch(error) {
-        console.error('Falha inesperada ao carregar catálogo de períodos:', { message:error?.message, code:error?.code, details:error?.details, hint:error?.hint });
-        return [];
-      }
-    })();
-    const resultado = await catalogoPeriodosPromiseV12;
-    if (!resultado.length) catalogoPeriodosPromiseV12 = null;
-    return resultado;
+    window.__CCO_CONTADOR_CATALOGO__=window.__CCO_CONTADOR_CATALOGO__||{consultasRPC:0,paginacaoCompleta:0,consumidores:0,promiseCompartilhada:false};
+    window.__CCO_CONTADOR_CATALOGO__.chamadasLegado=(window.__CCO_CONTADOR_CATALOGO__.chamadasLegado||0)+1;
+    if(!window.CCOPainelService?.getCatalogoPeriodos)throw new Error("CCOPainelService.getCatalogoPeriodos indisponível.");
+    const catalogo=await window.CCOPainelService.getCatalogoPeriodos();
+    window.__CCO_CATALOGO_PERIODOS__=catalogo;
+    window.__CCO_IMPORTACOES_POR_PERIODO__=Object.fromEntries(catalogo.map(item=>[item.periodo,item]));
+    window.__CCO_PERIODOS_REAIS_V12__=catalogo;
+    return catalogo;
   }
 
   async function obterImportacaoPrincipal(ano, mes){
