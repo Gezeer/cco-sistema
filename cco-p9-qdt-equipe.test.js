@@ -54,6 +54,17 @@ assert.equal(preparacao.jaExistentes.length,1);
 assert.equal(preparacao.duplicadasNoLote.length,1);
 assert.equal(preparacao.prontas.length,1,"a prévia deve manter operação pronta mesmo com chave null entre as existentes");
 
+const preparacaoFracionaria=api.prepararReprocessamentoP9({
+  raw:[{...rawBase,id:"raw-fracao",numero_linha:6}],ano:2026,mes:7,importacaoId:"imp-julho",
+  chavesExistentes:[{id:99,chave_operacao:"P9|imp-julho|2026-07-03|RA I|Diurno|6",qtd_equipe:0.4666667,equipe:0.4666667,executado:4.5333333}]
+});
+assert.equal(preparacaoFracionaria.prontas.length,0);
+assert.equal(preparacaoFracionaria.corrigirExistentes.length,1,"operação existente fracionária deve ser corrigida pelo Qdt_Equipe literal");
+assert.deepEqual(
+  Object.fromEntries(["qtd_equipe","equipe","executado"].map(campo=>[campo,preparacaoFracionaria.corrigirExistentes[0].operacao[campo]])),
+  {qtd_equipe:1,equipe:1,executado:1}
+);
+
 const semEquipe={SheetNames:["P9"],Sheets:{P9:[
   ["Dados","Qdt_Catador","Ra","Turno"],
   ["01/07/2026",15,"RA I","Diurno"]
@@ -69,6 +80,11 @@ assert.match(fonte,/\[P9 RAW CARREGADO\]/);
 assert.match(fonte,/\[P9 OPERAÇÕES EXISTENTES\]/);
 assert.match(fonte,/\[P9 OPERAÇÕES GERADAS\]/);
 assert.match(fonte,/\[P9 DESCARTE\]/);
+assert.match(fonte,/\[P9 INSERT ANTES\]/);
+assert.match(fonte,/\[P9 INSERT DEPOIS\]/);
+assert.match(fonte,/quantidadeRealmenteInserida/);
+assert.match(fonte,/primeiraLinhaEnviada/);
+assert.match(fonte,/erroSupabase/);
 assert.match(fonte,/window\.confirm\(/);
 assert.match(fs.readFileSync("index.html","utf8"),/20260731-p9-reprocessamento-final-v1/);
 assert.doesNotMatch(fonte,/Qdt_Catador[^\n]*valorEquipeEscolhido:\s*(?:original|linha)/);
