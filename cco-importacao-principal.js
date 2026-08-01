@@ -479,8 +479,13 @@
     return mapas;
   }
 
+  function ehRawP9(item){
+    const original=item?.dados_originais&&typeof item.dados_originais==="object"?item.dados_originais:{},dados=item?.dados&&typeof item.dados==="object"?item.dados:{},valores=[item?.servico,item?.aba,original._aba_original,original.descricao,original.nome_servico,dados.descricao,dados.nome_servico].map(normalizarCabecalhoCCO);
+    return valores.some(valor=>valor==="p9"||valor.includes("catacao")||valor.includes("area verde"));
+  }
+
   async function buscarRawP9(importacaoId) {
-    const colunas="id,importacao_id,aba,numero_linha,rd,servico,data_operacao,dados,dados_originais",buscar=async configurar=>{const registros=[];for(let inicio=0;;inicio+=200){let consulta=banco().from("planilha_linhas").select(colunas).eq("importacao_id",importacaoId).order("numero_linha",{ascending:true}).range(inicio,inicio+199);consulta=configurar(consulta);const{data,error}=await consulta;if(error)throw error;const lote=data||[];registros.push(...lote);if(lote.length<200)break;}return registros;},[porServico,porAba]=await Promise.all([buscar(consulta=>consulta.in("servico",["P9","P 9","P-9","p9"])),buscar(consulta=>consulta.ilike("aba","%P9%"))]),mapa=new Map();[...porServico,...porAba].forEach((item,indice)=>mapa.set(item.id||`${item.importacao_id}|${item.aba}|${item.numero_linha}|${indice}`,item));return[...mapa.values()].sort((a,b)=>Number(a.numero_linha)-Number(b.numero_linha));
+    const colunas="id,importacao_id,aba,numero_linha,rd,servico,data_operacao,dados,dados_originais",buscar=async configurar=>{const registros=[];for(let inicio=0;;inicio+=200){let consulta=banco().from("planilha_linhas").select(colunas).eq("importacao_id",importacaoId).order("numero_linha",{ascending:true}).range(inicio,inicio+199);consulta=configurar(consulta);const{data,error}=await consulta;if(error)throw error;const lote=data||[];registros.push(...lote);if(lote.length<200)break;}return registros;},fontes=await Promise.all([buscar(consulta=>consulta.in("servico",["P9","P 9","P-9","p9"])),buscar(consulta=>consulta.ilike("aba","%P9%")),buscar(consulta=>consulta.ilike("aba","%Cata%")),buscar(consulta=>consulta.ilike("aba","%rea Verde%"))]),mapa=new Map();fontes.flat().forEach((item,indice)=>mapa.set(item.id||`${item.importacao_id}|${item.aba}|${item.numero_linha}|${indice}`,item));const candidatos=[...mapa.values()],descartados=candidatos.filter(item=>!ehRawP9(item));descartados.forEach(item=>console.log("[P9 DESCARTE]",{importacaoId,numeroLinha:item.numero_linha,aba:item.aba,servico:item.servico,motivo:"RAW_NAO_IDENTIFICADO_COMO_P9"}));return candidatos.filter(ehRawP9).sort((a,b)=>Number(a.numero_linha)-Number(b.numero_linha));
   }
 
   function montarOperacaoP9DoRaw(item) {
@@ -500,22 +505,28 @@
     if(erroImportacao)throw erroImportacao;
     if(!importacao)throw new Error(`Importação ${id} não encontrada.`);
     if(Number(importacao.ano)!==anoNumero||Number(importacao.mes)!==mesNumero)throw new Error(`A importação ${id} não pertence a ${anoNumero}-${String(mesNumero).padStart(2,"0")}.`);
-    const raw=await buscarTudoPaginado(()=>cliente.from("planilha_linhas").select("id,importacao_id,aba,numero_linha,rd,servico,data_operacao,dados,dados_originais").eq("importacao_id",id).eq("aba","P9").order("numero_linha",{ascending:true}));
+    const periodo=`${anoNumero}-${String(mesNumero).padStart(2,"0")}`,filtroRaw='servico P9 OU aba contendo P9/Catação/Área Verde';
+    console.log("[P9 RAW → OPERAÇÕES]",{importacaoId:id,periodo,filtroAplicado:filtroRaw});
+    const raw=await buscarRawP9(id);
+    console.log("[P9 RAW CARREGADO]",{importacaoId:id,periodo,filtroAplicado:filtroRaw,quantidade:raw.length});
     const linhasValidas=[],linhasSemQdtEquipe=[],erros=[];
     for(const item of raw){
       const linha=item?.dados&&typeof item.dados==="object"?item.dados:{},original=item?.dados_originais&&typeof item.dados_originais==="object"?item.dados_originais:{},extracao=extrairValorOperacionalP9({...original,...linha}),data=item.data_operacao||normalizarData(original.Dados??linha.dados??campo(linha,"data_operacao"));
       if(!(extracao.valor>0)){
         linhasSemQdtEquipe.push(item);
         console.log("[P9 PARSER]",{numeroLinha:item.numero_linha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:null,operacaoGerada:false,motivoDescarte:"P9_QDT_EQUIPE_AUSENTE"});
+        console.log("[P9 DESCARTE]",{importacaoId:id,periodo,numeroLinha:item.numero_linha,aba:item.aba,servico:item.servico,motivo:"P9_QDT_EQUIPE_AUSENTE"});
         continue;
       }
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(texto(data))){erros.push({numeroLinha:item.numero_linha,codigo:"DATA_INVALIDA",mensagem:"data_operacao inválida"});continue;}
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(texto(data))){erros.push({numeroLinha:item.numero_linha,codigo:"DATA_INVALIDA",mensagem:"data_operacao inválida"});console.log("[P9 DESCARTE]",{importacaoId:id,periodo,numeroLinha:item.numero_linha,aba:item.aba,servico:item.servico,motivo:"DATA_INVALIDA",dataOperacao:data||null});continue;}
       const operacao=montarOperacaoP9DoRaw({...item,data_operacao:data});
       linhasValidas.push(operacao);
       console.log("[P9 PARSER]",{numeroLinha:item.numero_linha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:extracao.valor,operacaoGerada:true,motivoDescarte:null});
     }
     const existentes=await buscarTudoPaginado(()=>cliente.from("operacoes").select("id,chave_operacao").eq("importacao_id",id).eq("servico","P9").order("id",{ascending:true}));
     const chavesExistentes=new Set(existentes.map(item=>item.chave_operacao).filter(Boolean)),jaExistentes=linhasValidas.filter(item=>chavesExistentes.has(item.chave_operacao)),ausentes=linhasValidas.filter(item=>!chavesExistentes.has(item.chave_operacao));
+    console.log("[P9 OPERAÇÕES CARREGADAS]",{importacaoId:id,periodo,filtroAplicado:'importacao_id = informado AND servico = "P9"',quantidade:existentes.length});
+    jaExistentes.forEach(item=>console.log("[P9 DESCARTE]",{importacaoId:id,periodo,numeroLinha:item.numero_linha,chaveOperacao:item.chave_operacao,motivo:"CHAVE_OPERACAO_JA_EXISTENTE"}));
     const previa={periodo:`${anoNumero}-${String(mesNumero).padStart(2,"0")}`,importacaoId:id,linhasRaw:raw.length,linhasValidas:linhasValidas.length,linhasSemQdtEquipe:linhasSemQdtEquipe.length,jaExistentes:jaExistentes.length,aInserir:ausentes.length,erros:erros.length};
     console.log("[P9 REPROCESSAMENTO PRÉVIA]",previa);
     console.table(ausentes.slice(0,30).map(item=>({numero_linha:item.numero_linha,data_operacao:item.data_operacao,chave_operacao:item.chave_operacao,qtd_equipe:item.qtd_equipe,equipe:item.equipe,executado:item.executado})));
@@ -745,7 +756,7 @@
     const novo=antigo.cloneNode(true);antigo.replaceWith(novo);novo.dataset.importadorPrincipal=BUILD;novo.addEventListener("change",importarPlanilhas);
   }
 
-  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
+  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
   window.reprocessarP9AtivosCCO=reprocessarP9Ativos;
   window.reprocessarP9Ativo=reprocessarP9Ativos;
   window.reprocessarP9Periodo=reprocessarP9Periodo;

@@ -14,6 +14,10 @@ assert.deepEqual({...api.extrairValorOperacionalP9({Qdt_Catador:15,Qdt_Equipe:1}
 assert.deepEqual({...api.extrairValorOperacionalP9({qdt_catador:15,qdt_equipe:1})},{valor:1,campo:"qdt_equipe"});
 assert.equal(api.extrairValorOperacionalP9({Qdt_Catador:15}).valor,null);
 assert.equal(api.extrairValorOperacionalP9({qdt_catador:15}).valor,null);
+assert.equal(api.ehRawP9({aba:"P9"}),true);
+assert.equal(api.ehRawP9({aba:"Catação Em Área Verde",servico:null}),true);
+assert.equal(api.ehRawP9({aba:"Outra",dados_originais:{descricao:"Catação em Área Verde"}}),true);
+assert.equal(api.ehRawP9({aba:"P8",servico:"P8"}),false);
 
 const workbook={SheetNames:["Catação Em Área Verde"],Sheets:{"Catação Em Área Verde":[
   ["Dados","Qdt_Catador","Qdt_Equipe","Ra","Turno"],
@@ -37,7 +41,10 @@ assert.ok(descartado.erros.some(item=>item.codigo==="P9_QDT_EQUIPE_AUSENTE"));
 assert.equal(typeof contexto.window.reprocessarP9Periodo,"function");
 
 const fonte=fs.readFileSync("cco-importacao-principal.js","utf8");
-assert.match(fonte,/\.eq\("aba","P9"\)/);
+assert.match(fonte,/\.ilike\("aba","%Cata%"\)/);
+assert.match(fonte,/\.ilike\("aba","%rea Verde%"\)/);
+assert.match(fonte,/\[P9 OPERAÇÕES CARREGADAS\]/);
+assert.match(fonte,/\[P9 DESCARTE\]/);
 assert.match(fonte,/window\.confirm\(/);
 assert.doesNotMatch(fonte,/Qdt_Catador[^\n]*valorEquipeEscolhido:\s*(?:original|linha)/);
 console.log("P9 Qdt_Equipe: parser literal, descarte seguro e rotina administrativa aprovados.");
