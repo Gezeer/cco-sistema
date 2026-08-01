@@ -136,7 +136,7 @@
     const painelConvertido = SERVICOS_OFICIAIS.map(servico => {
       const item = metas.get(servico) || {};
       const registros = linhas.filter(linha => normalizarServico(linha.servico ?? linha.servico_p ?? linha.tipo_servico) === servico);
-      if(servico==="P9")console.log("[P9 EXECUÇÃO]",{registrosRecebidos:linhas.length,registrosFiltrados:registros.length,executadoCalculado:registros.reduce((t,x)=>t+numeroSeguro(x.executado),0),valorFinal:metricas.calcularAcumuladoServico("P9",registros)});
+      if(servico==="P9"){window.CCODiagnosticoP9Etapa?.("cco-fixes.js:metas.get(P9) → painel_executivo",item.acumulado,"leitura de painel_executivo.acumulado",registros);console.log("[P9 EXECUÇÃO]",{registrosRecebidos:linhas.length,registrosFiltrados:registros.length,executadoCalculado:registros.reduce((t,x)=>t+numeroSeguro(x.executado),0),valorFinal:metricas.calcularAcumuladoServico("P9",registros)});}
       const diasOperacao = window.CCO_REGRAS.obterDiasOperacao(periodo.ano,periodo.mes);
       const valoresOficiais = window.CCO_VALORES_FIXOS || (typeof VALORES_FIXOS !== "undefined" ? VALORES_FIXOS : {});
       const valorUnitario = numeroSeguro(item.valor_unitario) || numeroSeguro(valoresOficiais[servico]);
@@ -160,6 +160,7 @@
         consolidado=metricas.consolidarServico({servico,registros,previstoMensal:item.previsto,diasOperacaoMes:diasOperacao,valorUnitario,nome:item.nome_servico||"",unidade:obterMedicaoOficial(servico),ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
         linha={acumulado_mes:metricaDisponivel?consolidado.acumuladoReal:null,metrica_disponivel:metricaDisponivel,previsto_mes:consolidado.previstoMensal,previsto_acumulado:metricaDisponivel?consolidado.previstoAcumulado:null,porcentagem_execucao:metricaDisponivel?consolidado.percentualCumprimento:null,valor:metricaDisponivel?consolidado.valorAcumulado:null,status:metricaDisponivel&&consolidado.status==="com_dados"?"Com dados":"Sem dados",fonte_metricas:"operacoes + painel_executivo + dias_operacao"};
       }
+      if(servico==="P9")window.CCODiagnosticoP9Etapa?.("cco-fixes.js:painelConvertido[P9].acumulado_mes",linha?.acumulado_mes,"atribuição final da linha consolidada antes de painelExecutivo",registros);
       return {servico,nome_servico:item.nome_servico||"",medicao:obterMedicaoOficial(servico),dias_acumulados:diasAcumulados,total_dias_mes:diasOperacao,quantidade_equipes:consolidado?.quantidadeEquipes??null,produtividade:consolidado?.produtividade??null,avisos_consistencia:consolidado?.avisos||[],...linha};
     });
     window.painelExecutivo = painelConvertido;
