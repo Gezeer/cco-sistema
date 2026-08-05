@@ -30,6 +30,7 @@ body.execution-page #detalheServico > .cards > .card.cco-card-entrada { animatio
 body.execution-page #detalheServico > .cards > .card.cco-card-entrada.cco-card-meta-atingida { animation:ccoCardEntrada 460ms cubic-bezier(.22,.8,.3,1) var(--cco-card-delay,0ms) both,ccoMetaAtingida 520ms ease-out 560ms 1 both; }
 body.execution-page #detalheServico > .cards > .card.cco-card-meta-atingida:not(.cco-card-entrada) { animation:ccoMetaAtingida 520ms ease-out 80ms 1 both; }
 body.execution-page #detalheServico.cco-cards-carregando > .cards > .card::after { content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:linear-gradient(105deg,transparent 25%,rgba(255,255,255,.075) 44%,rgba(255,255,255,.12) 50%,transparent 70%);background-size:220% 100%;animation:ccoCardShimmer 1.15s ease-in-out infinite; }
+@media (max-width:767px){body.execution-page #detalheServico>.cards>.card.cco-card-entrada{animation-duration:220ms}body.execution-page #detalheServico>.cards>.card{transition:none}body.execution-page .chart-card,body.execution-page .execucao-graficos-grid{content-visibility:auto;contain:layout paint style;contain-intrinsic-size:320px}}
 body.execution-page .execucao-tendencia.is-crescimento.cco-tendencia-animada .execucao-tendencia__direcional { animation:ccoSetaSobe 420ms ease-out both; }
 body.execution-page .execucao-tendencia.is-queda.cco-tendencia-animada .execucao-tendencia__direcional { animation:ccoSetaDesce 420ms ease-out both; }
 

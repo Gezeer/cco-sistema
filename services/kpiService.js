@@ -6,7 +6,7 @@
     const ano=Number(filtros.ano),mes=Number(filtros.mes),servico=global.CCOMetricas?.normalizarServico?.(filtros.servico)||String(filtros.servico||"").trim().toUpperCase();
     if(!importacaoId&&(!ano||!mes))throw new Error("importacao_id ou período válido é obrigatório para consultar KPI.");
     const partes = [importacaoId, filtros.ano, filtros.mes, servico, filtros.ra, filtros.turno], cacheKey = global.CCOCache.chave("kpi", partes);
-    return global.CCOCache.lembrar(cacheKey, async () => {
+    const produtor=()=>global.CCOCache.lembrar(cacheKey, async () => {
       const registros=await global.CCOSupabase.paginar(() => {
         let consulta = db().from("operacoes").select(CAMPOS).order("id");
         if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);
@@ -17,16 +17,18 @@
         return consulta;
       });
       const velocidade=global.CCOKpiVelocidade,validos=(registros||[]).filter(item=>velocidade?velocidade.normalizarNumero(item?.velocidade_media)!==null:item?.velocidade_media!==null&&item?.velocidade_media!==undefined&&item?.velocidade_media!=="");
-      console.log("[KPI VELOCIDADE][CONSULTA]",{ano,mes,periodo:ano&&mes?`${ano}-${String(mes).padStart(2,"0")}`:null,importacaoId,servico:servico||null,registrosRecebidos:registros.length,registrosComVelocidade:validos.length,primeiros20:registros.slice(0,20).map(item=>({importacao_id:item.importacao_id,servico:item.servico,data_operacao:item.data_operacao,velocidade_media:item.velocidade_media}))});
+      if(global.CCO_DEBUG_PERFORMANCE===true)console.log("[KPI VELOCIDADE][CONSULTA]",{ano,mes,periodo:ano&&mes?`${ano}-${String(mes).padStart(2,"0")}`:null,importacaoId,servico:servico||null,registrosRecebidos:registros.length,registrosComVelocidade:validos.length});
       return registros;
     }, 5 * 60 * 1000);
+    return global.CCOMobilePerformance?.dados({pagina:"kpi",ano,mes,servico,importacaoId},produtor)||produtor();
   }
   async function mensal(importacaoId){
     if(!importacaoId)throw new Error("importacao_id é obrigatório para consultar kpi_mensal.");
     const cacheKey=global.CCOCache.chave("kpi-mensal",[importacaoId]);
-    return global.CCOCache.lembrar(cacheKey,()=>global.CCOSupabase.paginar(()=>db().from("kpi_mensal")
+    const produtor=()=>global.CCOCache.lembrar(cacheKey,()=>global.CCOSupabase.paginar(()=>db().from("kpi_mensal")
       .select("id,importacao_id,ano,mes,servico,total_operacoes,total_viagens,total_peso_t,total_km,velocidade_media,quantidade_dias,dados")
       .eq("importacao_id",importacaoId).order("servico")),5*60*1000);
+    return global.CCOMobilePerformance?.dados({pagina:"kpi-mensal",ano:"",mes:"",servico:"",importacaoId},produtor)||produtor();
   }
   async function carregar(importacaoId,filtros={}){const[kpis,registros]=await Promise.all([mensal(importacaoId),operacoes(importacaoId,filtros)]);return{kpis,operacoes:registros};}
   global.CCOKpiService = Object.freeze({ operacoes, mensal, carregar });

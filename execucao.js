@@ -59,7 +59,7 @@
     return renderizarPeriodoExecucao(localizarPeriodoExecucao(catalogo,ano,selectMes.value));
   }
   async function alterarMesExecucaoCCO(){const catalogo=await carregarCatalogoExecucaoCCO(),ano=Number(document.getElementById("filtroExecucaoAno")?.value),mes=Number(document.getElementById("filtroExecucaoMes")?.value);return renderizarPeriodoExecucao(localizarPeriodoExecucao(catalogo,ano,mes));}
-  window.carregarCatalogoExecucaoCCO=carregarCatalogoExecucaoCCO;window.obterMesesDoAnoExecucao=obterMesesDoAnoExecucao;window.localizarPeriodoExecucao=localizarPeriodoExecucao;window.alterarAnoExecucaoCCO=alterarAnoExecucaoCCO;window.alterarMesExecucaoCCO=alterarMesExecucaoCCO;window.aplicarFiltroExecucaoMensal=alterarMesExecucaoCCO;
+  const debounceExecucao=window.CCOMobilePerformance?.debounce;window.carregarCatalogoExecucaoCCO=carregarCatalogoExecucaoCCO;window.obterMesesDoAnoExecucao=obterMesesDoAnoExecucao;window.localizarPeriodoExecucao=localizarPeriodoExecucao;window.alterarAnoExecucaoCCO=debounceExecucao?debounceExecucao("execucao:filtro-ano",alterarAnoExecucaoCCO,275):alterarAnoExecucaoCCO;window.alterarMesExecucaoCCO=debounceExecucao?debounceExecucao("execucao:filtro-mes",alterarMesExecucaoCCO,275):alterarMesExecucaoCCO;window.aplicarFiltroExecucaoMensal=window.alterarMesExecucaoCCO;
 
   const cacheEvolucaoExecucao=new Map();
   let requisicaoEvolucaoExecucao=0;

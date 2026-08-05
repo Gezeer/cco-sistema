@@ -22,6 +22,6 @@ const cards=[card("Peso","100 t"),card("Distância Média","25 km/viagem"),card(
 api.animarCardsExecucaoCCO();api.animarCardsExecucaoCCO();assert.equal(cards[0].valorEl.textContent,"100 t");assert.equal(cards[1].valorEl.textContent,"25 km/viagem");assert.equal(cards[0].classList.valores.has("cco-card-entrada"),false,"reduced motion não deve aplicar entrada");
 assert.equal(cards[2].classList.valores.has("cco-card-meta-atingida"),false,"Não atingido não pode receber pulso verde");
 
-const fonte=fs.readFileSync("js/cco-cards-execucao.js","utf8");assert.doesNotMatch(fonte,/filtroExecucaoAno|filtroExecucaoMes/);assert.doesNotMatch(fonte,/addEventListener\(["'](?:change|input)["']/);assert.match(fs.readFileSync("execucao.html","utf8"),/20260731-cards-execucao-animados-v1/);
+const fonte=fs.readFileSync("js/cco-cards-execucao.js","utf8");assert.doesNotMatch(fonte,/filtroExecucaoAno|filtroExecucaoMes/);assert.doesNotMatch(fonte,/addEventListener\(["'](?:change|input)["']/);assert.match(fs.readFileSync("execucao.html","utf8"),/20260805-mobile-performance-v1/);
 const css=fs.readFileSync("css/execucao.css","utf8");assert.match(css,/@media \(max-width: 1100px\)/);assert.match(css,/@media \(max-width: 760px\)/);assert.match(css,/@media \(max-width: 520px\)/);assert.match(css,/grid-template-columns: minmax\(0, 1fr\)/);assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
 console.log("Cards Execução: formato, cancelamento, reduced motion e renderização repetida aprovados.");

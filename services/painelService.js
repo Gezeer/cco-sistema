@@ -50,11 +50,13 @@
     console.log("[CATÁLOGO] início");
     let resultado=[],fonte="rpc";
     contador.consultasRPC+=1;
+    if(global.CCOMobilePerformance)global.CCOMobilePerformance.metricas.consultasSupabase+=1;
     const resposta=await db().rpc("cco_catalogo_periodos");
     console.log("[CATÁLOGO RPC]",{status:resposta.status??null,error:resposta.error?.message??null,details:resposta.error?.details??null,hint:resposta.error?.hint??null});
     if(resposta.error)throw Object.assign(new Error(`Falha na RPC cco_catalogo_periodos: ${resposta.error.message||"erro sem mensagem"}`),{status:resposta.status??null,code:resposta.error.code??null,details:resposta.error.details??null,hint:resposta.error.hint??null,cause:resposta.error});
     resultado=(resposta.data||[]).map(item=>({...item,ano:Number(item.ano),mes:Number(item.mes),periodo:item.periodo||`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`,origem:"rpc"})).sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
     const diasOperacao=await global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}));
+      if(global.CCOMobilePerformance)global.CCOMobilePerformance.metricas.consultasSupabase+=1;
       diasOperacaoCache.clear();
       for(const item of diasOperacao||[]){
         const periodo=`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`;
@@ -66,6 +68,7 @@
     global.__CCO_IMPORTACOES_POR_PERIODO__=Object.fromEntries(resultado.map(item=>[item.periodo,item]));
     global.__CCO_PERIODOS_REAIS_V12__=resultado;
     console.log("[CATÁLOGO]",{fonte,quantidadePeriodos:resultado.length,duracaoMs});
+    global.CCOMobilePerformance?.fase("CATÁLOGO",{periodos:resultado.length});
     return resultado;
   }
   function getCatalogoPeriodos(){
@@ -85,23 +88,23 @@
   async function ultimoPeriodo() { return (await catalogo())[0] || null; }
   async function porImportacao(importacaoId) {
     const id = validarId(importacaoId), chave = global.CCOCache.chave("painel", [id]);
-    console.log("[P9 FLUXO LEITURA porImportacao]",{importacaoId:id,chaveCache:chave,fonte:"CCOCache.lembrar → painel_executivo",stack:new Error().stack});
+    if(global.CCO_DEBUG_P9===true)console.log("[P9 FLUXO LEITURA porImportacao]",{importacaoId:id,chaveCache:chave,fonte:"CCOCache.lembrar → painel_executivo"});
     return global.CCOCache.lembrar(chave, async () => {
       const { data, error } = await db().from("painel_executivo").select("id,importacao_id,numero_linha,ano,mes,servico,descricao,nome_servico,medicao,previsto,acumulado,valor_unitario,valor_total,dias_acumulados,total_dias_mes,dados").eq("importacao_id", id).order("numero_linha");
       if (error) throw error;
       const p9=(data||[]).find(item=>String(item.servico||"").trim().toUpperCase()==="P9");
-      console.log("[P9 PRIMEIRA LEITURA porImportacao]",{arquivo:"services/painelService.js",funcao:"porImportacao",origem:"painel_executivo.acumulado",importacaoId:id,linhaP9:p9,acumulado:p9?.acumulado??null,stack:new Error().stack});
+      if(global.CCO_DEBUG_P9===true)console.log("[P9 PRIMEIRA LEITURA porImportacao]",{arquivo:"services/painelService.js",funcao:"porImportacao",origem:"painel_executivo.acumulado",importacaoId:id,acumulado:p9?.acumulado??null});
       if(p9)global.CCODiagnosticoP9Etapa?.("services/painelService.js:porImportacao → painel_executivo.acumulado",p9.acumulado,"leitura direta da coluna painel_executivo.acumulado");
       return data || [];
     }, TTL);
   }
   async function p9PorPeriodo(importacaoId,ano,mes) {
-    console.log("[P9 FLUXO LEITURA p9PorPeriodo]",{importacaoId,ano:Number(ano),mes:Number(mes),fonte:"painel_executivo",cacheLocal:false,stack:new Error().stack});
+    if(global.CCO_DEBUG_P9===true)console.log("[P9 FLUXO LEITURA p9PorPeriodo]",{importacaoId,ano:Number(ano),mes:Number(mes),fonte:"painel_executivo",cacheLocal:false});
     const id=validarId(importacaoId),{data,error}=await db().from("painel_executivo")
       .select("id,importacao_id,numero_linha,ano,mes,servico,descricao,nome_servico,medicao,previsto,acumulado,valor_unitario,valor_total,dias_acumulados,total_dias_mes,dados")
       .eq("importacao_id",id).eq("ano",Number(ano)).eq("mes",Number(mes)).eq("servico","P9").maybeSingle();
     if(error)throw error;
-    console.log("[P9 PRIMEIRA LEITURA p9PorPeriodo]",{arquivo:"services/painelService.js",funcao:"p9PorPeriodo",origem:"painel_executivo.acumulado",importacaoId:id,periodo:`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`,linhaP9:data,acumulado:data?.acumulado??null,stack:new Error().stack});
+    if(global.CCO_DEBUG_P9===true)console.log("[P9 PRIMEIRA LEITURA p9PorPeriodo]",{arquivo:"services/painelService.js",funcao:"p9PorPeriodo",origem:"painel_executivo.acumulado",importacaoId:id,periodo:`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`,acumulado:data?.acumulado??null});
     if(data)global.CCODiagnosticoP9Etapa?.("services/painelService.js:p9PorPeriodo → painel_executivo.acumulado",data.acumulado,"leitura direta da coluna painel_executivo.acumulado");
     return data||null;
   }

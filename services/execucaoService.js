@@ -8,9 +8,10 @@
     const campos="id,importacao_id,chave_operacao,rd,servico,tipo_servico,data_operacao,turno,ra,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media";
     const banco=global.supabaseClient;
     if(!banco)throw new Error("Supabase indisponível.");
-    const operacoes=await global.CCOSupabase.paginar(()=>{let consulta=banco.from("operacoes").select(campos).gte("data_operacao",inicio).lt("data_operacao",fim).order("id");if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);return consulta;});
+    const produtor=()=>global.CCOSupabase.paginar(()=>{let consulta=banco.from("operacoes").select(campos).gte("data_operacao",inicio).lt("data_operacao",fim).order("id");if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);return consulta;});
+    const operacoes=await(global.CCOMobilePerformance?.dados({pagina:"execucao",ano,mes,servico:String(filtros.servico||""),importacaoId},produtor)||produtor());
     const p9Banco=operacoes.filter(item=>String(item.servico||"").trim().toUpperCase()==="P9");
-    console.log("[P9 BANCO]",{registros:p9Banco.length,executado:p9Banco.reduce((t,x)=>t+(Number(x.executado)||0),0),peso_t:p9Banco.reduce((t,x)=>t+(Number(x.peso_t)||0),0),km_total:p9Banco.reduce((t,x)=>t+(Number(x.km_total)||0),0),importacaoId:importacaoId||null,datas:[...new Set(p9Banco.map(x=>String(x.data_operacao||"").slice(0,10)).filter(Boolean))].sort()});
+    if(global.CCO_DEBUG_P9===true)console.log("[P9 BANCO]",{registros:p9Banco.length,executado:p9Banco.reduce((t,x)=>t+(Number(x.executado)||0),0),peso_t:p9Banco.reduce((t,x)=>t+(Number(x.peso_t)||0),0),km_total:p9Banco.reduce((t,x)=>t+(Number(x.km_total)||0),0),importacaoId:importacaoId||null,datas:[...new Set(p9Banco.map(x=>String(x.data_operacao||"").slice(0,10)).filter(Boolean))].sort()});
     const p1=operacoes.filter(item=>String(item.servico||"").trim().toUpperCase()==="P1");
     if(!p1.length){global.__CCO_P1_KM_RAW__={importacaoId,linhasRaw:0,somaKmTotal:0};return operacoes;}
     try{
