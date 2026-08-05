@@ -144,6 +144,32 @@ body.execution-page #detalheServico > .cards > .card > small {
   body.execution-page #graficoExecDetalheEvolucao { height: var(--cco-chart-mobile-height, 250px) !important; min-height: var(--cco-chart-mobile-height, 250px) !important; }
 }
 
+@media (max-width: 767px) {
+  body.execution-page #graficoExecDetalheEvolucao {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: var(--cco-chart-mobile-height, 460px) !important;
+    min-height: 420px !important;
+    max-height: 500px !important;
+    overflow: hidden;
+  }
+
+  body.execution-page .secao-evolucao__cabecalho {
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  body.execution-page .execucao-tendencia {
+    min-height: 0;
+    padding: 7px 9px;
+    gap: 7px;
+  }
+
+  body.execution-page .execucao-tendencia__icone { width: 28px; height: 28px; }
+  body.execution-page .execucao-tendencia__titulo { font-size: 10px; }
+  body.execution-page .execucao-tendencia__texto { font-size: 11px; line-height: 1.25; }
+}
+
 /* Execução — gaveta de navegação sólida no breakpoint real do projeto. */
 body.execution-page {
   --altura-header: 72px;

@@ -46,11 +46,11 @@ assert.match(render,/\[EXECUÇÃO COMPARATIVO 3D\]/);
 assert.match(graficos3d,/if\(config\.preservarNulos&&api\.value\(1\)==null\)return\{type:"group",children:\[\]\}/,"null não pode criar barra falsa");
 assert.match(graficos3d,/centro=api\.coord\(\[api\.value\(0\),valor\]\)/,"a altura visual deve usar diretamente o valor real");
 assert.match(graficos3d,/type:"polygon"[\s\S]*type:"rect"[\s\S]*type:"ellipse"/,"a barra 3D deve combinar lateral, elipses e corpo");
-assert.match(graficos3d,/cfg\.pequeno\?18:cfg\.mobile\?24:36/,"largura das barras deve responder ao viewport");
+assert.match(graficos3d,/mobileCompacto\?30:cfg\.pequeno\?18:cfg\.mobile\?24:36/,"largura das barras deve responder ao viewport");
 assert.match(graficos3d,/prefers-reduced-motion: reduce/);
 assert.match(graficos3d,/movimentoReduzido\?0:cfg\.animacao/);
 assert.match(fonteHtml,/cco-execucao-comparativo\.js\?v=20260805-previsto-acumulado-v1/);
-assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260805-mobile-performance-v1/);
-assert.match(fonteHtml,/execucao\.js\?v=20260805-mobile-performance-v1/);
+assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260805-grafico-mobile-compacto-v1/);
+assert.match(fonteHtml,/execucao\.js\?v=20260805-grafico-mobile-compacto-v1/);
 
 console.log("Execução comparativa: nove meses, duas séries, isolamento por importação, null e corrida assíncrona aprovados.");

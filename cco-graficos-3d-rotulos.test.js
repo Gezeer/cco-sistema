@@ -27,7 +27,7 @@ const distante=api.calcularPosicaoRotulo3D({indiceSerie:1,centroX:118,topoY:180,
 assert.equal(distante.deslocado,false,"valores muito diferentes devem continuar alinhados ao topo da barra");
 
 assert.match(fonte,/fill:"rgba\(3,24,18,\.82\)"/,"rótulo deve possuir cápsula escura discreta");
-assert.match(fonte,/const guia=posicaoRotulo\.deslocado/,"deslocamentos devem poder criar linha-guia");
+assert.match(fonte,/const guia=posicaoRotulo\?\.deslocado/,"deslocamentos devem poder criar linha-guia");
 assert.match(fonte,/CCO_DEBUG_GRAFICOS_3D===true/,"log deve existir somente no modo debug");
 assert.match(fonte,/Diferença:/,"tooltip deve incluir a diferença com valor completo");
 assert.match(fonte,/destruirGrafico\(container\)/,"uma nova renderização deve remover a instância anterior");
