@@ -62,6 +62,7 @@
   window.carregarCatalogoExecucaoCCO=carregarCatalogoExecucaoCCO;window.obterMesesDoAnoExecucao=obterMesesDoAnoExecucao;window.localizarPeriodoExecucao=localizarPeriodoExecucao;window.alterarAnoExecucaoCCO=alterarAnoExecucaoCCO;window.alterarMesExecucaoCCO=alterarMesExecucaoCCO;window.aplicarFiltroExecucaoMensal=alterarMesExecucaoCCO;
 
   const cacheEvolucaoExecucao=new Map();
+  let requisicaoEvolucaoExecucao=0;
   function invalidarCacheEvolucaoExecucaoCCO(){cacheEvolucaoExecucao.clear();}
   window.invalidarCacheEvolucaoExecucaoCCO=invalidarCacheEvolucaoExecucaoCCO;
   document.addEventListener("cco:importacao-concluida",()=>{invalidarCacheEvolucaoExecucaoCCO();const servico=window.obterServicoAtivo?.();if(servico&&servico!=="geral")renderizarEvolucaoHistoricaCCO(servico).catch(error=>console.error("[EXECUÇÃO Evolução] atualização após importação falhou",error));});
@@ -89,18 +90,14 @@
     if(!elemento){cabecalho.insertAdjacentHTML("beforeend",`<div id="tendenciaEvolucaoServico" class="execucao-tendencia is-indisponivel" aria-live="polite" aria-label="Comparação indisponível"><span class="execucao-tendencia__icone" aria-hidden="true"><svg viewBox="0 0 48 48" class="execucao-tendencia__svg"><g class="execucao-tendencia__direcional"><path class="execucao-tendencia__linha" d="M8 34 L22 20 L30 28 L42 12"/><path class="execucao-tendencia__ponta" d="M31 12 H42 V23"/></g><g class="execucao-tendencia__horizontal"><path d="M7 24 H41"/><path d="M31 14 L41 24 L31 34"/></g></svg></span><div class="execucao-tendencia__conteudo"><strong class="execucao-tendencia__titulo">Tendência</strong><span class="execucao-tendencia__texto">Comparação indisponível</span></div></div>`);elemento=document.getElementById("tendenciaEvolucaoServico");}
     return elemento;
   }
-  function atualizarTendenciaEvolucaoCCO(categorias,valores){
-    const elemento=garantirIndicadorTendenciaEvolucaoCCO();if(!elemento)return null;const tendencia=calcularTendenciaEvolucaoCCO(categorias,valores),texto=elemento.querySelector(".execucao-tendencia__texto"),formatar=valor=>n(valor).toLocaleString("pt-BR",{maximumFractionDigits:2}),formatarPercentual=valor=>Math.abs(valor).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1});
-    elemento.classList.remove("is-crescimento","is-queda","is-estavel","is-indisponivel","is-animando");elemento.classList.add(`is-${tendencia.tipo}`);
-    if(tendencia.tipo==="indisponivel"){
-      texto.textContent=tendencia.atual?"Comparação indisponível — somente um período com dados.":"Comparação indisponível";elemento.setAttribute("aria-label",texto.textContent);elemento.removeAttribute("title");return tendencia;
-    }
-    const anterior=tendencia.anterior,atual=tendencia.atual,pct=tendencia.percentual===null?null:formatarPercentual(tendencia.percentual);let mensagem;
-    if(tendencia.tipo==="crescimento")mensagem=anterior.valor===0?`Crescimento a partir de zero • ${anterior.categoria} → ${atual.categoria}`:`Crescimento de ${pct}% • ${anterior.categoria} → ${atual.categoria}`;
-    else if(tendencia.tipo==="queda")mensagem=pct===null?`Queda • ${anterior.categoria} → ${atual.categoria}`:`Queda de ${pct}% • ${anterior.categoria} → ${atual.categoria}`;
-    else mensagem=anterior.valor===0&&atual.valor===0?`Estável — sem variação • ${anterior.categoria} → ${atual.categoria}`:`Estável • ${anterior.categoria} → ${atual.categoria}`;
-    texto.textContent=mensagem;const acessivel=`${tendencia.tipo==="crescimento"?"Crescimento":tendencia.tipo==="queda"?"Queda":"Estável"}${pct!==null?` de ${pct} por cento`:""} entre ${anterior.categoria} e ${atual.categoria}.`;elemento.setAttribute("aria-label",acessivel);elemento.title=`Anterior: ${anterior.categoria} — ${formatar(anterior.valor)}\nAtual: ${atual.categoria} — ${formatar(atual.valor)}\nDiferença: ${formatar(tendencia.diferenca)}${pct!==null?`\nVariação: ${pct}%`:""}`;
-    void elemento.offsetWidth;elemento.classList.add("is-animando");console.log("[EXECUÇÃO Tendência]",{tipo:tendencia.tipo,anterior,atual,diferenca:tendencia.diferenca,percentual:tendencia.percentual});return tendencia;
+  function atualizarTendenciaEvolucaoCCO(comparativo){
+    const elemento=garantirIndicadorTendenciaEvolucaoCCO();if(!elemento)return null;
+    const periodoSelecionado=periodoChave(window.filtroExecucaoAnoAtual,window.filtroExecucaoMesAtual),indice=comparativo.itens.findIndex(item=>item.periodo===periodoSelecionado),item=comparativo.itens[indice]||null,texto=elemento.querySelector(".execucao-tendencia__texto"),formatar=valor=>n(valor).toLocaleString("pt-BR",{maximumFractionDigits:2});
+    const disponivel=item&&item.previsto!==null&&item.acumulado!==null,diferenca=disponivel?item.acumulado-item.previsto:null,percentual=disponivel&&item.previsto!==0?item.acumulado/item.previsto*100:null,tipo=!disponivel?"indisponivel":Math.abs(diferenca)<.005?"estavel":diferenca>0?"crescimento":"queda";
+    elemento.classList.remove("is-crescimento","is-queda","is-estavel","is-indisponivel","is-animando");elemento.classList.add(`is-${tipo}`);
+    texto.textContent=!disponivel?"Comparação indisponível no mês selecionado":`${item.rotulo} • ${diferenca>=0?"acima":"abaixo"} do previsto em ${formatar(Math.abs(diferenca))}${percentual!==null?` • ${percentual.toLocaleString("pt-BR",{maximumFractionDigits:1})}%`:""}`;
+    elemento.setAttribute("aria-label",texto.textContent);elemento.title=disponivel?`Previsto: ${formatar(item.previsto)}\nAcumulado: ${formatar(item.acumulado)}\nDiferença: ${formatar(diferenca)}`:"";
+    void elemento.offsetWidth;elemento.classList.add("is-animando");return{tipo,item,diferenca,percentual};
   }
   window.atualizarTendenciaEvolucaoCCO=atualizarTendenciaEvolucaoCCO;
   function garantirContainerEvolucao(codigo){
@@ -112,24 +109,25 @@
     return posicionarSecoesDetalheExecucao();
   }
   async function buscarEvolucaoServicoCCO(servico){
-    const catalogo=await carregarCatalogoExecucaoCCO(),assinatura=catalogo.map(item=>item.importacao_id).join("|"),chaveCache=`evolucao:${servico}`,armazenado=cacheEvolucaoExecucao.get(chaveCache);
+    const catalogoCompleto=await carregarCatalogoExecucaoCCO(),periodosObrigatorios=new Set(window.CCOExecucaoComparativoMensal.PERIODOS.map(item=>periodoChave(item.ano,item.mes))),catalogo=catalogoCompleto.filter(item=>periodosObrigatorios.has(periodoChave(item.ano,item.mes))),assinatura=catalogo.map(item=>`${periodoChave(item.ano,item.mes)}:${item.importacao_id}`).join("|"),chaveCache=`evolucao:${servico}`,armazenado=cacheEvolucaoExecucao.get(chaveCache);
     if(armazenado?.assinatura===assinatura)return{catalogo,linhas:armazenado.linhas};
     const idsAtivos=new Set(catalogo.map(item=>String(item.importacao_id))),banco=window.supabaseClient;
     const resposta=await banco.from("painel_executivo").select("importacao_id,ano,mes,servico,acumulado,previsto,valor_total").in("importacao_id",[...idsAtivos]).eq("servico",servico).order("ano",{ascending:true}).order("mes",{ascending:true});
     if(resposta.error)throw resposta.error;
-    const porPeriodo=new Map();
-    for(const item of resposta.data||[]){if(!idsAtivos.has(String(item.importacao_id)))continue;porPeriodo.set(periodoChave(item.ano,item.mes),item);}
-    const linhas=[...porPeriodo.values()].sort((a,b)=>Number(a.ano)-Number(b.ano)||Number(a.mes)-Number(b.mes));cacheEvolucaoExecucao.set(chaveCache,{assinatura,linhas});return{catalogo,linhas};
+    const linhas=(resposta.data||[]).filter(item=>idsAtivos.has(String(item.importacao_id)));cacheEvolucaoExecucao.set(chaveCache,{assinatura,linhas});return{catalogo,linhas};
   }
   async function renderizarEvolucaoHistoricaCCO(servicoSelecionado){
-    const servico=String(servicoSelecionado||"").trim().toUpperCase();if(!servico||servico==="GERAL")return null;
-    const{catalogo,linhas}=await buscarEvolucaoServicoCCO(servico),mapaValor=new Map(linhas.map(item=>[periodoChave(item.ano,item.mes),n(item.acumulado)])),categorias=catalogo.map(item=>`${MESES[pad(item.mes)]||pad(item.mes)}/${item.ano}`),valores=catalogo.map(item=>{const chave=periodoChave(item.ano,item.mes);return mapaValor.has(chave)?mapaValor.get(chave):null;});
-    console.log("[EXECUÇÃO Evolução]",{servico,periodos:categorias,valores,total:valores.length});
+    const servico=String(servicoSelecionado||"").trim().toUpperCase(),token=++requisicaoEvolucaoExecucao;if(!servico||servico==="GERAL")return null;
+    const{catalogo,linhas}=await buscarEvolucaoServicoCCO(servico);if(token!==requisicaoEvolucaoExecucao||String(window.obterServicoAtivo?.()||"").toUpperCase()!==servico)return null;
+    const comparativo=window.CCOExecucaoComparativoMensal.montar({catalogo,linhas}),{labels,importacoes,previstos,acumulados,percentuais}=comparativo;
+    if(labels.length!==9||previstos.length!==9||acumulados.length!==9)throw new Error("Comparativo mensal da Execução deve possuir exatamente nove períodos.");
+    console.log("[EXECUÇÃO COMPARATIVO MENSAL]",{servico,periodos:labels,importacoes,previstos,acumulados,percentuais});
     const container=garantirContainerEvolucao(servico);if(!container)return null;
-    const ativo=window.obterServicoAtivo?.();if(ativo&&String(ativo).toUpperCase()!==servico)return null;
     const formatar=valor=>n(valor).toLocaleString("pt-BR",{maximumFractionDigits:2});
-    const grafico=window.CCO_GRAFICOS_3D?.renderizarDireto?.(container,{tipo:cfg=>cfg.mobile?"linha":"cilindro",categorias,series:[{nome:"Executado",valores,formatarRotulo:(valor,indice)=>valores[indice]==null?"":formatar(valor)}],tooltip:{formatter:parametros=>{const item=(Array.isArray(parametros)?parametros:[parametros])[0],indice=item?.dataIndex??0;return valores[indice]==null?`${categorias[indice]}<br>Sem dados válidos`:`${categorias[indice]}<br>Executado: ${formatar(valores[indice])}`;}}});
-    posicionarSecoesDetalheExecucao();atualizarTendenciaEvolucaoCCO(categorias,valores);return grafico;
+    const titulo=container.closest(".section, .chart-card")?.querySelector(".section-title h2");if(titulo)titulo.textContent="Previsto x Acumulado — Novembro/2025 a Julho/2026";
+    window.CCO_GRAFICOS_3D?.destruirGrafico?.(container);
+    const grafico=window.CCO_GRAFICOS_3D?.renderizarDireto?.(container,{tipo:"barra",preservarNulos:true,categorias:labels,series:[{nome:"Previsto",valores:previstos,formatarRotulo:(valor,indice)=>previstos[indice]==null?"":formatar(valor)},{nome:"Acumulado",valores:acumulados,formatarRotulo:(valor,indice)=>acumulados[indice]==null?"":formatar(valor)}],legend:{show:true},tooltip:{formatter:parametros=>{const itens=Array.isArray(parametros)?parametros:[parametros],indice=itens[0]?.dataIndex??0,pct=percentuais[indice];return`${labels[indice]}<br>Previsto: ${previstos[indice]===null?"Sem dados":formatar(previstos[indice])}<br>Acumulado: ${acumulados[indice]===null?"Sem dados":formatar(acumulados[indice])}<br>Percentual: ${pct===null?"Sem dados":`${pct.toLocaleString("pt-BR",{maximumFractionDigits:1})}%`}`;}}});
+    posicionarSecoesDetalheExecucao();atualizarTendenciaEvolucaoCCO(comparativo);return grafico;
   }
   window.renderizarEvolucaoHistoricaCCO=renderizarEvolucaoHistoricaCCO;
   const renderDetalheServicoMensalOriginal=window.renderDetalheServicoMensal;

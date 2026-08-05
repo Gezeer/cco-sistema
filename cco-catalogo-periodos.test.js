@@ -51,19 +51,18 @@ function criarContexto({falharRpc=false}={}){
   assert.equal(normal.window.__CCO_CONTADOR_CATALOGO__.paginacaoCompleta,0);
   assert.equal(normal.window.__CCO_CONTADOR_CATALOGO__.promiseCompartilhada,true);
 
-  const fallback=criarContexto({falharRpc:true});
-  const catalogoFallback=await fallback.window.CCOPainelService.getCatalogoPeriodos();
-  assert.equal(fallback.chamadasRpc,1);
-  assert.equal(fallback.consultasOperacoes,1,"fallback pesado deve executar uma única vez após falha da RPC");
-  assert.equal(catalogoFallback[0].periodo,"2026-07");
-  assert.equal(fallback.window.__CCO_CONTADOR_CATALOGO__.paginacaoCompleta,1);
+  const falha=criarContexto({falharRpc:true});
+  await assert.rejects(falha.window.CCOPainelService.getCatalogoPeriodos(),/Falha na RPC cco_catalogo_periodos/);
+  assert.equal(falha.chamadasRpc,1);
+  assert.equal(falha.consultasOperacoes,0,"falha da RPC não pode ativar paginação de operacoes");
+  assert.equal(falha.window.__CCO_CONTADOR_CATALOGO__.paginacaoCompleta,0);
 
   assert.match(fonte,/rpc\("cco_catalogo_periodos"\)/);
-  assert.match(fonte,/\[CATÁLOGO\] fallback pesado ativado/);
+  assert.match(fonte,/\[CATÁLOGO RPC\]/);
   assert.match(fonte,/CCO_DEBUG_PAGINACAO===true/);
   assert.match(utils,/CCOPainelService\?\.getCatalogoPeriodos/);
   const legado=utils.match(/async function carregarCatalogoPeriodosV12[\s\S]*?(?=\n\s*async function obterImportacaoPrincipal)/)?.[0]||"";
   assert.doesNotMatch(legado,/from\(['"]operacoes['"]\)/);
   assert.match(execucao,/CCOPainelService\.getCatalogoPeriodos\(\)/);
-  console.log("Catálogo RPC: Promise única, nove períodos, cache e fallback controlado aprovados.");
+  console.log("Catálogo RPC: Promise única, nove períodos e falha sem fallback pesado aprovados.");
 })().catch(error=>{console.error(error);process.exitCode=1});

@@ -51,16 +51,9 @@
     let resultado=[],fonte="rpc";
     contador.consultasRPC+=1;
     const resposta=await db().rpc("cco_catalogo_periodos");
-    if(!resposta.error){
-      resultado=(resposta.data||[]).map(item=>({...item,ano:Number(item.ano),mes:Number(item.mes),periodo:item.periodo||`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`,origem:"rpc"})).sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
-    }else{
-      fonte="fallback";
-      const[operacoes,importacoes]=await Promise.all([
-        paginarOperacoesCatalogo(),
-        global.CCOSupabase.paginar(()=>db().from("importacoes").select("id,ano,mes,nome_arquivo,status,ativa,concluido_em,criado_em").order("criado_em",{ascending:false}))
-      ]);
-      resultado=montarCatalogoPorOperacoes(operacoes,importacoes);
-    }
+    console.log("[CATÁLOGO RPC]",{status:resposta.status??null,error:resposta.error?.message??null,details:resposta.error?.details??null,hint:resposta.error?.hint??null});
+    if(resposta.error)throw Object.assign(new Error(`Falha na RPC cco_catalogo_periodos: ${resposta.error.message||"erro sem mensagem"}`),{status:resposta.status??null,code:resposta.error.code??null,details:resposta.error.details??null,hint:resposta.error.hint??null,cause:resposta.error});
+    resultado=(resposta.data||[]).map(item=>({...item,ano:Number(item.ano),mes:Number(item.mes),periodo:item.periodo||`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`,origem:"rpc"})).sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
     const diasOperacao=await global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}));
       diasOperacaoCache.clear();
       for(const item of diasOperacao||[]){
@@ -72,7 +65,7 @@
     global.__CCO_CATALOGO_PERIODOS__=resultado;
     global.__CCO_IMPORTACOES_POR_PERIODO__=Object.fromEntries(resultado.map(item=>[item.periodo,item]));
     global.__CCO_PERIODOS_REAIS_V12__=resultado;
-    console.log("[CATÁLOGO] concluído",{fonte,periodos:resultado.length,duracaoMs});
+    console.log("[CATÁLOGO]",{fonte,quantidadePeriodos:resultado.length,duracaoMs});
     return resultado;
   }
   function getCatalogoPeriodos(){
