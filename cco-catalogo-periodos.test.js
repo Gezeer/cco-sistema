@@ -7,7 +7,7 @@ const utils=fs.readFileSync("utils.js","utf8");
 const execucao=fs.readFileSync("execucao.js","utf8");
 const periodos=["2026-07","2026-06","2026-05","2026-04","2026-03","2026-02","2026-01","2025-12","2025-11"];
 
-function criarContexto({falharRpc=false}={}){
+function criarContexto({falharRpc=false,rpcError=null}={}){
   let chamadasRpc=0,consultasOperacoes=0;
   const memoria=new Map(),pendentes=new Map();
   const cache={
@@ -27,7 +27,7 @@ function criarContexto({falharRpc=false}={}){
     const q={select(){return q},not(){return q},order(){return q},limit(){return q},gt(){return q},then(resolve){resolve({data:consultas[tabela]||[],error:null})}};
     return q;
   }
-  const cliente={rpc:async()=>{chamadasRpc+=1;return falharRpc?{data:null,error:{code:"PGRST202"}}:{data:dadosRpc,error:null}},from:tabela=>query(tabela)};
+  const cliente={rpc:async()=>{chamadasRpc+=1;return falharRpc||rpcError?{data:null,error:rpcError||{code:"PGRST202"}}:{data:dadosRpc,error:null}},from:tabela=>query(tabela)};
   const window={CCOCache:cache,CCOSupabase:{getClient:()=>cliente,paginar:async produtor=>(await produtor()).data||[]}};
   const contexto={window,performance:{now:()=>0},console:{log(){},warn(){},error(){},table(){}}};
   vm.createContext(contexto);vm.runInContext(fonte,contexto);
@@ -57,6 +57,11 @@ function criarContexto({falharRpc=false}={}){
   assert.equal(falha.consultasOperacoes,0,"falha da RPC não pode ativar paginação de operacoes");
   assert.equal(falha.window.__CCO_CONTADOR_CATALOGO__.paginacaoCompleta,0);
 
+  const timeout=criarContexto({rpcError:{code:"57014",message:"canceling statement due to statement timeout"}}),catalogoFallback=await timeout.window.CCOPainelService.getCatalogoPeriodos();
+  assert.equal(catalogoFallback.length,1,"timeout pode ativar somente o fallback temporário existente");
+  assert.equal(catalogoFallback[0].periodo,"2026-07");
+  assert.equal(timeout.window.__CCO_CONTADOR_CATALOGO__.paginacaoCompleta,1);
+
   assert.match(fonte,/rpc\("cco_catalogo_periodos"\)/);
   assert.match(fonte,/\[CATÁLOGO RPC\]/);
   assert.match(fonte,/CCO_DEBUG_PAGINACAO===true/);
@@ -64,5 +69,13 @@ function criarContexto({falharRpc=false}={}){
   const legado=utils.match(/async function carregarCatalogoPeriodosV12[\s\S]*?(?=\n\s*async function obterImportacaoPrincipal)/)?.[0]||"";
   assert.doesNotMatch(legado,/from\(['"]operacoes['"]\)/);
   assert.match(execucao,/CCOPainelService\.getCatalogoPeriodos\(\)/);
-  console.log("Catálogo RPC: Promise única, nove períodos e falha sem fallback pesado aprovados.");
+  const sql=fs.readFileSync("supabase_cco_catalogo_periodos.sql","utf8");
+  const corpoFuncao=sql.match(/create or replace function[\s\S]*?\$\$;\s*\n\s*grant execute/i)?.[0]||"";
+  assert.doesNotMatch(corpoFuncao,/row_number\s*\(/i);
+  assert.doesNotMatch(corpoFuncao,/select\s+distinct/i);
+  assert.match(sql,/max\(o\.id\)/i);
+  assert.match(sql,/group by[\s\S]*extract\(year[\s\S]*extract\(month/i);
+  assert.match(sql,/operacoes_catalogo_ano_mes_id_idx/);
+  assert.match(sql,/include \(importacao_id\)/i);
+  console.log("Catálogo RPC: Promise única, nove períodos e fallback pesado restrito ao timeout aprovados.");
 })().catch(error=>{console.error(error);process.exitCode=1});

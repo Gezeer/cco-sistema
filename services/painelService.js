@@ -45,6 +45,12 @@
     }
   }
 
+  function montarFallbackTemporarioCatalogo(operacoes){
+    const porPeriodo=new Map();
+    for(const item of operacoes||[]){const data=String(item.data_operacao||"").slice(0,10),match=data.match(/^(\d{4})-(\d{2})-\d{2}$/);if(!match||!item.importacao_id)continue;const ano=Number(match[1]),mes=Number(match[2]),periodo=`${ano}-${String(mes).padStart(2,"0")}`;porPeriodo.set(periodo,{ano,mes,periodo,importacao_id:item.importacao_id,origem:"fallback-temporario-operacoes"});}
+    return[...porPeriodo.values()].sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
+  }
+
   async function produzirCatalogo() {
     const inicio=typeof performance!=="undefined"?performance.now():Date.now();
     console.log("[CATÁLOGO] início");
@@ -53,8 +59,8 @@
     if(global.CCOMobilePerformance)global.CCOMobilePerformance.metricas.consultasSupabase+=1;
     const resposta=await db().rpc("cco_catalogo_periodos");
     console.log("[CATÁLOGO RPC]",{status:resposta.status??null,error:resposta.error?.message??null,details:resposta.error?.details??null,hint:resposta.error?.hint??null});
-    if(resposta.error)throw Object.assign(new Error(`Falha na RPC cco_catalogo_periodos: ${resposta.error.message||"erro sem mensagem"}`),{status:resposta.status??null,code:resposta.error.code??null,details:resposta.error.details??null,hint:resposta.error.hint??null,cause:resposta.error});
-    resultado=(resposta.data||[]).map(item=>({...item,ano:Number(item.ano),mes:Number(item.mes),periodo:item.periodo||`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`,origem:"rpc"})).sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
+    if(resposta.error){const mensagem=String(resposta.error.message||""),timeout=resposta.error.code==="57014"||/statement timeout|canceling statement/i.test(mensagem);if(!timeout)throw Object.assign(new Error(`Falha na RPC cco_catalogo_periodos: ${mensagem||"erro sem mensagem"}`),{status:resposta.status??null,code:resposta.error.code??null,details:resposta.error.details??null,hint:resposta.error.hint??null,cause:resposta.error});console.warn("[CATÁLOGO] timeout da RPC; fallback temporário ativado.",{code:resposta.error.code,message:mensagem});fonte="fallback-temporario";resultado=montarFallbackTemporarioCatalogo(await paginarOperacoesCatalogo());}
+    else resultado=(resposta.data||[]).map(item=>({...item,ano:Number(item.ano),mes:Number(item.mes),periodo:item.periodo||`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`,origem:"rpc"})).sort((a,b)=>b.ano-a.ano||b.mes-a.mes);
     const diasOperacao=await global.CCOSupabase.paginar(()=>db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").order("ano",{ascending:false}).order("mes",{ascending:false}));
       if(global.CCOMobilePerformance)global.CCOMobilePerformance.metricas.consultasSupabase+=1;
       diasOperacaoCache.clear();
@@ -108,5 +114,5 @@
     if(data)global.CCODiagnosticoP9Etapa?.("services/painelService.js:p9PorPeriodo → painel_executivo.acumulado",data.acumulado,"leitura direta da coluna painel_executivo.acumulado");
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, paginarOperacoesCatalogo });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, montarFallbackTemporarioCatalogo, paginarOperacoesCatalogo });
 })(window);
