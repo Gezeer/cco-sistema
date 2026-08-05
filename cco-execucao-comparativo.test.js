@@ -38,9 +38,19 @@ assert.match(render,/destruirGrafico\?\.\(container\)/,"a segunda renderização
 assert.doesNotMatch(render,/IDS_GRAFICOS_EXECUCAO\.forEach/,"a atualização não pode destruir gráficos de outras seções");
 assert.match(fonteExecucao,/select\("importacao_id,ano,mes,servico,acumulado,previsto,valor_total"\)/);
 assert.match(fonteExecucao,/labels\.length!==9\|\|previstos\.length!==9\|\|acumulados\.length!==9/);
-assert.match(render,/tipo:"barra",preservarNulos:true/,"ausência de dados deve permanecer null até a renderização");
-assert.match(fs.readFileSync("js/cco-graficos-3d.js","utf8"),/config\.preservarNulos/);
+const graficos3d=fs.readFileSync("js/cco-graficos-3d.js","utf8");
+assert.match(render,/tipo:"barra3d",agrupado:true,preservarNulos:true/,"o comparativo deve usar barras 3D agrupadas preservando null");
+assert.match(render,/nome:"Previsto"[\s\S]*nome:"Acumulado"/,"cada mês deve possuir Previsto e Acumulado");
+assert.match(render,/categoriasMobile:labelsMobile/,"o mobile deve receber rótulos mensais abreviados");
+assert.match(render,/\[EXECUÇÃO COMPARATIVO 3D\]/);
+assert.match(graficos3d,/if\(config\.preservarNulos&&api\.value\(1\)==null\)return\{type:"group",children:\[\]\}/,"null não pode criar barra falsa");
+assert.match(graficos3d,/centro=api\.coord\(\[api\.value\(0\),valor\]\)/,"a altura visual deve usar diretamente o valor real");
+assert.match(graficos3d,/type:"polygon"[\s\S]*type:"rect"[\s\S]*type:"ellipse"/,"a barra 3D deve combinar lateral, elipses e corpo");
+assert.match(graficos3d,/cfg\.pequeno\?18:cfg\.mobile\?24:36/,"largura das barras deve responder ao viewport");
+assert.match(graficos3d,/prefers-reduced-motion: reduce/);
+assert.match(graficos3d,/movimentoReduzido\?0:cfg\.animacao/);
 assert.match(fonteHtml,/cco-execucao-comparativo\.js\?v=20260805-previsto-acumulado-v1/);
-assert.match(fonteHtml,/execucao\.js\?v=20260805-previsto-acumulado-v1/);
+assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260805-comparativo-barra3d-v2/);
+assert.match(fonteHtml,/execucao\.js\?v=20260805-comparativo-barra3d-v2/);
 
 console.log("Execução comparativa: nove meses, duas séries, isolamento por importação, null e corrida assíncrona aprovados.");
