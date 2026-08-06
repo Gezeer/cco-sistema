@@ -56,9 +56,9 @@
     width:100%!important;
     max-width:100%!important;
     min-width:0!important;
-    height:var(--cco-chart-mobile-height,718px)!important;
-    min-height:680px!important;
-    max-height:780px!important;
+    height:var(--cco-chart-mobile-height,552px)!important;
+    min-height:540px!important;
+    max-height:580px!important;
     overflow:hidden!important;
   }
 }
