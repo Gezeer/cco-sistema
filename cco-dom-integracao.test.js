@@ -40,6 +40,6 @@ assert.match(utilsFonte,/\[ÚLTIMA ESCRITA CCO\]/);
 assert.match(utilsFonte,/\[RENDER EXECUÇÃO\]/);
 assert.match(utilsFonte,/\[RENDER PAINEL\]/);
 assert.match(utilsFonte,/ccoAtivarListenersExecucaoDinamica\(\) \{\s*if\(String\(window\.CCO_PAGE/);
-assert.match(execucaoHtml,/utils\.js\?v=20260805-cards-periodo-v1/);
+assert.match(execucaoHtml,/utils\.js\?v=20260806-execucao-race-periodo-servico-v1/);
 assert.match(indexHtml,/const VERSAO_CCO = "20260731-ultima-escrita-v1"/);
 console.log("Integração DOM: duas renderizações preservaram P1 e P9 sem sobrescrita legada.");

@@ -22,12 +22,12 @@ assert.match(servico,/\[EXECUÇÃO CACHE MISS\]/);
 
 assert.match(execucao,/requisicaoPeriodoExecucao/);
 assert.match(execucao,/\[EXECUÇÃO RESPOSTA DESCARTADA\]/);
-assert.match(fixes,/__CCO_EXECUCAO_REQUISICAO_ATUAL__!==periodo\.__ccoChaveRequisicao/,"resposta antiga deve ser descartada antes da publicação");
+assert.match(fixes,/__ccoContextoExecucao.*contextoExecucaoAtualCCO/s,"resposta antiga deve ser descartada antes da publicação");
 assert.match(fixes,/chaveCompleta=\[PAGINA,periodo\.ano,periodo\.mes,servico,periodo\.importacao_id\]/);
 
 assert.match(fixes,/campoPresenteNosRegistros/);
 assert.match(fixes,/Object\.prototype\.hasOwnProperty\.call\(registro,campoMetrica\)/,"a presença real do campo deve prevalecer sobre schema global vazio");
-assert.match(execucao,/window\.renderDetalheServicoMensal\?\.\(codigo\)/,"todo período deve usar o renderizador final oficial");
+assert.match(execucao,/window\.renderDetalheServicoMensal\?\.\(codigo,contexto\)/,"todo período deve usar o renderizador final oficial com contexto");
 assert.match(utils,/\[EXECUÇÃO RENDER FINAL\]/);
 assert.match(fixes,/\[EXECUÇÃO CONSOLIDAÇÃO\]/);
 assert.match(servico,/\[EXECUÇÃO CONSULTA\]/);
@@ -44,9 +44,6 @@ assert.equal(localizar(2026,6).importacao_id,"uuid-jun");
 assert.equal(localizar(2026,7).importacao_id,"uuid-jul");
 assert.notEqual(localizar(2026,6).importacao_id,localizar(2026,7).importacao_id);
 
-assert.match(html,/services\/execucaoService\.js\?v=20260805-cards-periodo-v1/);
-assert.match(html,/utils\.js\?v=20260805-cards-periodo-v1/);
-assert.match(html,/cco-fixes\.js\?v=20260805-cards-periodo-v1/);
-assert.match(html,/execucao\.js\?v=20260806-execucao-rotulos-legenda-espacamento-v1/);
+for(const arquivo of["services/execucaoService.js","utils.js","cco-fixes.js","execucao.js"])assert.match(html,new RegExp(`${arquivo.replace(/[./]/g,"\\$&")}\\?v=20260806-execucao-race-periodo-servico-v1`));
 
 console.log("Cards por período: UUID, filtro mensal, cache, concorrência e render final aprovados.");

@@ -9505,6 +9505,8 @@ function ccoObterUltimoPeriodoDisponivel(dados = null) {
 
 function ccoAplicarUltimoMesPrimeiro() {
   try {
+    /* A página Execução possui catálogo/controlador assíncrono próprio. */
+    if(String(window.CCO_PAGE||"").toLowerCase()==="execucao")return false;
     const ultimo = ccoObterUltimoPeriodoDisponivel();
 
     if (!ultimo) {
@@ -10573,7 +10575,9 @@ function ccoFinalCriarLinha(canvasId, label, labels, valores, beginZero = true) 
 }
 
 /* Execução P1 a P12: recria a área do serviço apenas com gráficos que têm dados. */
-function renderDetalheServicoMensal(codigo) {
+function renderDetalheServicoMensal(codigo,contextoExecucao) {
+  const contexto=contextoExecucao||window.__CCO_EXECUCAO_CONTEXTO_ATUAL__;
+  if(String(window.CCO_PAGE||"").toLowerCase()==="execucao"&&contexto&&!window.contextoExecucaoAtualCCO?.(contexto)){console.warn("[EXECUÇÃO RENDER DESCARTADO]",{servico:codigo,chave:contexto.chave});return false;}
   window.__CCO_RENDER_EXECUCAO_CONTADOR__=(window.__CCO_RENDER_EXECUCAO_CONTADOR__||0)+1;console.log("[RENDER EXECUÇÃO]",{contador:window.__CCO_RENDER_EXECUCAO_CONTADOR__,servico:codigo});
   const detalhe = document.getElementById("detalheServico");
   if (!detalhe) return;
@@ -10603,6 +10607,8 @@ function renderDetalheServicoMensal(codigo) {
 
   const previsto = ccoFinalNumero(dadosPainel.previsto_mes);
   const executado = ccoFinalNumero(dadosPainel.acumulado_mes);
+  const previstoEquipeOficial=window.CCOMetricas?.obterPrevistoEquipeServico?.(codigo);
+  if(previstoEquipeOficial!==null&&previstoEquipeOficial!==undefined&&(previsto!==previstoEquipeOficial||executado>previstoEquipeOficial))console.error("[EXECUÇÃO INVARIANTE QUEBRADA]",{servico:codigo,previsto,executado,previstoOficial:previstoEquipeOficial,periodo:periodo?.periodo,importacaoId:periodo?.importacao_id});
   if(codigo==="P9")console.log("[P9 RENDER]",{valorRecebido:dadosPainel.acumulado_mes,valorRenderizado:ccoFinalFormatarNumero(executado)});
   const percentual = ccoFinalNumero(dadosPainel.porcentagem_execucao);
   const status = typeof obterStatusExecucao === "function"
@@ -10640,7 +10646,7 @@ function renderDetalheServicoMensal(codigo) {
       ...auditoriaKm
     });
   }
-  const totalEquipes = dadosServico.reduce((s, i) => s + ccoFinalNumero(i.equipe), 0);
+  const totalEquipes = previstoEquipeOficial!==null&&previstoEquipeOficial!==undefined?executado:dadosServico.reduce((s, i) => s + ccoFinalNumero(i.equipe), 0);
   const totalHoras = dadosServico.reduce((s, i) => s + (typeof ccoTempoProdutivoLinha === "function" ? ccoTempoProdutivoLinha(i) : ccoFinalNumero(i.tempo_produtivo_h)), 0);
   const totalTempoRD = dadosServico.reduce((s, i) => s + (typeof ccoTempoRDHorasCorrigido === "function" ? ccoTempoRDHorasCorrigido(i) : ccoFinalNumero(i.tempo_rd_horas)), 0);
   const diasComDados = typeof contarDiasDistintos === "function" ? contarDiasDistintos(dadosServico) : 0;
@@ -10673,6 +10679,7 @@ function renderDetalheServicoMensal(codigo) {
   if (mensal.some(i => i.executado > 0)) secoes.push(ccoFinalSecaoGrafico("Comparativo mensal", `Evolução do serviço ${codigo}`, "graficoExecDetalheEvolucao"));
   if (temDadosTurno) secoes.push(`<section class="section exec-turn-section"><div class="section-title"><span>Operação por turno</span><h2>Diurno e Noturno</h2><p>Indicadores consolidados dentro de cada período operacional</p></div><div class="exec-turn-visuals">${cardTurno(turnoDiurno, "diurno")}${cardTurno(turnoNoturno, "noturno")}</div></section>`);
 
+  if(String(window.CCO_PAGE||"").toLowerCase()==="execucao"&&contexto&&!window.contextoExecucaoAtualCCO?.(contexto)){console.warn("[EXECUÇÃO ESCRITA DESCARTADA]",{servico:codigo,chave:contexto.chave});return false;}
   detalhe.innerHTML = `
     <section class="section">
       <div class="section-title">
@@ -10710,6 +10717,7 @@ function renderDetalheServicoMensal(codigo) {
       ${tempoMedio > 0 ? criarCard("Tempo Médio/Viagem", `${ccoFinalFormatarNumero(tempoMedio)} h/viagem`, "Tempo RD/viagem") : ""}
     </section>
   `;
+  if(window.CCO_DEBUG_EXECUCAO_RACE===true){const memoria=window.__CCO_EXECUCAO_CARD_WRITES__||(window.__CCO_EXECUCAO_CARD_WRITES__=new Map()),tokenAtual=contexto?.chave||null,stack=new Error("[EXECUÇÃO CARD WRITE]").stack;detalhe.querySelectorAll(":scope > .cards > .card").forEach(card=>{const cardNome=String(card.querySelector("span")?.textContent||"").trim(),valor=String(card.querySelector("strong")?.textContent||"").trim(),chave=`${tokenAtual}|${cardNome}`,anterior=memoria.get(chave),diagnostico={card:cardNome,valor,servico:codigo,periodo:periodo?.periodo,importacaoId:periodo?.importacao_id,origem:"utils.js:renderDetalheServicoMensal",token:tokenAtual,stack};console.log("[EXECUÇÃO CARD WRITE]",diagnostico);if(anterior&&anterior.valor!==valor)console.warn("[EXECUÇÃO CARD SOBRESCRITO]",{anterior,novo:diagnostico});memoria.set(chave,diagnostico);});}
 
   if (codigo === "P1" && cardKmPermanente) {
     const gradeCards = detalhe.querySelector(":scope > .cards");

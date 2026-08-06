@@ -16,6 +16,18 @@
   let catalogoExecucaoPromise=null,requisicaoPeriodoExecucao=0;
   const pad=valor=>String(Number(valor)).padStart(2,"0");
   const periodoChave=(ano,mes)=>`${Number(ano)}-${pad(mes)}`;
+  function criarContextoExecucaoCCO({ano,mes,servico,importacaoId}){
+    const sequencia=++requisicaoPeriodoExecucao,contexto={pagina:"execucao",ano:String(ano),mes:pad(mes),servico:String(servico||"").toUpperCase(),importacaoId:String(importacaoId||""),sequencia};
+    contexto.chave=[contexto.servico,contexto.ano,contexto.mes,contexto.importacaoId,sequencia].join("|");
+    window.__CCO_EXECUCAO_CONTEXTO_ATUAL__=contexto;window.__CCO_EXECUCAO_REQUISICAO_ATUAL__=contexto.chave;window.__CCO_EXECUCAO_RENDER_TOKEN__=contexto.chave;
+    return contexto;
+  }
+  function contextoExecucaoAtualCCO(contexto){
+    if(!contexto||window.__CCO_EXECUCAO_CONTEXTO_ATUAL__?.chave!==contexto.chave)return false;
+    const ano=String(document.getElementById("filtroExecucaoAno")?.value||""),mes=pad(document.getElementById("filtroExecucaoMes")?.value||0),servico=String(window.obterServicoAtivo?.()||"").toUpperCase();
+    return ano===contexto.ano&&mes===contexto.mes&&servico===contexto.servico;
+  }
+  window.criarContextoExecucaoCCO=criarContextoExecucaoCCO;window.contextoExecucaoAtualCCO=contextoExecucaoAtualCCO;
   async function carregarCatalogoExecucaoCCO(forcar=false){
     if(!forcar&&catalogoExecucaoPromise)return catalogoExecucaoPromise;
     catalogoExecucaoPromise=(async()=>{
@@ -40,17 +52,17 @@
   }
   async function renderizarPeriodoExecucao(periodo){
     if(!periodo){console.warn("[EXECUÇÃO] período solicitado não existe no catálogo oficial.");return false;}
-    const token=++requisicaoPeriodoExecucao,servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),normalizado={...periodo,ano:String(periodo.ano),mes:pad(periodo.mes),periodo:periodoChave(periodo.ano,periodo.mes),id:periodo.importacao_id},chaveRequisicao=["execucao",normalizado.ano,normalizado.mes,servico,normalizado.importacao_id].join("|");
-    normalizado.__ccoChaveRequisicao=chaveRequisicao;window.__CCO_EXECUCAO_REQUISICAO_ATUAL__=chaveRequisicao;
+    const servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),normalizado={...periodo,ano:String(periodo.ano),mes:pad(periodo.mes),periodo:periodoChave(periodo.ano,periodo.mes),id:periodo.importacao_id},contexto=criarContextoExecucaoCCO({ano:periodo.ano,mes:periodo.mes,servico,importacaoId:periodo.importacao_id}),chaveRequisicao=contexto.chave;
+    normalizado.__ccoChaveRequisicao=chaveRequisicao;normalizado.__ccoContextoExecucao=contexto;
     console.log("[EXECUÇÃO Períodos] carregando",{ano:Number(normalizado.ano),mes:Number(normalizado.mes),importacaoId:normalizado.importacao_id});
     window.animarCardsExecucaoCCO?.({carregando:true});
-    try{const publicada=await window.carregarPeriodoCCO(normalizado);if(publicada===false||token!==requisicaoPeriodoExecucao||window.__CCO_EXECUCAO_REQUISICAO_ATUAL__!==chaveRequisicao){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{ano:normalizado.ano,mes:normalizado.mes,servico,importacaoId:normalizado.importacao_id,chave:chaveRequisicao});return false;}}catch(error){window.animarCardsExecucaoCCO?.({carregando:false,erro:error});throw error;}
+    try{const publicada=await window.carregarPeriodoCCO(normalizado);if(publicada===false||!contextoExecucaoAtualCCO(contexto)){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{ano:normalizado.ano,mes:normalizado.mes,servico,importacaoId:normalizado.importacao_id,chave:chaveRequisicao});return false;}}catch(error){window.animarCardsExecucaoCCO?.({carregando:false,erro:error});throw error;}
     if(typeof window.definirPeriodoExecucaoAtivoCCO==="function")window.definirPeriodoExecucaoAtivoCCO(normalizado.ano,normalizado.mes);else{window.filtroExecucaoAnoAtual=normalizado.ano;window.filtroExecucaoMesAtual=normalizado.mes;}
     localStorage.setItem("cco_execucao_periodo",JSON.stringify({ano:Number(normalizado.ano),mes:Number(normalizado.mes)}));
     if(typeof carregarFiltroMesesComparativoExecucao==="function")carregarFiltroMesesComparativoExecucao();
     if(typeof renderTabelaContratualMensal==="function")renderTabelaContratualMensal();
     if(typeof renderComparativoMesesExecucao==="function")renderComparativoMesesExecucao();
-    const codigo=window.obterServicoAtivo?.();if(codigo&&codigo!=="geral")window.renderDetalheServicoMensal?.(codigo);
+    const codigo=window.obterServicoAtivo?.();if(codigo&&codigo!=="geral"&&contextoExecucaoAtualCCO(contexto))window.renderDetalheServicoMensal?.(codigo,contexto);
     return true;
   }
   async function alterarAnoExecucaoCCO(){
@@ -110,8 +122,8 @@
     return posicionarSecoesDetalheExecucao();
   }
   async function buscarEvolucaoServicoCCO(servico){
-    const catalogoCompleto=await carregarCatalogoExecucaoCCO(),periodosObrigatorios=new Set(window.CCOExecucaoComparativoMensal.PERIODOS.map(item=>periodoChave(item.ano,item.mes))),catalogo=catalogoCompleto.filter(item=>periodosObrigatorios.has(periodoChave(item.ano,item.mes))),assinatura=catalogo.map(item=>`${periodoChave(item.ano,item.mes)}:${item.importacao_id}`).join("|"),chaveCache=`evolucao:${servico}`,armazenado=cacheEvolucaoExecucao.get(chaveCache);
-    if(armazenado?.assinatura===assinatura)return{catalogo,linhas:armazenado.linhas};
+    const catalogoCompleto=await carregarCatalogoExecucaoCCO(),periodosObrigatorios=new Set(window.CCOExecucaoComparativoMensal.PERIODOS.map(item=>periodoChave(item.ano,item.mes))),catalogo=catalogoCompleto.filter(item=>periodosObrigatorios.has(periodoChave(item.ano,item.mes))),assinatura=catalogo.map(item=>`${periodoChave(item.ano,item.mes)}:${item.importacao_id}`).join("|"),chaveCache=`evolucao|${servico}|${assinatura}`,armazenado=cacheEvolucaoExecucao.get(chaveCache);
+    if(armazenado)return{catalogo,linhas:armazenado.linhas};
     const idsAtivos=new Set(catalogo.map(item=>String(item.importacao_id))),banco=window.supabaseClient;
     const resposta=await banco.from("painel_executivo").select("importacao_id,ano,mes,servico,acumulado,previsto,valor_total").in("importacao_id",[...idsAtivos]).eq("servico",servico).order("ano",{ascending:true}).order("mes",{ascending:true});
     if(resposta.error)throw resposta.error;
@@ -121,11 +133,11 @@
       const porPeriodo=new Map(linhas.map(item=>[`${periodoChave(item.ano,item.mes)}|${String(item.importacao_id)}`,item]));
       linhas=catalogo.map(periodo=>{const importacaoId=periodo.importacao_id??periodo.id,base=porPeriodo.get(`${periodoChave(periodo.ano,periodo.mes)}|${String(importacaoId)}`)||{},equipe=window.CCOMetricas.calcularEquipeMensalServico({servico,registros:operacoes,ano:periodo.ano,mes:periodo.mes,importacaoId});return{...base,importacao_id:importacaoId,ano:Number(periodo.ano),mes:Number(periodo.mes),servico,previsto:equipe.previsto,acumulado:equipe.executado,unidade:equipe.unidade};});
     }
-    cacheEvolucaoExecucao.set(chaveCache,{assinatura,linhas});return{catalogo,linhas};
+    cacheEvolucaoExecucao.set(chaveCache,{linhas});return{catalogo,linhas};
   }
   async function renderizarEvolucaoHistoricaCCO(servicoSelecionado){
-    const servico=String(servicoSelecionado||"").trim().toUpperCase(),token=++requisicaoEvolucaoExecucao;if(!servico||servico==="GERAL")return null;
-    const{catalogo,linhas}=await buscarEvolucaoServicoCCO(servico);if(token!==requisicaoEvolucaoExecucao||String(window.obterServicoAtivo?.()||"").toUpperCase()!==servico)return null;
+    const servico=String(servicoSelecionado||"").trim().toUpperCase(),token=++requisicaoEvolucaoExecucao,contexto=window.__CCO_EXECUCAO_CONTEXTO_ATUAL__;if(!servico||servico==="GERAL")return null;
+    const{catalogo,linhas}=await buscarEvolucaoServicoCCO(servico);if(token!==requisicaoEvolucaoExecucao||String(window.obterServicoAtivo?.()||"").toUpperCase()!==servico||!contextoExecucaoAtualCCO(contexto))return null;
     const comparativo=window.CCOExecucaoComparativoMensal.montar({catalogo,linhas}),{labels,importacoes,previstos,acumulados,percentuais}=comparativo,ehEquipe=window.CCOMetricas?.ehServicoEquipe?.(servico)===true,sufixoUnidade=ehEquipe?" equipe":"";
     if(labels.length!==9||previstos.length!==9||acumulados.length!==9)throw new Error("Comparativo mensal da Execução deve possuir exatamente nove períodos.");
     console.log("[EXECUÇÃO COMPARATIVO MENSAL]",{servico,periodos:labels,importacoes,previstos,acumulados,percentuais});
@@ -149,12 +161,14 @@
     try {
       if(!await window.CCOSupabase.exigirSessao())return false;
       if(window.__CCO_EXECUCAO_PERIODOS_INICIADOS__)return true;
-      window.__CCO_EXECUCAO_PERIODOS_INICIADOS__=true;window.__CCO_CONTROLADOR_PERIODOS_LEGADO_DESATIVADO__=true;
+      window.__CCO_EXECUCAO_PERIODOS_INICIADOS__=true;window.__CCO_EXECUCAO_INICIALIZADA__=true;window.__CCO_CONTROLADOR_PERIODOS_LEGADO_DESATIVADO__=true;
       const[catalogo]=await Promise.all([carregarCatalogoExecucaoCCO(),window.carregarRegrasServicosCCO()]);
       if(!catalogo.length)throw new Error("Nenhum período ativo disponível para Execução.");
       let salvo=null;try{salvo=JSON.parse(localStorage.getItem("cco_execucao_periodo")||"null");}catch(_){salvo=null;}
       const ultimo=catalogo[0],preferido=localizarPeriodoExecucao(catalogo,salvo?.ano,salvo?.mes)||ultimo,selectAno=document.getElementById("filtroExecucaoAno"),selectMes=document.getElementById("filtroExecucaoMes"),anos=[...new Set(catalogo.map(item=>Number(item.ano)))].filter(Number.isFinite).sort((a,b)=>a-b);
       preencherFiltroAnoExecucao(selectAno,anos,preferido.ano);preencherFiltroMesExecucao(selectMes,obterMesesDoAnoExecucao(catalogo,preferido.ano),preferido.mes);
+      const tela=document.getElementById("tela-contrato");
+      if(tela&&!tela.dataset.ccoExecucaoServicoRace){tela.dataset.ccoExecucaoServicoRace="1";tela.addEventListener("click",evento=>{if(!evento.target.closest?.(".servico-btn"))return;queueMicrotask(()=>{const atual=localizarPeriodoExecucao(window.__CCO_CATALOGO_EXECUCAO__,selectAno?.value,selectMes?.value);renderizarPeriodoExecucao(atual).catch(erro=>console.error("[EXECUÇÃO] troca de serviço falhou",erro));});});}
       await renderizarPeriodoExecucao(preferido);
     } catch (erro) {
       window.__CCO_EXECUCAO_PERIODOS_INICIADOS__=false;

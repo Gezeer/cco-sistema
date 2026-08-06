@@ -9,7 +9,7 @@
     const banco=global.supabaseClient;
     if(!banco)throw new Error("Supabase indisponível.");
     const contextoCache={pagina:"execucao",ano,mes,servico,importacaoId},chaveCache=global.CCOMobilePerformance?.chaveDados?.(contextoCache)||`execucao|${ano}|${mes}|${servico}|${importacaoId}`,entradaCache=global.__CCO_DADOS_CACHE__?.get?.(chaveCache),cacheValido=Boolean(entradaCache&&Date.now()-entradaCache.criadoEm<5*60*1000),promiseExistente=global.__CCO_DADOS_PROMISES__?.has?.(chaveCache);
-    console.log(cacheValido||promiseExistente?"[EXECUÇÃO CACHE HIT]":"[EXECUÇÃO CACHE MISS]",{chave:chaveCache});
+    console.log(cacheValido||promiseExistente?"[EXECUÇÃO CACHE HIT]":"[EXECUÇÃO CACHE MISS]",{chave:chaveCache,ano,mes,servico:servico||null,importacaoId});
     console.log("[EXECUÇÃO PERÍODO]",{ano,mes,periodo:`${ano}-${String(mes).padStart(2,"0")}`,importacaoIdCatalogo:importacaoId,importacaoIdConsulta:importacaoId,servico:servico||null,inicio,fimExclusivo:fim});
     const produtor=()=>global.CCOSupabase.paginar(()=>banco.from("operacoes").select(campos).eq("importacao_id",importacaoId).gte("data_operacao",inicio).lt("data_operacao",fim).order("id"));
     const operacoes=await(global.CCOMobilePerformance?.dados(contextoCache,produtor)||produtor());
