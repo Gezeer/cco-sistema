@@ -1,9 +1,10 @@
 (function criarKpiService(global) {
   "use strict";
   const CAMPOS = "importacao_id,servico,tipo_servico,data_operacao,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media";
+  const SERVICOS_VALIDOS=new Set(["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"]);
   const db = () => { const cliente=global.CCOSupabase?.getClient?.();if(!cliente)throw new Error("Supabase indisponível.");return cliente; };
   async function operacoes(importacaoId, filtros = {}) {
-    const ano=Number(filtros.ano),mes=Number(filtros.mes),servico=global.CCOMetricas?.normalizarServico?.(filtros.servico)||String(filtros.servico||"").trim().toUpperCase();
+    const ano=Number(filtros.ano),mes=Number(filtros.mes),normalizado=global.CCONormalizarServicoKPIObrigatorio?.(filtros.servico)||global.CCOMetricas?.normalizarServico?.(filtros.servico)||String(filtros.servico||"").trim().toUpperCase(),servico=SERVICOS_VALIDOS.has(normalizado)?normalizado:"P1";
     if(!importacaoId&&(!ano||!mes))throw new Error("importacao_id ou período válido é obrigatório para consultar KPI.");
     const partes = [importacaoId, filtros.ano, filtros.mes, servico, filtros.ra, filtros.turno], cacheKey = global.CCOCache.chave("kpi", partes);
     const produtor=()=>global.CCOCache.lembrar(cacheKey, async () => {
@@ -11,7 +12,7 @@
         let consulta = db().from("operacoes").select(CAMPOS).order("id");
         if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);
         if(ano&&mes){const inicio=`${ano}-${String(mes).padStart(2,"0")}-01`,fim=mes===12?`${ano+1}-01-01`:`${ano}-${String(mes+1).padStart(2,"0")}-01`;consulta=consulta.gte("data_operacao",inicio).lt("data_operacao",fim);}
-        if (servico) consulta = consulta.eq("servico", servico);
+        consulta = consulta.eq("servico", servico);
         if (filtros.ra) consulta = consulta.eq("ra", filtros.ra);
         if (filtros.turno) consulta = consulta.eq("turno", filtros.turno);
         return consulta;

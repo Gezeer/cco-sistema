@@ -2773,10 +2773,12 @@ function limparFiltroPeriodo() {
 }
 
 function limparFiltroKpiServico() {
-  ["filtroKpiServico", "filtroKpiAno", "filtroKpiMes", "filtroKpiDia"].forEach(id => {
+  ["filtroKpiAno", "filtroKpiMes", "filtroKpiDia"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
+  const servico=document.getElementById("filtroKpiServico");
+  if(servico)servico.value=window.CCOSalvarServicoKPI?.("P1")||"P1";
 
   renderPaginaKpiPorServicoCompleto();
 }
@@ -2835,14 +2837,14 @@ function preencherSelectDiaGithub(id, dias, textoInicial = "Todos os dias") {
    KPI POR SERVIÇO COM FILTRO
 ===================================================== */
 function obterDadosFiltradosKpiServico() {
-  const servico = document.getElementById("filtroKpiServico")?.value || "";
+  const servico = window.CCONormalizarServicoKPIObrigatorio?.(document.getElementById("filtroKpiServico")?.value) || "P1";
   const ano = document.getElementById("filtroKpiAno")?.value || "";
   const mes = document.getElementById("filtroKpiMes")?.value || "";
   const dia = document.getElementById("filtroKpiDia")?.value || "";
 
   let dados = clonar(operacoesOriginal || []);
 
-  if (servico) dados = dados.filter(item => item.servico === servico);
+  dados = dados.filter(item => item.servico === servico);
   if (ano) dados = dados.filter(item => item.data_normalizada && item.data_normalizada.substring(0, 4) === ano);
   if (mes) dados = dados.filter(item => item.data_normalizada && item.data_normalizada.substring(5, 7) === mes);
   if (dia) dados = dados.filter(item => item.data_normalizada && item.data_normalizada.substring(8, 10) === dia);
@@ -3618,7 +3620,7 @@ function renderPaginaKpiPorServicoCompleto() {
 
   const filtro = obterDadosFiltradosKpiServico();
   const dados = filtro.dados;
-  const servicoLabel = filtro.servico || "Todos";
+  const servicoLabel = window.CCONormalizarServicoKPIObrigatorio?.(filtro.servico) || "P1";
 
   const peso = dados.reduce((s, i) => s + numero(i.peso), 0);
   const viagens = dados.reduce((s, i) => s + numero(i.viagens), 0);
@@ -11265,7 +11267,7 @@ function carregarFiltrosKpiServicoCompleto() {
 
   const base = obterKpiMensalDisponivel();
   const catalogo = window.__CCO_CATALOGO_PERIODOS__ || [];
-  const servicos = [...new Set(base.map(i => i.servico).filter(Boolean))].sort(ccoOrdenarServicos);
+  const servicos = [...(window.CCO_SERVICOS_KPI || ["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"])];
   const anos = catalogo.length
     ? [...new Set(catalogo.map(i => String(i.ano)).filter(a => a && a !== "0"))].sort()
     : [...new Set(base.map(i => String(i.ano)).filter(a => a && a !== "0"))].sort();
@@ -11280,12 +11282,12 @@ function carregarFiltrosKpiServicoCompleto() {
   const dias = [...new Set((operacoesOriginal || []).map(i => String(i.data_normalizada || "").substring(8, 10)).filter(Boolean))]
     .sort((a, b) => Number(a) - Number(b));
 
-  selectServico.innerHTML = `<option value="">Todos os serviços</option>` + servicos.map(s => `<option value="${s}">${s}</option>`).join("");
+  selectServico.innerHTML = servicos.map(s => `<option value="${s}">${s}</option>`).join("");
   selectAno.innerHTML = `<option value="">Todos os anos</option>` + anos.map(a => `<option value="${a}">${a}</option>`).join("");
   selectMes.innerHTML = `<option value="">Todos os meses</option>` + meses.map(m => `<option value="${m}">${MESES_BR[m] || m}</option>`).join("");
   selectDia.innerHTML = `<option value="">Todos os dias</option>` + dias.map(d => `<option value="${d}">${d}</option>`).join("");
 
-  if (servicos.includes(atual.servico)) selectServico.value = atual.servico;
+  selectServico.value=window.CCOSalvarServicoKPI?.(window.CCOObterServicoKPIObrigatorio?.(atual.servico)||atual.servico)||"P1";
   if (anos.includes(anoSelecionado)) selectAno.value = anoSelecionado;
   if (meses.includes(atual.mes)) selectMes.value = atual.mes;
   if (dias.includes(atual.dia)) selectDia.value = atual.dia;
@@ -11293,9 +11295,10 @@ function carregarFiltrosKpiServicoCompleto() {
 
 function ccoKpiMensalFiltrado(filtro) {
   const base = obterKpiMensalDisponivel();
+  const servico=window.CCONormalizarServicoKPIObrigatorio?.(filtro.servico)||"P1";
   return base
     .filter(item =>
-      (!filtro.servico || item.servico === filtro.servico) &&
+      item.servico === servico &&
       (!filtro.ano || String(item.ano) === String(filtro.ano)) &&
       (!filtro.mes || String(item.mes).padStart(2, "0") === String(filtro.mes).padStart(2, "0"))
     )
@@ -16527,14 +16530,15 @@ importarPlanilhas = async function(evento) {
   }
 
   window.obterDadosFiltradosKpiServico = obterDadosFiltradosKpiServico = function(){
-    const servico = document.getElementById("filtroKpiServico")?.value || "";
+    const campoServico=document.getElementById("filtroKpiServico"),servico=window.CCONormalizarServicoKPIObrigatorio?.(campoServico?.value)||"P1";
+    if(campoServico)campoServico.value=window.CCOSalvarServicoKPI?.(servico)||servico;
     const ano = document.getElementById("filtroKpiAno")?.value || "";
     const mes = document.getElementById("filtroKpiMes")?.value || "";
     const dia = document.getElementById("filtroKpiDia")?.value || "";
     const origem = operacoesOriginal || [];
 
     const dados = origem.filter(item => {
-      if (servico && item.servico !== servico) return false;
+      if (item.servico !== servico) return false;
       const data = dataLinha(item);
       if (ano && data.slice(0,4) !== ano) return false;
       if (mes && data.slice(5,7) !== mes) return false;
