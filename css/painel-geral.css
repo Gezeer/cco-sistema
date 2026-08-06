@@ -71,3 +71,36 @@
     overflow:hidden!important;
   }
 }
+
+/* Painel Geral — encerra o card financeiro junto ao conteúdo real no mobile. */
+@media(max-width:767px){
+  body.painel-geral-page .cco-dashboard-row-secondary{
+    align-items:start!important;
+    grid-auto-rows:auto!important;
+  }
+  body.painel-geral-page .cco-dashboard-row-secondary>.cco-chart-financeiro{
+    align-self:start!important;
+    flex:0 0 auto!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    padding:12px 10px!important;
+    margin:0!important;
+    contain:none!important;
+    contain-intrinsic-size:auto!important;
+    aspect-ratio:auto!important;
+  }
+  body.painel-geral-page .cco-dashboard-row-secondary>.cco-chart-financeiro>.section-title{
+    flex:0 0 auto!important;
+    min-height:54px!important;
+    margin:0 0 8px!important;
+    padding:6px 8px 8px!important;
+  }
+  body.painel-geral-page .cco-dashboard-row-secondary>.cco-chart-financeiro>#graficoFinanceiro{
+    flex:0 0 var(--cco-chart-mobile-height,469px)!important;
+    height:var(--cco-chart-mobile-height,469px)!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+  }
+}

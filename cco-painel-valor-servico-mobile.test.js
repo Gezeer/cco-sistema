@@ -44,8 +44,8 @@ assert.match(graficos,/config\.rotulosFixos!==false&&categorias\.length<=6/);
 assert.match(graficos,/destruirGrafico\(container\)/,"segunda renderização deve destruir a instância anterior");
 assert.match(graficos,/document\.removeEventListener\("pointerdown",interacao\.fora,true\)/,"eventos móveis anteriores devem ser removidos");
 
-assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-mobile-graficos-ordem-espacamento-v1/);
+assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-valor-mobile-card-altura-v3/);
 assert.match(html,/js\/cco-graficos-3d\.js\?v=20260805-painel-valor-servico-mobile-v1/);
-assert.match(html,/painel-geral\.js", "20260806-painel-mobile-graficos-ordem-espacamento-v1"/);
+assert.match(html,/painel-geral\.js", "20260806-painel-valor-mobile-card-altura-v3"/);
 
 console.log("Painel financeiro mobile: 13 serviços, ordem, altura, barras, eixo, tooltip, overflow e desktop aprovados.");

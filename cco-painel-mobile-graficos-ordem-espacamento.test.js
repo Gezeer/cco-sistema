@@ -46,7 +46,7 @@ assert.match(css,/#graficoExecucao[\s\S]*height:var\(--cco-chart-mobile-height,4
 assert.match(css,/@media\(max-width:767px\)/,"alterações CSS devem ser somente mobile");
 assert.match(painel,/CCO_DEBUG_PAINEL_MOBILE===true\)console\.debug\("\[PAINEL MOBILE GRÁFICO VALOR\]"/);
 assert.match(painel,/CCO_DEBUG_PAINEL_MOBILE===true\)console\.debug\("\[PAINEL MOBILE EXECUÇÃO SERVIÇO\]"/);
-assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-mobile-graficos-ordem-espacamento-v1/);
-assert.match(html,/painel-geral\.js", "20260806-painel-mobile-graficos-ordem-espacamento-v1"/);
+assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-valor-mobile-card-altura-v3/);
+assert.match(html,/painel-geral\.js", "20260806-painel-valor-mobile-card-altura-v3"/);
 
 console.log("Painel mobile: valor e execução com 13 serviços, ordem visual, alturas, tooltips e desktop isolado aprovados.");
