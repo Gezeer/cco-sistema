@@ -47,3 +47,18 @@
   body.painel-geral-page .cco-chart-financeiro{min-width:0;overflow:hidden;padding:12px 10px 14px!important}
   body.painel-geral-page #graficoFinanceiro,body.painel-geral-page .cco-chart-financeiro .cco-chart-container{width:100%!important;max-width:100%!important;min-width:0!important;height:var(--cco-chart-mobile-height,310px)!important;min-height:var(--cco-chart-mobile-height,310px)!important;max-height:none!important;overflow:hidden!important}
 }
+
+/* Painel Geral — Valor contratado por Serviço somente no mobile. */
+@media(max-width:767px){
+  body.painel-geral-page .cco-chart-financeiro{min-width:0;overflow:hidden!important}
+  body.painel-geral-page #graficoFinanceiro,
+  body.painel-geral-page .cco-chart-financeiro .cco-chart-container{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:var(--cco-chart-mobile-height,718px)!important;
+    min-height:680px!important;
+    max-height:780px!important;
+    overflow:hidden!important;
+  }
+}
