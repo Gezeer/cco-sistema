@@ -108,6 +108,11 @@
     const fora=evento=>{if(!container.contains(evento.target))instancia.dispatchAction({type:"hideTip"});};
     document.addEventListener("pointerdown",fora,true);interacoesMobile.set(container,{fora});
   }
+  function instalarFechamentoTooltipMobile(instancia,container){
+    const anterior=interacoesMobile.get(container);if(anterior){document.removeEventListener("pointerdown",anterior.fora,true);interacoesMobile.delete(container);}
+    const fora=evento=>{if(!container.contains(evento.target))instancia.dispatchAction({type:"hideTip"});};
+    document.addEventListener("pointerdown",fora,true);interacoesMobile.set(container,{fora});
+  }
   function instalarDestaquePorCategoria(instancia,container,quantidadeSeries,{persistente=false}={}){
     instancia.off("mouseover");instancia.off("mouseout");instancia.off("click");interacoesCategoria.delete(container);
     const destacar=parametro=>{if(!Number.isInteger(parametro?.dataIndex))return;instancia.dispatchAction({type:"downplay",seriesIndex:"all"});for(let serie=0;serie<quantidadeSeries;serie++)instancia.dispatchAction({type:"highlight",seriesIndex:serie,dataIndex:parametro.dataIndex});instancia.dispatchAction({type:"showTip",seriesIndex:0,dataIndex:parametro.dataIndex});container.dataset.ccoDiaSelecionado=String(parametro.dataIndex);};
@@ -139,7 +144,7 @@
       if(mobileCompacto)base.series=base.series.map(serie=>({...serie,emphasis:{focus:"self",blurScope:"coordinateSystem"},blur:{itemStyle:{opacity:.28}}}));
       if(categorias.length>12&&!cfg.mobile)base.dataZoom=[{type:"inside"},{type:"slider",height:14,bottom:5}];if(Array.isArray(config.dataZoom))base.dataZoom=config.dataZoom;
     }
-    if(config.graphic)base.graphic=config.graphic;instancia.setOption(base,{notMerge:true,replaceMerge:["series","xAxis","yAxis","legend","grid","dataZoom"],lazyUpdate:false});if(mobileCompacto)instalarInteracaoMobileCompacta(instancia,container,series.length);else if(config.destaquePorCategoria)instalarDestaquePorCategoria(instancia,container,series.length,{persistente:cfg.mobile&&config.tooltipPorToque});instancias.set(container,instancia);const registro=global.CCO_CHART_RUNTIME?.registrar?.({id:container.id,render:()=>renderizarDireto(container,config)});if(registro){registro.instancia=instancia;registro.ultimoModo=cfg.mobile?"mobile":"desktop";}requestAnimationFrame(()=>{if(!instancia.isDisposed())instancia.resize({width:container.clientWidth,height:container.clientHeight});});return instancia;
+    if(config.graphic)base.graphic=config.graphic;instancia.setOption(base,{notMerge:true,replaceMerge:["series","xAxis","yAxis","legend","grid","dataZoom"],lazyUpdate:false});if(mobileCompacto)instalarInteracaoMobileCompacta(instancia,container,series.length);else if(config.destaquePorCategoria)instalarDestaquePorCategoria(instancia,container,series.length,{persistente:cfg.mobile&&config.tooltipPorToque});if(cfg.mobile&&config.tooltipPorToque&&config.fecharTooltipAoTocarFora)instalarFechamentoTooltipMobile(instancia,container);instancias.set(container,instancia);const registro=global.CCO_CHART_RUNTIME?.registrar?.({id:container.id,render:()=>renderizarDireto(container,config)});if(registro){registro.instancia=instancia;registro.ultimoModo=cfg.mobile?"mobile":"desktop";}requestAnimationFrame(()=>{if(!instancia.isDisposed())instancia.resize({width:container.clientWidth,height:container.clientHeight});});return instancia;
   }
   const barrasDiretas=config=>config?.container?renderizarDireto(config.container,{...config,tipo:"cilindro"}):criarBarrasCilindricas(config);
   const horizontaisDiretas=config=>config?.container?renderizarDireto(config.container,{...config,tipo:"horizontal"}):criarBarrasHorizontais3D(config);

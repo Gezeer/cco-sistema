@@ -15,7 +15,7 @@ assert.match(css,/\.kpi-indicadores-operacionais-grafico[\s\S]*padding: 0 24px 0
 assert.match(css,/#graficoKpiServicoIndicadores[\s\S]*top: -10px/);
 assert.match(css,/@media \(max-width: 768px\)[\s\S]*\.kpi-producao-mensal-card,[\s\S]*min-height: 430px !important[\s\S]*padding: 16px !important[\s\S]*overflow-x: hidden !important/);
 assert.doesNotMatch(css,/(^|\n)\s*(canvas|svg|\.kpi-card|\.chart-container)\s*\{/m,"não pode existir seletor global novo");
-assert.match(html,/css\/kpi\.css\?v=20260805-kpi-diario-rotulos-limpos-v1/);
+assert.match(html,/css\/kpi\.css\?v=20260805-kpi-velocidade-mobile-v1/);
 
 const kpi=fs.readFileSync("kpi.js","utf8");
 assert.ok(kpi.includes('render("graficoKpiServicoMensal"'));
