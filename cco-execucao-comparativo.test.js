@@ -50,7 +50,7 @@ assert.match(graficos3d,/mobileCompacto\?30:cfg\.pequeno\?18:cfg\.mobile\?24:36/
 assert.match(graficos3d,/prefers-reduced-motion: reduce/);
 assert.match(graficos3d,/movimentoReduzido\?0:cfg\.animacao/);
 assert.match(fonteHtml,/cco-execucao-comparativo\.js\?v=20260805-previsto-acumulado-v1/);
-assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260805-grafico-mobile-compacto-v1/);
-assert.match(fonteHtml,/execucao\.js\?v=20260805-cards-periodo-v1/);
+assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260806-execucao-rotulos-legenda-espacamento-v1/);
+assert.match(fonteHtml,/execucao\.js\?v=20260806-execucao-rotulos-legenda-espacamento-v1/);
 
 console.log("Execução comparativa: nove meses, duas séries, isolamento por importação, null e corrida assíncrona aprovados.");

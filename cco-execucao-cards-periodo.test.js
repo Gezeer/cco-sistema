@@ -47,6 +47,6 @@ assert.notEqual(localizar(2026,6).importacao_id,localizar(2026,7).importacao_id)
 assert.match(html,/services\/execucaoService\.js\?v=20260805-cards-periodo-v1/);
 assert.match(html,/utils\.js\?v=20260805-cards-periodo-v1/);
 assert.match(html,/cco-fixes\.js\?v=20260805-cards-periodo-v1/);
-assert.match(html,/execucao\.js\?v=20260805-cards-periodo-v1/);
+assert.match(html,/execucao\.js\?v=20260806-execucao-rotulos-legenda-espacamento-v1/);
 
 console.log("Cards por período: UUID, filtro mensal, cache, concorrência e render final aprovados.");
