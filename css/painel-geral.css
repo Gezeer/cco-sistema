@@ -72,15 +72,19 @@
   }
 }
 
-/* Painel Geral — encerra o card financeiro junto ao conteúdo real no mobile. */
+/* Painel Geral — encerra os dois cards de gráficos junto ao conteúdo real no mobile. */
 @media(max-width:767px){
+  body.painel-geral-page .cco-dashboard-row-primary,
   body.painel-geral-page .cco-dashboard-row-secondary{
     align-items:start!important;
     grid-auto-rows:auto!important;
+    grid-template-rows:auto!important;
   }
+  body.painel-geral-page .cco-dashboard-row-primary>.cco-chart-execucao,
   body.painel-geral-page .cco-dashboard-row-secondary>.cco-chart-financeiro{
     align-self:start!important;
     flex:0 0 auto!important;
+    flex-grow:0!important;
     height:auto!important;
     min-height:0!important;
     max-height:none!important;
@@ -88,19 +92,35 @@
     margin:0!important;
     contain:none!important;
     contain-intrinsic-size:auto!important;
+    content-visibility:visible!important;
     aspect-ratio:auto!important;
   }
+  body.painel-geral-page .cco-dashboard-row-primary>.cco-chart-execucao>.section-title,
   body.painel-geral-page .cco-dashboard-row-secondary>.cco-chart-financeiro>.section-title{
     flex:0 0 auto!important;
+    flex-grow:0!important;
     min-height:54px!important;
     margin:0 0 8px!important;
     padding:6px 8px 8px!important;
   }
+  body.painel-geral-page .cco-dashboard-row-primary>.cco-chart-execucao>#graficoExecucao{
+    flex:0 0 var(--cco-chart-mobile-height,493px)!important;
+    flex-grow:0!important;
+    height:var(--cco-chart-mobile-height,493px)!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    aspect-ratio:auto!important;
+    contain-intrinsic-size:auto!important;
+  }
   body.painel-geral-page .cco-dashboard-row-secondary>.cco-chart-financeiro>#graficoFinanceiro{
     flex:0 0 var(--cco-chart-mobile-height,469px)!important;
+    flex-grow:0!important;
     height:var(--cco-chart-mobile-height,469px)!important;
     min-height:0!important;
     margin:0!important;
     padding:0!important;
+    aspect-ratio:auto!important;
+    contain-intrinsic-size:auto!important;
   }
 }
