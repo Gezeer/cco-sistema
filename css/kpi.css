@@ -1,0 +1,91 @@
+/* KPI — distribuição exclusiva do card Velocidade Média Mensal. */
+body.kpi-page .kpi-speed-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: 76px minmax(320px, 1fr);
+  box-sizing: border-box;
+  min-height: 444px;
+  padding: 24px !important;
+  overflow: hidden;
+}
+
+body.kpi-page .kpi-speed-card > .section-title {
+  position: relative;
+  z-index: 4;
+  align-self: start;
+  min-height: 70px;
+  margin: 0;
+  padding: 0;
+}
+
+body.kpi-page .kpi-speed-card > .kpi-speed-chart {
+  position: relative;
+  z-index: 1;
+  align-self: stretch;
+  width: 100%;
+  height: auto !important;
+  min-height: 320px !important;
+  margin: 0;
+  overflow: hidden;
+}
+
+body.kpi-page .kpi-speed-card #graficoKpiVelocidadeMediaMensal {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 320px !important;
+  max-height: none !important;
+  margin: 0 !important;
+}
+
+body.kpi-page .kpi-speed-card > .cco-velocidade-percurso {
+  top: 100px;
+  bottom: 24px;
+  left: 24px;
+  width: calc(70% - 48px);
+  min-height: 0;
+}
+
+body.kpi-page .kpi-speed-card .kpi-speedometer-drawing {
+  top: 50%;
+  right: 24px;
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%);
+  transform-origin: center right;
+}
+
+@media (max-width: 768px) {
+  body.kpi-page .kpi-speed-card {
+    grid-template-rows: 64px minmax(244px, 1fr);
+    min-height: 340px !important;
+    padding: 16px !important;
+  }
+
+  body.kpi-page .kpi-speed-card > .section-title { min-height: 58px; }
+
+  body.kpi-page .kpi-speed-card > .kpi-speed-chart,
+  body.kpi-page .kpi-speed-card #graficoKpiVelocidadeMediaMensal {
+    height: 100% !important;
+    min-height: 244px !important;
+    max-height: none !important;
+  }
+
+  body.kpi-page .kpi-speed-card > .cco-velocidade-percurso {
+    top: 80px;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    height: auto;
+    min-height: 0;
+  }
+
+  body.kpi-page .kpi-speed-card .kpi-speedometer-drawing {
+    top: 50%;
+    right: 12px;
+    bottom: auto;
+    left: auto;
+    transform: translateY(-50%) scale(.72);
+    transform-origin: center right;
+  }
+}
