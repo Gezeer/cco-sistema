@@ -89,3 +89,104 @@ body.kpi-page .kpi-speed-card .kpi-speedometer-drawing {
     transform-origin: center right;
   }
 }
+
+/* KPI — espaçamento isolado dos cards Produção Mensal e Indicadores Operacionais. */
+body.kpi-page .kpi-producao-mensal-card,
+body.kpi-page .kpi-indicadores-operacionais-card {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 520px !important;
+  padding: 22px 24px !important;
+  overflow: hidden !important;
+}
+
+body.kpi-page .kpi-producao-mensal-card {
+  display: grid;
+  grid-template-rows: auto minmax(350px, 1fr);
+  align-content: stretch;
+  row-gap: 16px;
+}
+
+body.kpi-page .kpi-producao-mensal-card > .section-title,
+body.kpi-page .kpi-indicadores-operacionais-card > .section-title {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+body.kpi-page .kpi-producao-mensal-grafico {
+  align-self: stretch;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 350px !important;
+  max-height: none !important;
+  margin: 0;
+  padding-bottom: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+body.kpi-page .kpi-indicadores-operacionais-card {
+  display: grid !important;
+  grid-template-rows: auto auto minmax(330px, 1fr);
+  align-content: stretch;
+  row-gap: 14px;
+}
+
+body.kpi-page .kpi-indicadores-operacionais-card > .kpi-composition-visuals {
+  align-self: start;
+  margin: 0;
+  padding: 0;
+}
+
+body.kpi-page .kpi-indicadores-operacionais-grafico {
+  align-self: stretch;
+  width: 100%;
+  height: 100% !important;
+  min-height: 330px !important;
+  max-height: none !important;
+  margin: 0;
+  padding: 0 24px 0 0;
+  box-sizing: border-box;
+  overflow: hidden !important;
+}
+
+body.kpi-page .kpi-indicadores-operacionais-grafico > #graficoKpiServicoIndicadores {
+  position: relative;
+  top: -10px;
+  width: 100% !important;
+  height: calc(100% + 10px) !important;
+  min-height: 330px !important;
+  max-height: none !important;
+}
+
+@media (max-width: 768px) {
+  body.kpi-page .kpi-producao-mensal-card,
+  body.kpi-page .kpi-indicadores-operacionais-card {
+    min-height: 430px !important;
+    padding: 16px !important;
+    overflow-x: hidden !important;
+  }
+
+  body.kpi-page .kpi-producao-mensal-card {
+    grid-template-rows: auto minmax(300px, 1fr);
+    row-gap: 12px;
+  }
+
+  body.kpi-page .kpi-producao-mensal-grafico {
+    min-height: 300px !important;
+    padding-bottom: 20px;
+  }
+
+  body.kpi-page .kpi-indicadores-operacionais-card {
+    grid-template-rows: auto auto minmax(280px, 1fr);
+    row-gap: 12px;
+  }
+
+  body.kpi-page .kpi-indicadores-operacionais-grafico,
+  body.kpi-page .kpi-indicadores-operacionais-grafico > #graficoKpiServicoIndicadores {
+    min-height: 280px !important;
+  }
+
+  body.kpi-page .kpi-indicadores-operacionais-grafico { padding-right: 8px; }
+}

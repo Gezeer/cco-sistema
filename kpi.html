@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="css/responsive.css?v=20260722-graficos-mobile-runtime-v1">
   <link rel="stylesheet" href="css/cco-green-command.css?v=20260718-kpi-fundo-verde-v4">
   <link rel="stylesheet" href="css/cco-graficos-3d.css?v=20260722-graficos-mobile-runtime-v1">
-  <link rel="stylesheet" href="css/kpi.css?v=20260805-kpi-velocidade-layout-v1">
+  <link rel="stylesheet" href="css/kpi.css?v=20260805-kpi-cards-espacamento-v1">
 </head>
 <body class="kpi-page">
   <div class="layout">
@@ -151,15 +151,15 @@
         </section>
 
         <section class="grid-2">
-          <div class="section chart-card">
+          <div class="section chart-card kpi-producao-mensal-card">
             <div class="section-title">
               <span>Evolução mensal</span>
               <h2>Produção mensal do serviço</h2>
             </div>
-            <div id="graficoKpiServicoMensal" class="cco-chart-host cco-chart-3d" role="img" aria-label="Produção mensal do serviço"></div>
+            <div id="graficoKpiServicoMensal" class="cco-chart-host cco-chart-3d kpi-producao-mensal-grafico" role="img" aria-label="Produção mensal do serviço"></div>
           </div>
 
-          <div class="section chart-card">
+          <div class="section chart-card kpi-indicadores-operacionais-card">
           <div class="section-title">
               <span>Composição</span>
               <h2>Indicadores operacionais</h2>
@@ -170,7 +170,7 @@
               <div title="Viagens"><svg viewBox="0 0 64 48" aria-hidden="true"><path d="M5 13h34v25H5zM39 22h10l9 10v6H39zM14 38a5 5 0 1 0 10 0m22 0a5 5 0 1 0 10 0"/><path class="plane-mark" d="m13 25 17-7-5 7 5 7-17-7 7-2v4Z"/></svg><span>Viagens</span><strong id="kpiCompositionViagens">—</strong></div>
               <div title="Equipes"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="18" cy="17" r="6"/><circle cx="32" cy="19" r="5"/><path d="M7 39c1-10 21-10 22 0m-3-8c7-4 15 1 15 8"/></svg><span>Equipes</span><strong id="kpiCompositionEquipes">—</strong></div>
             </div>
-            <div class="kpi-composition-chart"><div id="graficoKpiServicoIndicadores" class="cco-chart-host cco-chart-3d" role="img" aria-label="Indicadores operacionais"></div></div>
+            <div class="kpi-composition-chart kpi-indicadores-operacionais-grafico"><div id="graficoKpiServicoIndicadores" class="cco-chart-host cco-chart-3d" role="img" aria-label="Indicadores operacionais"></div></div>
           </div>
         </section>
 
