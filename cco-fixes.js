@@ -174,6 +174,7 @@
 
   async function carregarPeriodo(periodo) {
     if (!periodo) return false;
+    const tokenKpi=PAGINA==="kpi"?++window.__CCO_KPI_SEQUENCIA__:0;
     const servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),chaveCompleta=[PAGINA,periodo.ano,periodo.mes,servico,periodo.importacao_id].join("|");
     if (cargaPromise?.chave === chaveCompleta) return cargaPromise.promise;
     const promise = (async () => {
@@ -183,6 +184,7 @@
         Promise.resolve(window.CCO_REGRAS.obterDiasOperacao(periodo.ano, periodo.mes))
       ]);
       if(PAGINA==="execucao"&&periodo.__ccoChaveRequisicao&&window.__CCO_EXECUCAO_REQUISICAO_ATUAL__!==periodo.__ccoChaveRequisicao){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,chave:periodo.__ccoChaveRequisicao});return false;}
+      if(PAGINA==="kpi"&&tokenKpi!==window.__CCO_KPI_SEQUENCIA__){if(window.CCO_DEBUG_KPI_PERFORMANCE===true)console.warn("[KPI RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,tokenKpi});return false;}
       publicarPeriodo(linhas, painelLinhas, periodo, diasOperacao);
       return true;
     })();
@@ -447,7 +449,10 @@
     try { carregarBaseSupabase = iniciarExecucao; aplicarFiltroExecucaoMensal = aplicarExecucao; limparFiltroExecucaoMensal = iniciarExecucao; } catch (_) {}
   } else if (PAGINA === "kpi") {
     window.carregarBaseSupabase = iniciarKpi;
-    window.ccoAgendarRenderKpi = trocarKpi;
+    window.__CCO_KPI_SEQUENCIA__=window.__CCO_KPI_SEQUENCIA__||0;
+    window.__CCO_KPI_LISTENERS__=window.__CCO_KPI_LISTENERS__||new Set();
+    let timerTrocaKpi=0;
+    window.ccoAgendarRenderKpi = function agendarTrocaKpi(){clearTimeout(timerTrocaKpi);timerTrocaKpi=setTimeout(trocarKpi,275);};
     try { carregarBaseSupabase = iniciarKpi; } catch (_) {}
 
     /* Bloqueia chamadas históricas repetidas sem impedir uma nova combinação de filtros. */

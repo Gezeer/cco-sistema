@@ -27,6 +27,6 @@ assert.match(graficos,/document\.removeEventListener\("pointerdown",interacao\.f
 assert.doesNotMatch(mobile,/velocidade_media|agruparPorMes|resumir\(/,"CSS móvel não pode alterar valores ou cálculos");
 assert.match(html,/css\/kpi\.css\?v=20260805-kpi-velocidade-mobile-v1/);
 assert.match(html,/js\/cco-graficos-3d\.js\?v=20260805-kpi-velocidade-mobile-v1/);
-assert.match(html,/kpi\.js\?v=20260805-kpi-eixo-maximo-formatado-v1/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-performance-v1/);
 
 console.log("KPI velocidade mobile: três faixas, percurso, gauge, tooltip, overflow e desktop aprovados.");
