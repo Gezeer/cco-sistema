@@ -10,7 +10,7 @@ assert.match(execucao,/modoMobileCompacto:true/);
 assert.match(execucao,/categoriasMobile:labelsMobile/);
 assert.match(execucao,/preservarNulos:true/);
 assert.match(grafico,/mobileCompacto=cfg\.mobile&&tipo==="barra3d"&&config\.modoMobileCompacto===true/);
-assert.match(grafico,/exibirRotulos:!mobileCompacto/,"mobile compacto não deve renderizar números fixos");
+assert.match(grafico,/exibirRotulos:config\.rotulosFixos!==false&&!mobileCompacto/,"mobile compacto não deve renderizar números fixos");
 assert.match(grafico,/simplificado:mobileCompacto/,"efeito 3D móvel deve dispensar reflexo e sombra extras");
 assert.match(grafico,/triggerOn:"none",alwaysShowContent:true,enterable:true/,"tooltip móvel deve abrir somente pela interação controlada");
 assert.match(grafico,/type:"showTip"/);

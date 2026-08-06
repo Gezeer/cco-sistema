@@ -31,6 +31,6 @@ assert.match(fonte,/nome:"Previsto"[\s\S]*nome:"Executado"/);
 assert.match(fonte,/Diferença: \$\{formatar\(diferenca\)\}/);
 assert.match(fonte,/Execução: \$\{percentual\.toLocaleString/);
 assert.doesNotMatch(funcao,/registros|peso|km|viagens|valor|executado genérico/i);
-assert.match(html,/kpi\.js\?v=20260805-kpi-rotulos-mensais-v1/);
+assert.match(html,/kpi\.js\?v=20260805-kpi-diario-rotulos-limpos-v1/);
 
 console.log("KPI diário de equipes: matriz oficial, calendário real e séries fixas aprovados.");

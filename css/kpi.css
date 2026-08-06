@@ -55,6 +55,11 @@ body.kpi-page .kpi-speed-card .kpi-speedometer-drawing {
 }
 
 @media (max-width: 768px) {
+  body.kpi-page #graficoKpiServicoDiario.kpi-diario-equipe-limpo {
+    min-height: 400px !important;
+    overflow-x: hidden;
+  }
+
   body.kpi-page .kpi-speed-card {
     grid-template-rows: 64px minmax(244px, 1fr);
     min-height: 340px !important;
