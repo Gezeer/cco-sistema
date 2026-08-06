@@ -20,32 +20,32 @@ assert.match(responsivo,/CCOEhMobile\?\.\(\)===true\|\|window\.matchMedia\?\.\("
 assert.match(responsivo,/if\(!mobile\)\{if\(!compacto\)return renderizarGraficoFinanceiro\(linhas\)/,"desktop deve manter o renderizador existente");
 assert.match(responsivo,/sort\(\(a,b\)=>b\.valor-a\.valor\)\.slice\(0,8\)/,"comportamento legado não-mobile deve permanecer intacto");
 assert.match(painel,/ORDEM_SERVICOS_CCO\.map\(servico=>/,"mobile deve criar todas as categorias, inclusive ausentes");
-assert.match(responsivo,/altura=dados\.length\*34\+110/);
+assert.match(responsivo,/altura=dados\.length\*31\+66/);
 assert.match(responsivo,/dados\.length!==13/);
 assert.match(responsivo,/categorias:dados\.map\(item=>item\.servico\)/);
 assert.match(responsivo,/valores:dados\.map\(item=>item\.valor\)/,"valores financeiros não podem ser recalculados no renderizador");
 assert.match(painel,/valor=item\?window\.calcularValorTotalCCO\(item\):0/,"fonte financeira oficial deve ser preservada");
-assert.match(responsivo,/barWidth:18,barCategoryGap:"45%"/);
-assert.match(responsivo,/grid:\{left:68,right:20,top:20,bottom:48,containLabel:true\}/);
+assert.match(responsivo,/barWidth:17,barCategoryGap:"42%"/);
+assert.match(responsivo,/grid=\{left:66,right:16,top:16,bottom:42,containLabel:true\}/);
 assert.match(responsivo,/yAxis:\{inverse:true,axisLabel:/,"P1 deve ocupar visualmente o topo do eixo horizontal");
 assert.equal((responsivo.match(/inverse:true/g)||[]).length,1,"não pode ocorrer dupla inversão");
 assert.doesNotMatch(responsivo,/categorias:[^\n]*\.reverse\(|dados\.reverse\(/);
 assert.match(responsivo,/splitNumber:4[\s\S]*formatter:formatarEixoFinanceiroMobile/);
 assert.match(responsivo,/rotulosFixos:false/);
 assert.match(responsivo,/tooltipPorToque:true,fecharTooltipAoTocarFora:true/);
-for(const campo of["Valor:","Acumulado:","Previsto:","Execução:"])assert.ok(responsivo.includes(campo),`tooltip deve conter ${campo}`);
+for(const campo of["Valor contratado:","Acumulado:","Previsto:","Execução:"])assert.ok(responsivo.includes(campo),`tooltip deve conter ${campo}`);
 assert.match(responsivo,/confine:true,appendToBody:false/);
-assert.match(responsivo,/padding:7,extraCssText:"max-width:230px;white-space:normal;line-height:1\.3;",textStyle:\{fontSize:11\}/);
+assert.match(responsivo,/padding:7,extraCssText:"max-width:220px;white-space:normal;line-height:1\.3;",textStyle:\{fontSize:11\}/);
 
-assert.match(css,/@media\(max-width:767px\)[\s\S]*#graficoFinanceiro[\s\S]*height:var\(--cco-chart-mobile-height,552px\)!important[\s\S]*min-height:540px!important[\s\S]*max-height:580px!important[\s\S]*overflow:hidden!important/);
+assert.match(css,/@media\(max-width:767px\)[\s\S]*#graficoFinanceiro[\s\S]*height:var\(--cco-chart-mobile-height,469px\)!important[\s\S]*min-height:0!important[\s\S]*max-height:none!important[\s\S]*overflow:hidden!important/);
 assert.match(graficos,/barWidth:item\.barWidth\?\?config\.barWidth/);
 assert.match(graficos,/barCategoryGap:item\.barCategoryGap\?\?config\.barCategoryGap/);
 assert.match(graficos,/config\.rotulosFixos!==false&&categorias\.length<=6/);
 assert.match(graficos,/destruirGrafico\(container\)/,"segunda renderização deve destruir a instância anterior");
 assert.match(graficos,/document\.removeEventListener\("pointerdown",interacao\.fora,true\)/,"eventos móveis anteriores devem ser removidos");
 
-assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-valor-mobile-ordem-v2/);
+assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-mobile-graficos-ordem-espacamento-v1/);
 assert.match(html,/js\/cco-graficos-3d\.js\?v=20260805-painel-valor-servico-mobile-v1/);
-assert.match(html,/painel-geral\.js", "20260806-painel-valor-mobile-ordem-v2"/);
+assert.match(html,/painel-geral\.js", "20260806-painel-mobile-graficos-ordem-espacamento-v1"/);
 
 console.log("Painel financeiro mobile: 13 serviços, ordem, altura, barras, eixo, tooltip, overflow e desktop aprovados.");

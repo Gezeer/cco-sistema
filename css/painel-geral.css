@@ -56,9 +56,18 @@
     width:100%!important;
     max-width:100%!important;
     min-width:0!important;
-    height:var(--cco-chart-mobile-height,552px)!important;
-    min-height:540px!important;
-    max-height:580px!important;
+    height:var(--cco-chart-mobile-height,469px)!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:hidden!important;
+  }
+  body.painel-geral-page #graficoExecucao{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:var(--cco-chart-mobile-height,493px)!important;
+    min-height:0!important;
+    max-height:none!important;
     overflow:hidden!important;
   }
 }
