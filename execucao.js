@@ -114,12 +114,18 @@
     const idsAtivos=new Set(catalogo.map(item=>String(item.importacao_id))),banco=window.supabaseClient;
     const resposta=await banco.from("painel_executivo").select("importacao_id,ano,mes,servico,acumulado,previsto,valor_total").in("importacao_id",[...idsAtivos]).eq("servico",servico).order("ano",{ascending:true}).order("mes",{ascending:true});
     if(resposta.error)throw resposta.error;
-    const linhas=(resposta.data||[]).filter(item=>idsAtivos.has(String(item.importacao_id)));cacheEvolucaoExecucao.set(chaveCache,{assinatura,linhas});return{catalogo,linhas};
+    let linhas=(resposta.data||[]).filter(item=>idsAtivos.has(String(item.importacao_id)));
+    if(window.CCOMetricas?.ehServicoEquipe?.(servico)){
+      const operacoes=await window.CCOSupabase.paginar(()=>banco.from("operacoes").select("importacao_id,servico,tipo_servico,data_operacao,qtd_equipe,equipe,executado").in("importacao_id",[...idsAtivos]).eq("servico",servico).gte("data_operacao","2025-11-01").lt("data_operacao","2026-08-01").order("data_operacao",{ascending:true}));
+      const porPeriodo=new Map(linhas.map(item=>[`${periodoChave(item.ano,item.mes)}|${String(item.importacao_id)}`,item]));
+      linhas=catalogo.map(periodo=>{const importacaoId=periodo.importacao_id??periodo.id,base=porPeriodo.get(`${periodoChave(periodo.ano,periodo.mes)}|${String(importacaoId)}`)||{},equipe=window.CCOMetricas.calcularEquipeMensalServico({servico,registros:operacoes,ano:periodo.ano,mes:periodo.mes,importacaoId});return{...base,importacao_id:importacaoId,ano:Number(periodo.ano),mes:Number(periodo.mes),servico,previsto:equipe.previsto,acumulado:equipe.executado,unidade:equipe.unidade};});
+    }
+    cacheEvolucaoExecucao.set(chaveCache,{assinatura,linhas});return{catalogo,linhas};
   }
   async function renderizarEvolucaoHistoricaCCO(servicoSelecionado){
     const servico=String(servicoSelecionado||"").trim().toUpperCase(),token=++requisicaoEvolucaoExecucao;if(!servico||servico==="GERAL")return null;
     const{catalogo,linhas}=await buscarEvolucaoServicoCCO(servico);if(token!==requisicaoEvolucaoExecucao||String(window.obterServicoAtivo?.()||"").toUpperCase()!==servico)return null;
-    const comparativo=window.CCOExecucaoComparativoMensal.montar({catalogo,linhas}),{labels,importacoes,previstos,acumulados,percentuais}=comparativo;
+    const comparativo=window.CCOExecucaoComparativoMensal.montar({catalogo,linhas}),{labels,importacoes,previstos,acumulados,percentuais}=comparativo,ehEquipe=window.CCOMetricas?.ehServicoEquipe?.(servico)===true,sufixoUnidade=ehEquipe?" equipe":"";
     if(labels.length!==9||previstos.length!==9||acumulados.length!==9)throw new Error("Comparativo mensal da Execução deve possuir exatamente nove períodos.");
     console.log("[EXECUÇÃO COMPARATIVO MENSAL]",{servico,periodos:labels,importacoes,previstos,acumulados,percentuais});
     const container=garantirContainerEvolucao(servico);if(!container)return null;
@@ -128,7 +134,7 @@
     window.CCO_GRAFICOS_3D?.destruirGrafico?.(container);
     const labelsMobile=labels.map(rotulo=>rotulo.replace("/20","/"));
     console.log("[EXECUÇÃO COMPARATIVO 3D]",{servico,periodos:labels,previsto:previstos,acumulado:acumulados,renderizador:"CCO_GRAFICOS_3D.renderizarDireto/barra3d",modo3D:true});
-    const grafico=window.CCO_GRAFICOS_3D?.renderizarDireto?.(container,{tipo:"barra3d",agrupado:true,preservarNulos:true,modoMobileCompacto:true,altura:460,categorias:labels,categoriasMobile:labelsMobile,series:[{nome:"Previsto",valores:previstos,cor:"#047857",corTopo:"#6ee7b7",corLateral:"#064e3b",formatarRotulo:(valor,indice)=>previstos[indice]==null?"":formatar(valor)},{nome:"Acumulado",valores:acumulados,cor:"#10b981",corTopo:"#a7f3d0",corLateral:"#065f46",formatarRotulo:(valor,indice)=>acumulados[indice]==null?"":formatar(valor)}],legend:{show:true},tooltip:{formatter:parametros=>{const itens=Array.isArray(parametros)?parametros:[parametros],indice=itens[0]?.dataIndex??0,pct=percentuais[indice];return`${labels[indice]}<br>Previsto: ${previstos[indice]===null?"Sem dados":formatar(previstos[indice])}<br>Acumulado: ${acumulados[indice]===null?"Sem dados":formatar(acumulados[indice])}<br>Percentual: ${pct===null?"Sem dados":`${pct.toLocaleString("pt-BR",{maximumFractionDigits:1})}%`}`;}}});
+    const grafico=window.CCO_GRAFICOS_3D?.renderizarDireto?.(container,{tipo:"barra3d",agrupado:true,preservarNulos:true,modoMobileCompacto:true,altura:460,categorias:labels,categoriasMobile:labelsMobile,yAxis:ehEquipe?{name:"Equipes",min:0}:undefined,series:[{nome:"Previsto",valores:previstos,cor:"#047857",corTopo:"#6ee7b7",corLateral:"#064e3b",formatarRotulo:(valor,indice)=>previstos[indice]==null?"":formatar(valor)},{nome:"Acumulado",valores:acumulados,cor:"#10b981",corTopo:"#a7f3d0",corLateral:"#065f46",formatarRotulo:(valor,indice)=>acumulados[indice]==null?"":formatar(valor)}],legend:{show:true},tooltip:{formatter:parametros=>{const itens=Array.isArray(parametros)?parametros:[parametros],indice=itens[0]?.dataIndex??0,pct=percentuais[indice];return`${labels[indice]}<br>Previsto: ${previstos[indice]===null?"Sem dados":`${formatar(previstos[indice])}${sufixoUnidade}`}<br>Acumulado: ${acumulados[indice]===null?"Sem dados":`${formatar(acumulados[indice])}${sufixoUnidade}`}<br>Percentual: ${pct===null?"Sem dados":`${pct.toLocaleString("pt-BR",{maximumFractionDigits:1})}%`}`;}}});
     posicionarSecoesDetalheExecucao();atualizarTendenciaEvolucaoCCO(comparativo);return grafico;
   }
   window.renderizarEvolucaoHistoricaCCO=renderizarEvolucaoHistoricaCCO;
