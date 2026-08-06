@@ -27,6 +27,6 @@ assert.match(grafico,/Diferença:/);
 assert.match(css,/@media \(max-width: 767px\)[\s\S]*#graficoExecDetalheEvolucao[\s\S]*max-width: 100%[\s\S]*min-height: 420px[\s\S]*max-height: 500px/);
 assert.match(html,/css\/execucao\.css\?v=20260805-grafico-mobile-compacto-v1/);
 assert.match(html,/js\/cco-graficos-3d\.js\?v=20260805-grafico-mobile-compacto-v1/);
-assert.match(html,/execucao\.js\?v=20260805-graficos-equipe-v1/);
+assert.match(html,/execucao\.js\?v=20260805-cards-periodo-v1/);
 
 console.log("Gráfico móvel compacto: rótulos, tooltip por toque, seleção, null, responsividade e cache aprovados.");

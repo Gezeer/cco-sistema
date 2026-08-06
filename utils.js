@@ -261,6 +261,7 @@ let todasAsAbas = [];
 
 let filtroExecucaoMesAtual = "";
 let filtroExecucaoAnoAtual = "";
+window.definirPeriodoExecucaoAtivoCCO=function definirPeriodoExecucaoAtivoCCO(ano,mes){filtroExecucaoAnoAtual=String(ano||"");filtroExecucaoMesAtual=String(mes||"").padStart(2,"0");window.filtroExecucaoAnoAtual=filtroExecucaoAnoAtual;window.filtroExecucaoMesAtual=filtroExecucaoMesAtual;return{ano:filtroExecucaoAnoAtual,mes:filtroExecucaoMesAtual};};
 
 let graficoExecucao = null;
 let graficoPizza = null;
@@ -10713,6 +10714,7 @@ function renderDetalheServicoMensal(codigo) {
     if (gradeCards) gradeCards.insertBefore(cardKmPermanente, gradeCards.children[7] || null);
     atualizarCardKmExecutadoCCO(totalKm);
   }
+  console.log("[EXECUÇÃO RENDER FINAL]",{periodo:periodo?.periodo||window.__CCO_PERIODO_ATUAL__||null,servico:codigo,cardsEscritos:[...detalhe.querySelectorAll(":scope > .cards > .card > span")].map(elemento=>String(elemento.textContent||"").trim()).filter(Boolean)});
   window.animarCardsExecucaoCCO?.({carregando:false});
 
   const labelsMes = mensal.map(i => i.mesBrasil);

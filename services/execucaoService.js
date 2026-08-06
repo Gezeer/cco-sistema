@@ -1,15 +1,20 @@
 (function criarExecucaoService(global) {
   "use strict";
   async function carregar(importacaoId, filtros = {}) {
-    const ano=Number(filtros.ano),mes=Number(filtros.mes);
+    const ano=Number(filtros.ano),mes=Number(filtros.mes),servico=String(filtros.servico||"").trim().toUpperCase();
     if(!importacaoId&&(!ano||!mes))throw new Error("importacao_id ou período válido é obrigatório para consultar Execução.");
     if(!ano||!mes)return global.CCOKpiService.operacoes(importacaoId,filtros);
     const inicio=`${ano}-${String(mes).padStart(2,"0")}-01`,fim=mes===12?`${ano+1}-01-01`:`${ano}-${String(mes+1).padStart(2,"0")}-01`;
     const campos="id,importacao_id,chave_operacao,rd,servico,tipo_servico,data_operacao,turno,ra,equipe,qtd_equipe,peso_t,viagens,km_total,executado,velocidade_media";
     const banco=global.supabaseClient;
     if(!banco)throw new Error("Supabase indisponível.");
-    const produtor=()=>global.CCOSupabase.paginar(()=>{let consulta=banco.from("operacoes").select(campos).gte("data_operacao",inicio).lt("data_operacao",fim).order("id");if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);return consulta;});
-    const operacoes=await(global.CCOMobilePerformance?.dados({pagina:"execucao",ano,mes,servico:String(filtros.servico||""),importacaoId},produtor)||produtor());
+    const contextoCache={pagina:"execucao",ano,mes,servico,importacaoId},chaveCache=global.CCOMobilePerformance?.chaveDados?.(contextoCache)||`execucao|${ano}|${mes}|${servico}|${importacaoId}`,entradaCache=global.__CCO_DADOS_CACHE__?.get?.(chaveCache),cacheValido=Boolean(entradaCache&&Date.now()-entradaCache.criadoEm<5*60*1000),promiseExistente=global.__CCO_DADOS_PROMISES__?.has?.(chaveCache);
+    console.log(cacheValido||promiseExistente?"[EXECUÇÃO CACHE HIT]":"[EXECUÇÃO CACHE MISS]",{chave:chaveCache});
+    console.log("[EXECUÇÃO PERÍODO]",{ano,mes,periodo:`${ano}-${String(mes).padStart(2,"0")}`,importacaoIdCatalogo:importacaoId,importacaoIdConsulta:importacaoId,servico:servico||null,inicio,fimExclusivo:fim});
+    const produtor=()=>global.CCOSupabase.paginar(()=>banco.from("operacoes").select(campos).eq("importacao_id",importacaoId).gte("data_operacao",inicio).lt("data_operacao",fim).order("id"));
+    const operacoes=await(global.CCOMobilePerformance?.dados(contextoCache,produtor)||produtor());
+    const datas=operacoes.map(item=>String(item.data_operacao||"").slice(0,10)).filter(Boolean).sort();
+    console.log("[EXECUÇÃO CONSULTA]",{periodo:`${ano}-${String(mes).padStart(2,"0")}`,importacaoId,servico:servico||null,registrosRecebidos:operacoes.length,primeiraData:datas[0]||null,ultimaData:datas.at(-1)||null,camposDisponiveis:[...new Set(operacoes.flatMap(item=>Object.keys(item||{})))].sort()});
     const p9Banco=operacoes.filter(item=>String(item.servico||"").trim().toUpperCase()==="P9");
     if(global.CCO_DEBUG_P9===true)console.log("[P9 BANCO]",{registros:p9Banco.length,executado:p9Banco.reduce((t,x)=>t+(Number(x.executado)||0),0),peso_t:p9Banco.reduce((t,x)=>t+(Number(x.peso_t)||0),0),km_total:p9Banco.reduce((t,x)=>t+(Number(x.km_total)||0),0),importacaoId:importacaoId||null,datas:[...new Set(p9Banco.map(x=>String(x.data_operacao||"").slice(0,10)).filter(Boolean))].sort()});
     const p1=operacoes.filter(item=>String(item.servico||"").trim().toUpperCase()==="P1");

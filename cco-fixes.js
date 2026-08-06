@@ -72,9 +72,7 @@
 
   async function buscarImportacaoPeriodo(periodo){
     if(periodo.importacao_id)return{id:periodo.importacao_id,ativo:true,status:periodo.status||"concluida"};
-    const {data,error}=await db().from("v_catalogo_periodos").select("importacao_id,status,ativa,criado_em").eq("ano",Number(periodo.ano)).eq("mes",Number(periodo.mes)).maybeSingle();
-    if(error){console.warn("[DIAS] não foi possível selecionar a importação do período.",{message:error.message,code:error.code});return null;}
-    return data?{...data,id:data.importacao_id}:null;
+    console.warn("[EXECUÇÃO] período oficial sem importacao_id; nenhum fallback será aplicado.",{ano:periodo.ano,mes:periodo.mes,periodo:periodo.periodo});return null;
   }
 
   async function buscarTodasOperacoes(periodo) {
@@ -141,9 +139,12 @@
       const valoresOficiais = window.CCO_VALORES_FIXOS || (typeof VALORES_FIXOS !== "undefined" ? VALORES_FIXOS : {});
       const valorUnitario = numeroSeguro(item.valor_unitario) || numeroSeguro(valoresOficiais[servico]);
       const campoMetrica = metricas.METRICA_POR_SERVICO[servico];
+      const campoPresenteNosRegistros=campoMetrica==="equipe"
+        ?registros.some(registro=>Object.prototype.hasOwnProperty.call(registro,"equipe")||Object.prototype.hasOwnProperty.call(registro,"qtd_equipe"))
+        :registros.some(registro=>Object.prototype.hasOwnProperty.call(registro,campoMetrica));
       const metricaDisponivel = campoMetrica === "equipe"
-        ? schemaOperacoes.opcionaisDisponiveis.some(c => c === "equipe" || c === "qtd_equipe")
-        : schemaOperacoes.opcionaisDisponiveis.includes(campoMetrica);
+        ? campoPresenteNosRegistros||schemaOperacoes.opcionaisDisponiveis.some(c => c === "equipe" || c === "qtd_equipe")
+        : campoPresenteNosRegistros||schemaOperacoes.opcionaisDisponiveis.includes(campoMetrica);
       let linha,consolidado=null,diasAcumulados=calcularDiasAcumuladosServico(registros,servico,periodo.ano,periodo.mes);
       if(PAGINA==="painel"&&Object.prototype.hasOwnProperty.call(EQUIPES_FIXAS_PAINEL,servico)){
         const contrato=calcularMetricasContratuaisEquipePainel({servico,valorUnitario,previstoMensal:EQUIPES_FIXAS_PAINEL[servico],diasAcumulados,totalDiasMes:diasOperacao});
@@ -161,6 +162,7 @@
         linha={acumulado_mes:metricaDisponivel?consolidado.acumuladoReal:null,metrica_disponivel:metricaDisponivel,previsto_mes:consolidado.previstoMensal,previsto_acumulado:metricaDisponivel?consolidado.previstoAcumulado:null,porcentagem_execucao:metricaDisponivel?consolidado.percentualCumprimento:null,valor:metricaDisponivel?consolidado.valorAcumulado:null,status:metricaDisponivel&&consolidado.status==="com_dados"?"Com dados":"Sem dados",fonte_metricas:"operacoes + painel_executivo + dias_operacao"};
       }
       if(servico==="P9")window.CCODiagnosticoP9Etapa?.("cco-fixes.js:painelConvertido[P9].acumulado_mes",linha?.acumulado_mes,"atribuição final da linha consolidada antes de painelExecutivo",registros);
+      if(PAGINA==="execucao")console.log("[EXECUÇÃO CONSOLIDAÇÃO]",{periodo:periodo.periodo,servico,acumulado:linha?.acumulado_mes??null,previsto:linha?.previsto_mes??null,percentual:linha?.porcentagem_execucao??null,diasComDados:diasAcumulados,peso:registros.reduce((total,item)=>total+numeroSeguro(item.peso_t),0),viagens:registros.reduce((total,item)=>total+numeroSeguro(item.viagens),0),km:registros.reduce((total,item)=>total+numeroSeguro(item.km_total),0),equipes:registros.reduce((total,item)=>total+numeroSeguro(item.qtd_equipe??item.equipe),0)});
       return {servico,nome_servico:item.nome_servico||"",medicao:obterMedicaoOficial(servico),dias_acumulados:diasAcumulados,total_dias_mes:diasOperacao,quantidade_equipes:consolidado?.quantidadeEquipes??null,produtividade:consolidado?.produtividade??null,avisos_consistencia:consolidado?.avisos||[],...linha};
     });
     window.painelExecutivo = painelConvertido;
@@ -171,17 +173,19 @@
 
   async function carregarPeriodo(periodo) {
     if (!periodo) return false;
-    if (cargaPromise?.chave === periodo.periodo) return cargaPromise.promise;
+    const servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),chaveCompleta=[PAGINA,periodo.ano,periodo.mes,servico,periodo.importacao_id].join("|");
+    if (cargaPromise?.chave === chaveCompleta) return cargaPromise.promise;
     const promise = (async () => {
       const [linhas, painelLinhas, diasOperacao] = await Promise.all([
         buscarTodasOperacoes(periodo),
         buscarPainel(periodo),
         Promise.resolve(window.CCO_REGRAS.obterDiasOperacao(periodo.ano, periodo.mes))
       ]);
+      if(PAGINA==="execucao"&&periodo.__ccoChaveRequisicao&&window.__CCO_EXECUCAO_REQUISICAO_ATUAL__!==periodo.__ccoChaveRequisicao){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,chave:periodo.__ccoChaveRequisicao});return false;}
       publicarPeriodo(linhas, painelLinhas, periodo, diasOperacao);
       return true;
     })();
-    cargaPromise = { chave: periodo.periodo, promise };
+    cargaPromise = { chave: chaveCompleta, promise };
     try { return await promise; } finally { if (cargaPromise?.promise === promise) cargaPromise = null; }
   }
   window.carregarPeriodoCCO=carregarPeriodo;

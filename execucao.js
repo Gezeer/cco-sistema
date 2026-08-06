@@ -13,7 +13,7 @@
   instalarRenderizacaoDiretaExecucao();
 
   const MESES=window.MESES_BR||{"01":"Janeiro","02":"Fevereiro","03":"Março","04":"Abril","05":"Maio","06":"Junho","07":"Julho","08":"Agosto","09":"Setembro","10":"Outubro","11":"Novembro","12":"Dezembro"};
-  let catalogoExecucaoPromise=null;
+  let catalogoExecucaoPromise=null,requisicaoPeriodoExecucao=0;
   const pad=valor=>String(Number(valor)).padStart(2,"0");
   const periodoChave=(ano,mes)=>`${Number(ano)}-${pad(mes)}`;
   async function carregarCatalogoExecucaoCCO(forcar=false){
@@ -40,11 +40,12 @@
   }
   async function renderizarPeriodoExecucao(periodo){
     if(!periodo){console.warn("[EXECUÇÃO] período solicitado não existe no catálogo oficial.");return false;}
-    const normalizado={...periodo,ano:String(periodo.ano),mes:pad(periodo.mes),periodo:periodoChave(periodo.ano,periodo.mes),id:periodo.importacao_id};
+    const token=++requisicaoPeriodoExecucao,servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),normalizado={...periodo,ano:String(periodo.ano),mes:pad(periodo.mes),periodo:periodoChave(periodo.ano,periodo.mes),id:periodo.importacao_id},chaveRequisicao=["execucao",normalizado.ano,normalizado.mes,servico,normalizado.importacao_id].join("|");
+    normalizado.__ccoChaveRequisicao=chaveRequisicao;window.__CCO_EXECUCAO_REQUISICAO_ATUAL__=chaveRequisicao;
     console.log("[EXECUÇÃO Períodos] carregando",{ano:Number(normalizado.ano),mes:Number(normalizado.mes),importacaoId:normalizado.importacao_id});
     window.animarCardsExecucaoCCO?.({carregando:true});
-    try{await window.carregarPeriodoCCO(normalizado);}catch(error){window.animarCardsExecucaoCCO?.({carregando:false,erro:error});throw error;}
-    window.filtroExecucaoAnoAtual=normalizado.ano;window.filtroExecucaoMesAtual=normalizado.mes;
+    try{const publicada=await window.carregarPeriodoCCO(normalizado);if(publicada===false||token!==requisicaoPeriodoExecucao||window.__CCO_EXECUCAO_REQUISICAO_ATUAL__!==chaveRequisicao){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{ano:normalizado.ano,mes:normalizado.mes,servico,importacaoId:normalizado.importacao_id,chave:chaveRequisicao});return false;}}catch(error){window.animarCardsExecucaoCCO?.({carregando:false,erro:error});throw error;}
+    if(typeof window.definirPeriodoExecucaoAtivoCCO==="function")window.definirPeriodoExecucaoAtivoCCO(normalizado.ano,normalizado.mes);else{window.filtroExecucaoAnoAtual=normalizado.ano;window.filtroExecucaoMesAtual=normalizado.mes;}
     localStorage.setItem("cco_execucao_periodo",JSON.stringify({ano:Number(normalizado.ano),mes:Number(normalizado.mes)}));
     if(typeof carregarFiltroMesesComparativoExecucao==="function")carregarFiltroMesesComparativoExecucao();
     if(typeof renderTabelaContratualMensal==="function")renderTabelaContratualMensal();
