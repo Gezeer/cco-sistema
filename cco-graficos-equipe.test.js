@@ -38,7 +38,7 @@ assert.equal(api.obterValorEquipeValido({qtd_equipe:4.533333,equipe:0.466666,exe
 const execucao=fs.readFileSync("execucao.js","utf8"),kpi=fs.readFileSync("kpi.js","utf8");
 assert.match(execucao,/calcularEquipeMensalServico/);
 assert.match(execucao,/select\("importacao_id,servico,tipo_servico,data_operacao,qtd_equipe,equipe,executado"\)/);
-assert.match(kpi,/calcularEquipeDiariaServico/);
+assert.match(kpi,/criarSerieEquipeContratualDiariaKPI/);
 assert.match(kpi,/nome:"Previsto"[\s\S]*nome:"Executado"/);
 assert.doesNotMatch(execucao.match(/if\(window\.CCOMetricas\?\.ehServicoEquipe[\s\S]*?\n    }/)?.[0]||"",/valor_unitario|valor_total|peso_t|km_total|viagens|R\$/);
 
