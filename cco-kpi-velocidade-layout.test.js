@@ -5,7 +5,7 @@ const css=fs.readFileSync("css/kpi.css","utf8");
 const html=fs.readFileSync("kpi.html","utf8");
 
 assert.match(html,/section class="section chart-card kpi-speed-card"/);
-assert.match(html,/css\/kpi\.css\?v=20260806-kpi-producao-altura-v2/);
+assert.match(html,/css\/kpi\.css\?v=20260806-kpi-producao-altura-v3/);
 assert.match(css,/grid-template-rows: 76px minmax\(320px, 1fr\)/,"cabeçalho deve possuir área exclusiva");
 assert.match(css,/min-height: 444px/,"card desktop deve superar o mínimo de 420px");
 assert.match(css,/padding: 24px !important/);

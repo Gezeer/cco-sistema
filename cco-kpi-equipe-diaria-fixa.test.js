@@ -36,6 +36,6 @@ assert.doesNotMatch(renderEquipe,/nome:"Previsto"|Previsto:|Diferença:|Execuç�
 assert.match(renderEquipe,/legend:\{top:8,left:"center",data:\["Executado"\]\}/);
 assert.match(renderEquipe,/return`\$\{categoriasDiarias\[indice\]\}<br>Executado: \$\{formatar\(executado\)\} equipes`/);
 assert.doesNotMatch(funcao,/registros|peso|km|viagens|valor|executado genérico/i);
-assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v2/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v3/);
 
 console.log("KPI diário de equipes: matriz e calendário preservados, com série única Executado aprovada.");

@@ -25,8 +25,8 @@ assert.match(graficos,/confine:true,appendToBody:false/,"tooltip deve permanecer
 assert.match(graficos,/instalarFechamentoTooltipMobile/);
 assert.match(graficos,/document\.removeEventListener\("pointerdown",interacao\.fora,true\)/,"segunda renderização deve limpar o evento anterior");
 assert.doesNotMatch(mobile,/velocidade_media|agruparPorMes|resumir\(/,"CSS móvel não pode alterar valores ou cálculos");
-assert.match(html,/css\/kpi\.css\?v=20260806-kpi-producao-altura-v2/);
+assert.match(html,/css\/kpi\.css\?v=20260806-kpi-producao-altura-v3/);
 assert.match(html,/js\/cco-graficos-3d\.js\?v=20260805-kpi-velocidade-mobile-v1/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v2/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v3/);
 
 console.log("KPI velocidade mobile: três faixas, percurso, gauge, tooltip, overflow e desktop aprovados.");

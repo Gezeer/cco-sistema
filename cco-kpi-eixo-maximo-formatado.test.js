@@ -25,6 +25,6 @@ assert.match(comparativo,/yAxis:\{max:escalaVisualComparativo\.max,interval:esca
 assert.match(comparativo,/Previsto:[\s\S]*Executado:[\s\S]*Diferença:[\s\S]*Percentual:/,"tooltip deve permanecer completo");
 assert.equal((kpi.match(/axisLabel:\{formatter:formatarNumeroEixoKPI\}/g)||[]).length,1,"formatação deve atingir somente o comparativo mensal");
 assert.match(kpi,/destruirGrafico\?\.\(container\)/,"segunda renderização deve destruir a instância anterior");
-assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v2/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v3/);
 
 console.log("KPI eixo mensal: máximo agradável, ticks pt-BR, séries, tooltip e isolamento aprovados.");
