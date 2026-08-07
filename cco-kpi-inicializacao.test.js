@@ -22,7 +22,7 @@ assert.doesNotMatch(kpi,/estado\.estado="renderizado"[^;]+;[^\n]*renderizar\(\)/
 assert.match(kpi,/visivelComMargemKPI\(container\).*estado\.executar\(\).*observer\.observe/s);
 assert.match(utils,/\["painel","kpi","execucao","dados","historico"\].*return/s,"inicializador genérico permanece bloqueado no KPI");
 assert.match(utils,/function aplicarPeriodoInicialAoAbrirCCO\(\) \{\s*if \(String\(window\.CCO_PAGE \|\| ""\)\.toLowerCase\(\) === "kpi"\) return false;/,"temporizador legado de correção de período deve ser inerte no KPI");
-assert.match(html,/kpi\.js\?v=20260806-kpi-producao-mensal-grid-v1/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v2/);
 for(const arquivo of["services/kpiService.js","utils.js","cco-fixes.js"])assert.ok(html.includes(`${arquivo}?v=20260806-kpi-init-mes-sincronizado-v2`),`cache-buster ausente: ${arquivo}`);
 assert.doesNotMatch(`${kpi}\n${fixes}`,/dispatchEvent\(/,"a inicialização não deve simular change");
 
