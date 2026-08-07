@@ -2,7 +2,7 @@
 (function iniciarImportadorPrincipalCCO() {
   "use strict";
 
-  const BUILD = "20260730-importador-cabecalhos-duplicados-v1";
+  const BUILD = "20260807-p4-peso-parser-v1";
   const TAMANHO_MAXIMO_LOTE = 2.5 * 1024 * 1024;
   const TAMANHO_LOTE_RAW = 200;
   const TAMANHO_LOTE_OPERACOES = 200;
@@ -18,7 +18,7 @@
     hora:["hora","horario","hora_inicio"], turno:["turno","periodo"],
     ra:["ra","regiao_administrativa","regiao"], setor:["setor"], circuito:["circuito"],
     veiculo:["veiculo","placa","prefixo"], equipe:["equipe"], qtd_equipe:["qtd_equipe","quantidade_equipe","quantidade_de_equipes"],
-    peso_t:["peso_t","peso","toneladas","peso_total"], viagens:["viagens","qtd_viagens","quantidade_viagens"],
+    peso_t:["peso_t","peso","toneladas","peso_toneladas"], viagens:["viagens","qtd_viagens","quantidade_viagens"],
     km_total:["km_total","km_executado","km","quilometragem","quilometragem_total"],
     executado:["executado","km_executado","executado_total","quantidade_executada","qtd_executado","qtd_executada","execucao"],
     velocidade_media:["velocidade_media","velocidade","media_velocidade"],
@@ -112,6 +112,17 @@
   function campo(linha, nome) {
     for (const alias of ALIASES[nome] || [nome]) if (!vazio(linha[alias])) return linha[alias];
     return null;
+  }
+
+  function extrairPesoToneladasP4(original,linha,metadadosCabecalhos={},configuracao={}) {
+    const valorToneladas=campo(linha,"peso_t");
+    if(!vazio(valorToneladas))return{valor:normalizarNumero(valorToneladas),origem:"toneladas"};
+    if(String(configuracao?.pesoTotalUnidade||"").trim().toLowerCase()!=="kg")return{valor:null,origem:null};
+    const entradaPesoTotal=Object.entries(original||{}).find(([cabecalho,valor])=>normalizarCabecalhoCCO(cabecalho)==="peso total"&&!vazio(valor));
+    const chavePesoTotal=entradaPesoTotal?metadadosCabecalhos[entradaPesoTotal[0]]:null;
+    const valorPesoTotal=entradaPesoTotal?.[1]??(chavePesoTotal&&!vazio(linha?.[chavePesoTotal])?linha[chavePesoTotal]:null);
+    const pesoTotalKg=normalizarNumero(valorPesoTotal);
+    return pesoTotalKg===null?{valor:null,origem:null}:{valor:pesoTotalKg/1000,origem:"Peso Total (kg)"};
   }
 
   function normalizarCabecalhoCCO(valor){return String(valor||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase().replace(/[._/\-]+/g," ").replace(/[^a-z0-9º°\s]+/g," ").replace(/\s+/g," ").trim().replace(/^[nº°]+(?=\s|$)/,"n");}
@@ -267,7 +278,8 @@
             console.log("[P9 PARSER]",{numeroLinha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:null,operacaoGerada:false,motivoDescarte:"P9_QDT_EQUIPE_AUSENTE"});
           }else{
             const diagnosticoOriginal=servico==="P9"?{...original,campo_origem_p9:extracaoP9.campo}:servico==="P1"?{...original,campo_origem_km_total:resultadoKmP1.campo,valor_original_km_total:resultadoKmP1.valorOriginal}:original;
-            operacoes.push({aba:abaPersistida,numero_linha:numeroLinha,rd,servico,tipo_servico:servico==="P9"?"P9":texto(campo(linha,"tipo_servico"))||null,data_operacao:data,hora:texto(campo(linha,"hora"))||null,turno:texto(campo(linha,"turno"))||null,ra:texto(campo(linha,"ra"))||null,setor:texto(campo(linha,"setor"))||null,circuito:texto(campo(linha,"circuito"))||null,veiculo:texto(campo(linha,"veiculo"))||null,equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"equipe")),qtd_equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"qtd_equipe")),peso_t:normalizarNumero(campo(linha,"peso_t")),viagens:normalizarNumero(campo(linha,"viagens")),km_total:kmTotal,executado:servico==="P9"?valorP9:executado,velocidade_media:normalizarNumero(campo(linha,"velocidade_media")),tempo_produtivo_minutos:normalizarNumero(campo(linha,"tempo_produtivo_minutos")),tempo_total_minutos:normalizarNumero(campo(linha,"tempo_total_minutos")),tempo_parada_minutos:normalizarNumero(campo(linha,"tempo_parada_minutos")),km_produtivo:normalizarNumero(campo(linha,"km_produtivo")),km_improdutivo:normalizarNumero(campo(linha,"km_improdutivo")),valor_abastecido:normalizarNumero(campo(linha,"valor_abastecido")),valor_original:jsonSeguro(abaP9PorDescricao?{...diagnosticoOriginal,_aba_original:nomeAba,descricao:diagnosticoOriginal.descricao??nomeAba,nome_servico:diagnosticoOriginal.nome_servico??nomeAba}:diagnosticoOriginal),chave_operacao:chave(abaPersistida,numeroLinha,servico,data,rd)});
+            const pesoToneladas=servico==="P4"?extrairPesoToneladasP4(original,linha,metadadosCabecalhos,window.CCO_CONFIG_IMPORTACAO?.P4):{valor:normalizarNumero(campo(linha,"peso_t")),origem:null};
+            operacoes.push({aba:abaPersistida,numero_linha:numeroLinha,rd,servico,tipo_servico:servico==="P9"?"P9":texto(campo(linha,"tipo_servico"))||null,data_operacao:data,hora:texto(campo(linha,"hora"))||null,turno:texto(campo(linha,"turno"))||null,ra:texto(campo(linha,"ra"))||null,setor:texto(campo(linha,"setor"))||null,circuito:texto(campo(linha,"circuito"))||null,veiculo:texto(campo(linha,"veiculo"))||null,equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"equipe")),qtd_equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"qtd_equipe")),peso_t:pesoToneladas.valor,viagens:normalizarNumero(campo(linha,"viagens")),km_total:kmTotal,executado:servico==="P9"?valorP9:executado,velocidade_media:normalizarNumero(campo(linha,"velocidade_media")),tempo_produtivo_minutos:normalizarNumero(campo(linha,"tempo_produtivo_minutos")),tempo_total_minutos:normalizarNumero(campo(linha,"tempo_total_minutos")),tempo_parada_minutos:normalizarNumero(campo(linha,"tempo_parada_minutos")),km_produtivo:normalizarNumero(campo(linha,"km_produtivo")),km_improdutivo:normalizarNumero(campo(linha,"km_improdutivo")),valor_abastecido:normalizarNumero(campo(linha,"valor_abastecido")),valor_original:jsonSeguro(abaP9PorDescricao?{...diagnosticoOriginal,_aba_original:nomeAba,descricao:diagnosticoOriginal.descricao??nomeAba,nome_servico:diagnosticoOriginal.nome_servico??nomeAba}:diagnosticoOriginal),chave_operacao:chave(abaPersistida,numeroLinha,servico,data,rd)});
             if(servico==="P9")console.log("[P9 PARSER]",{numeroLinha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:valorP9,operacaoGerada:true,motivoDescarte:null});
           }
         }
@@ -825,7 +837,7 @@
     const novo=antigo.cloneNode(true);antigo.replaceWith(novo);novo.dataset.importadorPrincipal=BUILD;novo.addEventListener("change",importarPlanilhas);
   }
 
-  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,obterQdtEquipeP9,obterDataP9,criarOperacaoP9Raw,prepararReprocessamentoP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
+  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairPesoToneladasP4,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,obterQdtEquipeP9,obterDataP9,criarOperacaoP9Raw,prepararReprocessamentoP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
   window.reprocessarP9AtivosCCO=reprocessarP9Ativos;
   window.reprocessarP9Ativo=reprocessarP9Ativos;
   window.reprocessarP9Periodo=reprocessarP9Periodo;

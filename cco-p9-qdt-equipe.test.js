@@ -103,6 +103,6 @@ assert.match(fonte,/quantidadeRealmenteInserida/);
 assert.match(fonte,/primeiraLinhaEnviada/);
 assert.match(fonte,/erroSupabase/);
 assert.match(fonte,/window\.confirm\(/);
-assert.match(fs.readFileSync("index.html","utf8"),/20260731-p9-reprocessamento-final-v1/);
+assert.match(fs.readFileSync("index.html","utf8"),/20260807-p4-peso-parser-v1/);
 assert.doesNotMatch(fonte,/Qdt_Catador[^\n]*valorEquipeEscolhido:\s*(?:original|linha)/);
 console.log("P9 Qdt_Equipe: parser literal, descarte seguro e rotina administrativa aprovados.");
