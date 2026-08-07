@@ -1,0 +1,14 @@
+const fs=require("node:fs"),assert=require("node:assert/strict"),vm=require("node:vm");
+const arquivos=["services/analyticsAIService.js","js/cco-ai-conhecimento.js","js/cco-ai-analista.js","js/cco-ai-intencoes.js","js/cco-ai-graficos.js","js/cco-ai-chat.js","analytics-ai.js"];
+const codigo=Object.fromEntries(arquivos.map(nome=>[nome,fs.readFileSync(nome,"utf8")]));
+const window={CCOMetricas:{normalizarServico:v=>String(v||"").toUpperCase(),obterPrevistoEquipeServico:s=>({P3:12,P7:2,P8:2,P9:11,P10:3,P11:1})[s]??null,calcularAcumuladoServico:(_s,r)=>r.reduce((t,x)=>t+Number(x.executado||0),0)}},sandbox={window,console};vm.createContext(sandbox);vm.runInContext(codigo["js/cco-ai-conhecimento.js"],sandbox);vm.runInContext(codigo["js/cco-ai-analista.js"],sandbox);
+assert.equal(window.CCOAIConhecimento.obterServico("P9").previstoEquipe,11);assert.equal(window.CCOAIConhecimento.obterServico("P3").previstoEquipe,12);
+assert.equal(window.CCOAIAnalista.calcularPercentual(11,11),100);assert.equal(window.CCOAIAnalista.calcularPercentual(null,11),null);assert.equal(window.CCOAIAnalista.calcularMedia([{v:10},{v:20}],"v"),15);assert.equal(window.CCOAIAnalista.calcularMediana([{v:30},{v:10},{v:20}],"v"),20);
+assert.deepEqual(Array.from(window.CCOAIAnalista.calcularRanking([{ra:"A",n:2},{ra:"B",n:5},{ra:"A",n:4}],"ra","n"),x=>x.nome),["A","B"]);
+assert.equal(window.CCOAIAnalista.analisarServico({servico:"P9",registros:[]}).valor,null);assert.match(window.CCOAIAnalista.analisarServico({servico:"P9",registros:[]}).mensagem,/Não encontrei dados suficientes/);
+assert.equal(window.CCOAIAnalista.detectarAnomalias([{executado:-1,data_operacao:"2026-07-01",servico:"P1"}]).length,1);
+assert.match(codigo["services/analyticsAIService.js"],/__CCO_CATALOGO_PROMISE__\|\|global\.CCOPainelService\.getCatalogoPeriodos/);assert.match(codigo["services/analyticsAIService.js"],/5\*60\*1000/);assert.match(codigo["services/analyticsAIService.js"],/analytics-ai.*acao/);assert.doesNotMatch(codigo["services/analyticsAIService.js"],/\bselect\s+.+\bfrom\b|\.rpc\(/i);
+assert.match(codigo["services/analyticsAIService.js"],/Promise\.all\(periodos\.map/);assert.match(codigo["services/analyticsAIService.js"],/periodo\.importacao_id/);
+const html=fs.readFileSync("analytics-ai.html","utf8");for(const nome of arquivos)assert.match(html,new RegExp(nome.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\?v=20260806-analytics-ai-specialist-v1"));
+assert.match(html,/Resumo executivo/);assert.match(html,/Mostrar cálculo/);assert.match(fs.readFileSync("js/cco-analytics-consultas.js","utf8"),/CCOPainelService\.getCatalogoPeriodos/);
+console.log("CCO Analytics AI Specialist: arquitetura, métricas nulas, cache, catálogo oficial e consultas seguras aprovados.");

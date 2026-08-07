@@ -6,7 +6,7 @@
   <title>CCO Analytics AI • CCO</title>
   <link rel="icon" type="image/png" href="logo.png">
   <link rel="stylesheet" href="css/style.css?v=20260718-ai-design-tabela-v1">
-  <link rel="stylesheet" href="css/analytics-ai.css?v=20260721-analytics-robo-espacamento-v2">
+  <link rel="stylesheet" href="css/analytics-ai.css?v=20260806-analytics-ai-specialist-v1">
   <link rel="stylesheet" href="css/theme.css?v=20260718-cco-enterprise-ui-v1">
   <link rel="stylesheet" href="css/layout.css?v=20260718-cco-enterprise-ui-v1">
   <link rel="stylesheet" href="css/navbar.css?v=20260718-cco-enterprise-ui-v1">
@@ -46,6 +46,16 @@
 
       <div id="analyticsStatus" class="analytics-status" role="status" aria-live="polite"></div>
 
+      <section class="cco-ai-filters" aria-label="Contexto da análise">
+        <label>Serviço<select id="ccoAIFiltroServico"><option value="">Todos os serviços</option></select></label>
+        <label>Ano<select id="ccoAIFiltroAno"></select></label>
+        <label>Mês<select id="ccoAIFiltroMes"></select></label>
+        <label>RA<input id="ccoAIFiltroRA" type="text" placeholder="Todas"></label>
+        <label>Turno<input id="ccoAIFiltroTurno" type="text" placeholder="Todos"></label>
+        <button id="ccoAIResumoExecutivo" type="button">Resumo executivo</button>
+        <button id="ccoAIMostrarCalculo" type="button">Mostrar cálculo</button>
+      </section>
+
       <section class="cco-ai-workspace" aria-label="Assistente CCO Analytics AI">
         <aside class="cco-ai-history">
           <div><span>CONVERSA ATUAL</span><h2>Histórico</h2></div>
@@ -59,7 +69,7 @@
           <div class="cco-ai-executive-summary" aria-label="Resumo executivo de todos os períodos"><article><span>Melhor período</span><strong id="ccoAnalyticsMelhor">—</strong></article><article><span>Pior período</span><strong id="ccoAnalyticsPior">—</strong></article><article><span>Maior valor financeiro</span><strong id="ccoAnalyticsMaiorValor">—</strong></article><article><span>Serviços em atenção</span><strong id="ccoAnalyticsAtencao">—</strong></article></div>
 
           <div id="ccoAnalyticsSugestoes" class="quick-questions cco-ai-suggestions" aria-label="Sugestões rápidas">
-            <button type="button">Resumo de todos os meses</button><button type="button">Melhor e pior mês</button><button type="button">Ranking financeiro</button><button type="button">Serviços em atenção</button><button type="button">Comparar 2025 e 2026</button><button type="button">Evolução do P5</button><button type="button">Analisar P12</button><button type="button">Qualidade dos dados</button><button type="button">Detectar anomalias</button><button type="button">Resumo para diretoria</button>
+            <button type="button">Analisar período</button><button type="button">Comparar com mês anterior</button><button type="button">Ranking de serviços</button><button type="button">Qual RA teve maior atividade?</button><button type="button">Qual turno executou mais?</button><button type="button">Evolução do P5</button><button type="button">Analisar P12</button><button type="button">Qualidade dos dados</button><button type="button">Encontrar problemas</button><button type="button">Resumo executivo</button>
           </div>
 
           <div id="ccoAnalyticsMensagens" class="copilot-messages cco-ai-messages" aria-live="polite" aria-busy="true"></div>
@@ -82,6 +92,10 @@
   <script src="js/supabase.js?v=20260720-conexao-diagnostico-v3"></script>
   <script src="js/cco-boot-diagnostics.js?v=20260806-boot-diagnostics-v1" defer></script>
   <script src="js/cco-mobile-performance.js?v=20260805-mobile-performance-v1"></script>
+  <script src="services/cache.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="services/painelService.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="services/kpiService.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="cco-metricas.js?v=20260806-analytics-ai-specialist-v1" defer></script>
   <script>window.CCO_PAGE = "analytics-ai";</script>
   <script src="js/cco-regras-negocio.js?v=20260720-dias-centralizados-v1" defer></script>
   <script src="js/regras-servicos.js?v=20260720-valores-oficiais-v1" defer></script>
@@ -90,8 +104,15 @@
   <script src="js/cco-analytics-intencoes.js?v=20260721-analytics-chat-v2" defer></script>
   <script src="js/cco-analytics-consultas.js?v=20260721-analytics-chat-v2" defer></script>
   <script src="js/cco-analytics-graficos.js?v=20260805-mobile-performance-v1" defer></script>
+  <script src="js/cco-ai-conhecimento.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="js/cco-ai-intencoes.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="js/cco-ai-analista.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="js/cco-ai-graficos.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="js/cco-ai-chat.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="services/analyticsAIService.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="analytics-ai.js?v=20260806-analytics-ai-specialist-v1" defer></script>
   <script src="js/cco-robo-ai.js?v=20260721-analytics-robo-v1" defer></script>
-  <script src="js/cco-analytics-ai.js?v=20260721-analytics-robo-v1" defer></script>
+  <script src="js/cco-analytics-ai.js?v=20260806-analytics-ai-specialist-v1" defer></script>
   <script src="js/theme.js?v=20260718-enterprise-v1"></script>
   <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
 </body>
