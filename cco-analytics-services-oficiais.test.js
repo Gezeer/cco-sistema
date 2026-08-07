@@ -1,0 +1,14 @@
+const fs=require("node:fs"),assert=require("node:assert/strict");
+const consultas=fs.readFileSync("js/cco-analytics-consultas.js","utf8"),service=fs.readFileSync("services/analyticsAIService.js","utf8"),html=fs.readFileSync("analytics-ai.html","utf8");
+for(const arquivo of[consultas,service,html])assert.doesNotMatch(arquivo,/v_analytics_/i,"runtime do Analytics não pode consultar views Analytics");
+assert.match(consultas,/CCOPainelService\.porImportacao/,"mensal deve vir do service oficial do Painel");
+assert.match(consultas,/CCOMetricas\.carregarOperacoesResiliente/,"operacional deve usar a consulta resiliente oficial");
+assert.match(consultas,/CCOMetricas\.calcularAcumuladoServico/,"acumulado deve reutilizar a regra P1–P12 oficial");
+assert.match(consultas,/CCOMetricas\.calcularQuantidadeEquipesMensal/,"equipes devem reutilizar CCOMetricas");
+assert.match(consultas,/CCOMetricas\.calcularPercentualCumprimento/,"percentual deve reutilizar CCOMetricas");
+assert.doesNotMatch(consultas,/\.from\("operacoes"\)|\.from\("painel_executivo"\)|\.from\("dias_operacao"\)/,"camada Analytics não deve duplicar consultas dos services oficiais");
+assert.doesNotMatch(consultas,/\.from\("importacao_erros"\)/,"Analytics deve permanecer restrito às fontes oficiais autorizadas");
+assert.match(consultas,/\.from\("importacoes"\)/,"metadados podem vir da tabela oficial importacoes");
+assert.match(service,/CCOMetricas\.carregarOperacoesResiliente/);assert.match(service,/CCOPainelService\.getCatalogoPeriodos/);
+assert.match(html,/js\/cco-analytics-consultas\.js\?v=20260806-analytics-ai-services-oficiais-v1/);
+console.log("CCO Analytics: views inexistentes removidas e services oficiais aprovados.");
