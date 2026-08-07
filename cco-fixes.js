@@ -369,17 +369,32 @@
     });
   }
 
-  async function trocarKpi() {
+  async function aplicarMesKPI(opcoes={}) {
     const periodos = await obterPeriodos();
-    const ano = document.getElementById("filtroKpiAno")?.value;
-    const mes = document.getElementById("filtroKpiMes")?.value;
-    const periodo = periodos.find(p => p.ano === ano && p.mes === pad(mes)) || periodos.find(p => p.ano === ano) || periodos[0];
-    if (periodo && periodo.periodo !== window.__CCO_PERIODO_ATUAL__) {await carregarPeriodo(periodo);await carregarKpiMensalNovoBanco();}
+    const ano = String(opcoes.ano||document.getElementById("filtroKpiAno")?.value||"");
+    const mes = pad(opcoes.mes||document.getElementById("filtroKpiMes")?.value||"");
+    const servico=window.CCONormalizarServicoKPIObrigatorio?.(opcoes.servico||document.getElementById("filtroKpiServico")?.value)||"P1";
+    const periodo = periodos.find(p => String(p.ano) === ano && p.mes === mes && (!opcoes.importacaoId||String(p.importacao_id)===String(opcoes.importacaoId)));
+    if(!periodo?.importacao_id)throw new Error(`[KPI] importacao_id ausente para ${ano}-${mes}`);
+    const contexto=window.definirPeriodoKPIAtivo({ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id}),debug=window.CCO_DEBUG_KPI_INIT_MES===true,origem=opcoes.origem||"change";
+    window.__CCO_KPI_SEQUENCIA_RENDER__=(window.__CCO_KPI_SEQUENCIA_RENDER__||0)+1;const token=opcoes.token||[servico,contexto.periodo,contexto.importacaoId,window.__CCO_KPI_SEQUENCIA_RENDER__].join("|");window.__CCO_KPI_RENDER_TOKEN__=token;contexto.token=token;contexto.cacheKey=["kpi",contexto.ano,contexto.mes,servico,contexto.importacaoId].join("|");
+    try{localStorage.setItem("cco_kpi_periodo",JSON.stringify({ano:Number(contexto.ano),mes:Number(contexto.mes)}));}catch(_){}
+    const diagnostico={ano:Number(contexto.ano),mes:Number(contexto.mes),servico,importacaoId:contexto.importacaoId,filtroAnoDOM:document.getElementById("filtroKpiAno")?.value,filtroMesDOM:document.getElementById("filtroKpiMes")?.value,filtroServicoDOM:document.getElementById("filtroKpiServico")?.value,estadoAno:window.filtroKpiAnoAtual,estadoMes:window.filtroKpiMesAtual,estadoServico:servico,token,stack:new Error("KPI mês").stack};
+    if(debug){console.log(origem==="init"?"[KPI MÊS INIT]":"[KPI MÊS CHANGE]",diagnostico);console.log(origem==="init"?"[KPI MÊS][INIT]":"[KPI MÊS][CHANGE]",diagnostico);}
+    const periodoPublicado=await carregarPeriodo({...periodo,__ccoTokenKpi:opcoes.token});
+    if(periodoPublicado===false){if(debug)console.warn("[KPI MÊS RESPOSTA DESCARTADA]",{...contexto,servico,token});return false;}
+    await carregarKpiMensalNovoBanco();
     /* Recria os dias a partir das operações do mês recém-carregado. */
     window.carregarFiltrosKpiServicoCompleto?.();
     preencherKpiPeriodos(periodos, periodo);
-    agendarRenderKpi();
+    window.definirPeriodoKPIAtivo({ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
+    window.prepararGraficosPeriodoKPI?.(contexto.periodo);
+    if(debug)console.log("[KPI MÊS SINCRONIZAÇÃO]",{...contexto,servico,token});
+    if(opcoes.renderizar!==false){window.renderPaginaKpiPorServicoCompleto?.();if(debug)console.log("[KPI MÊS RENDER]",{...contexto,servico,token});}
+    return{periodo,contexto,servico,token};
   }
+  async function trocarKpi(){return aplicarMesKPI({origem:"change"});}
+  window.aplicarMesKPI=aplicarMesKPI;
 
   function agendarRenderKpi() {
     cancelAnimationFrame(renderFrame);

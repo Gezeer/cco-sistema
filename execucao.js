@@ -50,7 +50,7 @@
     for(const mes of meses){const option=document.createElement("option");option.value=pad(mes);option.textContent=MESES[pad(mes)]||pad(mes);selectMes.appendChild(option);}
     if(meses.includes(preferido))selectMes.value=pad(preferido);else if(meses.length)selectMes.value=pad(Math.max(...meses));
   }
-  async function renderizarPeriodoExecucao(periodo){
+  async function renderizarPeriodoExecucaoInterno(periodo){
     if(!periodo){console.warn("[EXECUÇÃO] período solicitado não existe no catálogo oficial.");return false;}
     const servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),normalizado={...periodo,ano:String(periodo.ano),mes:pad(periodo.mes),periodo:periodoChave(periodo.ano,periodo.mes),id:periodo.importacao_id},contexto=criarContextoExecucaoCCO({ano:periodo.ano,mes:periodo.mes,servico,importacaoId:periodo.importacao_id}),chaveRequisicao=contexto.chave;
     normalizado.__ccoChaveRequisicao=chaveRequisicao;normalizado.__ccoContextoExecucao=contexto;
@@ -65,13 +65,15 @@
     const codigo=window.obterServicoAtivo?.();if(codigo&&codigo!=="geral"&&contextoExecucaoAtualCCO(contexto))window.renderDetalheServicoMensal?.(codigo,contexto);
     return true;
   }
+  async function renderizarPeriodoExecucao(periodo){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("renderizarPeriodoExecucao","execucao.js",()=>renderizarPeriodoExecucaoInterno(periodo),periodo?.periodo||""):renderizarPeriodoExecucaoInterno(periodo);}
   async function alterarAnoExecucaoCCO(){
     const catalogo=await carregarCatalogoExecucaoCCO(),selectAno=document.getElementById("filtroExecucaoAno"),selectMes=document.getElementById("filtroExecucaoMes"),ano=Number(selectAno?.value),meses=obterMesesDoAnoExecucao(catalogo,ano);
     console.log("[EXECUÇÃO Períodos] ano alterado",{ano,mesesDisponiveis:meses});
     preencherFiltroMesExecucao(selectMes,meses,Math.max(...meses));
     return renderizarPeriodoExecucao(localizarPeriodoExecucao(catalogo,ano,selectMes.value));
   }
-  async function alterarMesExecucaoCCO(){const catalogo=await carregarCatalogoExecucaoCCO(),ano=Number(document.getElementById("filtroExecucaoAno")?.value),mes=Number(document.getElementById("filtroExecucaoMes")?.value);return renderizarPeriodoExecucao(localizarPeriodoExecucao(catalogo,ano,mes));}
+  async function alterarMesExecucaoCCOInterno(){const catalogo=await carregarCatalogoExecucaoCCO(),ano=Number(document.getElementById("filtroExecucaoAno")?.value),mes=Number(document.getElementById("filtroExecucaoMes")?.value);return renderizarPeriodoExecucao(localizarPeriodoExecucao(catalogo,ano,mes));}
+  async function alterarMesExecucaoCCO(){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("alterarMesExecucaoCCO","execucao.js",alterarMesExecucaoCCOInterno):alterarMesExecucaoCCOInterno();}
   const debounceExecucao=window.CCOMobilePerformance?.debounce;window.carregarCatalogoExecucaoCCO=carregarCatalogoExecucaoCCO;window.obterMesesDoAnoExecucao=obterMesesDoAnoExecucao;window.localizarPeriodoExecucao=localizarPeriodoExecucao;window.alterarAnoExecucaoCCO=debounceExecucao?debounceExecucao("execucao:filtro-ano",alterarAnoExecucaoCCO,275):alterarAnoExecucaoCCO;window.alterarMesExecucaoCCO=debounceExecucao?debounceExecucao("execucao:filtro-mes",alterarMesExecucaoCCO,275):alterarMesExecucaoCCO;window.aplicarFiltroExecucaoMensal=window.alterarMesExecucaoCCO;
 
   const cacheEvolucaoExecucao=new Map();
@@ -157,7 +159,7 @@
     window.renderDetalheServicoMensal=renderComEvolucao;try{renderDetalheServicoMensal=renderComEvolucao;}catch(_){}
   }
 
-  async function iniciar(){
+  async function iniciarInterno(){
     try {
       if(!await window.CCOSupabase.exigirSessao())return false;
       if(window.__CCO_EXECUCAO_PERIODOS_INICIADOS__)return true;
@@ -175,7 +177,10 @@
       console.error("Erro ao iniciar Execução P1 a P12:", erro);
     }
   }
+  async function iniciar(){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("execucao.iniciar","execucao.js",iniciarInterno):iniciarInterno();}
 
+  window.CCOBootDiagnostics?.instrumentarFuncao(window,"carregarPeriodoCCO","carregarPeriodoCCO","cco-fixes.js");
+  window.CCOBootDiagnostics?.instrumentarFuncao(window,"renderDetalheServicoMensal","renderDetalheServicoMensal","utils.js/execucao.js");
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded",iniciar,{once:true});
   } else {

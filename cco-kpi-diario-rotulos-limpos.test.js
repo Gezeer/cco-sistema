@@ -28,7 +28,7 @@ assert.match(graficos,/triggerOn:"click",alwaysShowContent:true/,"tooltip mobile
 assert.match(css,/#graficoKpiServicoDiario\.kpi-diario-equipe-limpo[\s\S]*min-height: 400px !important/);
 assert.match(html,/css\/kpi\.css\?v=20260805-kpi-velocidade-mobile-v1/);
 assert.match(html,/js\/cco-graficos-3d\.js\?v=20260805-kpi-velocidade-mobile-v1/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-init-primeira-carga-v1/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
 
 for(const valor of["P3","P7","P8","P9","P10","P11"])assert.match(fs.readFileSync("cco-metricas.js","utf8"),new RegExp(`${valor.replace(".","\\.")}\\s*:`));
 assert.doesNotMatch(diario,/\.push\(|\.splice\(/,"nenhum dia pode ser removido do dataset");

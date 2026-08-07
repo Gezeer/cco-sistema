@@ -87,7 +87,7 @@
     document.getElementById("dadosPorPagina")?.addEventListener("change", e => { ESTADO.porPagina = Number(e.target.value) || 500; ESTADO.pagina = 1; renderTabelaDadosCompleta(false); });
   }
 
-  async function renderTabelaDadosCompleta(resetPagina = true) {
+  async function renderTabelaDadosCompletaInterna(resetPagina = true) {
     const tabela = document.getElementById("tabelaDados");
     if (!tabela) return;
 
@@ -142,15 +142,17 @@
       if (loading) loading.style.display = "none";
     }
   }
+  async function renderTabelaDadosCompleta(resetPagina=true){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("renderTabelaDadosCompleta","dados.js",()=>renderTabelaDadosCompletaInterna(resetPagina)):renderTabelaDadosCompletaInterna(resetPagina);}
 
   window.renderTabelaDados = renderTabelaDadosCompleta;
 
-  function iniciar(){
+  function iniciarInterno(){
     window.CCOSupabase.exigirSessao().then(usuario=>{if(!usuario)return;
     if (typeof renderFiltros === "function") renderFiltros();
     renderTabelaDadosCompleta();
     });
   }
+  function iniciar(){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("dados.iniciar","dados.js",iniciarInterno):iniciarInterno();}
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", iniciar, { once: true });

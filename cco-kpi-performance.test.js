@@ -9,7 +9,7 @@ const html=fs.readFileSync("kpi.html","utf8");
 assert.match(service,/window\.__CCO_KPI_DADOS_PROMISES__|global\.__CCO_KPI_DADOS_PROMISES__/);
 assert.match(service,/global\.__CCO_KPI_DADOS_CACHE__/);
 assert.match(service,/const TTL=5\*60\*1000/);
-assert.match(service,/\["kpi",ano\|\|"",mes\|\|"",dia,servico,importacaoId\|\|""\]\.join\("\|"\)/);
+assert.match(service,/\["kpi",ano\|\|"",mes\|\|"",servico,importacaoId\|\|"",dia\]\.join\("\|"\)/);
 assert.match(service,/\[KPI CACHE HIT\]/);
 assert.match(service,/\[KPI CACHE MISS\]/);
 assert.match(service,/\[KPI PROMISE REUTILIZADA\]/);
@@ -36,8 +36,8 @@ assert.match(fixes,/tokenKpi!==window\.__CCO_KPI_SEQUENCIA__/);
 assert.match(kpi,/renderVelocidade\(dados\)/,"velocidade deve consumir os registros compartilhados");
 assert.doesNotMatch(kpi,/from\(["']operacoes["']\)/,"renderizadores não podem consultar operações");
 
-assert.match(html,/services\/kpiService\.js\?v=20260806-kpi-performance-v1/);
-assert.match(html,/cco-fixes\.js\?v=20260806-kpi-performance-v1/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-init-primeira-carga-v1/);
+assert.match(html,/services\/kpiService\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
+assert.match(html,/cco-fixes\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
 
 console.log("KPI performance: consulta única, Promise/cache, lazy render, debounce, token e cache-buster aprovados.");

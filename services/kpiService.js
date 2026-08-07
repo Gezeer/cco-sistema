@@ -11,8 +11,9 @@
   async function operacoes(importacaoId, filtros = {}) {
     const ano=Number(filtros.ano),mes=Number(filtros.mes),normalizado=global.CCONormalizarServicoKPIObrigatorio?.(filtros.servico)||global.CCOMetricas?.normalizarServico?.(filtros.servico)||String(filtros.servico||"").trim().toUpperCase(),servico=SERVICOS_VALIDOS.has(normalizado)?normalizado:"P1";
     if(!importacaoId&&(!ano||!mes))throw new Error("importacao_id ou período válido é obrigatório para consultar KPI.");
-    const dia=String(filtros.dia||"").padStart(filtros.dia?2:0,"0"),cacheKey=["kpi",ano||"",mes||"",dia,servico,importacaoId||""].join("|");
+    const dia=String(filtros.dia||"").padStart(filtros.dia?2:0,"0"),cacheKey=["kpi",ano||"",mes||"",servico,importacaoId||"",dia].join("|");
     const item=global.__CCO_KPI_DADOS_CACHE__.get(cacheKey),agora=Date.now();
+    if(global.CCO_DEBUG_KPI_INIT_MES===true)console.log("[KPI INIT CACHE]",{chave:cacheKey,hit:Boolean(item&&agora-item.criadoEm<TTL)||global.__CCO_KPI_DADOS_PROMISES__.has(cacheKey),ano,mes,servico,importacaoId});
     if(item&&agora-item.criadoEm<TTL){metricas.cacheHits++;if(debug())console.log("[KPI CACHE HIT]",{chave:cacheKey});return item.valor;}
     if(global.__CCO_KPI_DADOS_PROMISES__.has(cacheKey)){metricas.cacheHits++;if(debug())console.log("[KPI PROMISE REUTILIZADA]",{chave:cacheKey});return global.__CCO_KPI_DADOS_PROMISES__.get(cacheKey);}
     metricas.cacheMisses++;metricas.consultasSupabase++;if(debug())console.log("[KPI CACHE MISS]",{chave:cacheKey});

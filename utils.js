@@ -262,6 +262,9 @@ let todasAsAbas = [];
 let filtroExecucaoMesAtual = "";
 let filtroExecucaoAnoAtual = "";
 window.definirPeriodoExecucaoAtivoCCO=function definirPeriodoExecucaoAtivoCCO(ano,mes){filtroExecucaoAnoAtual=String(ano||"");filtroExecucaoMesAtual=String(mes||"").padStart(2,"0");window.filtroExecucaoAnoAtual=filtroExecucaoAnoAtual;window.filtroExecucaoMesAtual=filtroExecucaoMesAtual;return{ano:filtroExecucaoAnoAtual,mes:filtroExecucaoMesAtual};};
+let filtroKpiAnoAtual = "";
+let filtroKpiMesAtual = "";
+window.definirPeriodoKPIAtivo=function definirPeriodoKPIAtivo({ano,mes,importacaoId}={}){const anoNormalizado=String(Number(ano)||""),mesNormalizado=String(Number(mes)||"").padStart(2,"0");if(!anoNormalizado||mesNormalizado==="00"||!importacaoId)throw new Error(`[KPI] importacao_id ausente para ${anoNormalizado}-${mesNormalizado}`);filtroKpiAnoAtual=anoNormalizado;filtroKpiMesAtual=mesNormalizado;window.filtroKpiAnoAtual=anoNormalizado;window.filtroKpiMesAtual=mesNormalizado;const anoEl=document.getElementById("filtroKpiAno"),mesEl=document.getElementById("filtroKpiMes");if(anoEl)anoEl.value=anoNormalizado;if(mesEl)mesEl.value=mesNormalizado;window.__CCO_KPI_CONTEXTO_PERIODO__={ano:Number(anoNormalizado),mes:Number(mesNormalizado),importacaoId:String(importacaoId),periodo:`${anoNormalizado}-${mesNormalizado}`};return window.__CCO_KPI_CONTEXTO_PERIODO__;};
 
 let graficoExecucao = null;
 let graficoPizza = null;
@@ -6979,6 +6982,7 @@ function aplicarPeriodoGlobalCCO(ano, mes, salvar = true) {
 }
 
 function aplicarPeriodoInicialAoAbrirCCO() {
+  if (String(window.CCO_PAGE || "").toLowerCase() === "kpi") return false;
   const periodo = obterPeriodoInicialCCO();
   if (!periodo) return false;
   return aplicarPeriodoGlobalCCO(periodo.ano, periodo.mes, true);
