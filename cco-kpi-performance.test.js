@@ -38,6 +38,6 @@ assert.doesNotMatch(kpi,/from\(["']operacoes["']\)/,"renderizadores não podem c
 
 assert.match(html,/services\/kpiService\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
 assert.match(html,/cco-fixes\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-producao-mensal-grid-v1/);
 
 console.log("KPI performance: consulta única, Promise/cache, lazy render, debounce, token e cache-buster aprovados.");

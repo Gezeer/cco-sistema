@@ -24,6 +24,6 @@ assert.match(kpi,/Previsto: \$\{formatar\(previsto\)\} equipes/);
 assert.match(kpi,/Executado: \$\{formatar\(executado\)\} equipes/);
 assert.match(kpi,/Diferença: \$\{formatar\(diferenca\)\}/);
 assert.match(kpi,/Percentual: \$\{percentual===null/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-producao-mensal-grid-v1/);
 
 console.log("KPI mensal de equipes: fonte compartilhada, limite contratual e tooltip aprovados.");
