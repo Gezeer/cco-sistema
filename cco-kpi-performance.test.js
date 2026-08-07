@@ -22,7 +22,7 @@ assert.match(kpi,/new IntersectionObserver\([\s\S]*rootMargin:"200px 0px"/);
 for(const id of["graficoKpiServicoMensal","graficoKpiServicoIndicadores","graficoKpiComparativoMensal","graficoKpiProdutividadeMensal","graficoKpiVelocidadeMediaMensal"])assert.ok(kpi.includes(id));
 assert.match(kpi,/dataset\.ccoLazyEstado="aguardando"/);
 assert.match(kpi,/estado\.estado="renderizado"/);
-assert.match(kpi,/estado\.estado="destruído"/);
+assert.match(kpi,/catch\(error\)\{estado\.estado="aguardando"/,"falha de dimensão/render deve permanecer pendente");
 assert.match(kpi,/container\.__ccoKpiDataset===assinatura/,"dataset idêntico deve reutilizar instância");
 assert.match(kpi,/function consolidarDadosKPI\(registros,mensal,contexto=/);
 assert.match(kpi,/const consolidado=consolidarDadosKPI\(dados,mensal,/);
@@ -38,6 +38,6 @@ assert.doesNotMatch(kpi,/from\(["']operacoes["']\)/,"renderizadores não podem c
 
 assert.match(html,/services\/kpiService\.js\?v=20260806-kpi-performance-v1/);
 assert.match(html,/cco-fixes\.js\?v=20260806-kpi-performance-v1/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-equipe-serie-unica-v1/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-init-primeira-carga-v1/);
 
 console.log("KPI performance: consulta única, Promise/cache, lazy render, debounce, token e cache-buster aprovados.");

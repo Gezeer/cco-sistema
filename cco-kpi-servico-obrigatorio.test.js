@@ -39,7 +39,7 @@ assert.match(fixes,/servico:servicoKpi/);
 assert.match(html,/services\/kpiService\.js\?v=20260806-kpi-performance-v1/);
 assert.match(html,/utils\.js\?v=20260805-kpi-servico-obrigatorio-v1/);
 assert.match(html,/cco-fixes\.js\?v=20260806-kpi-performance-v1/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-equipe-serie-unica-v1/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-init-primeira-carga-v1/);
 assert.match(html,/id="filtroKpiAno"[\s\S]*Todos os anos/);
 assert.match(html,/id="filtroKpiMes"[\s\S]*Todos os meses/);
 assert.match(html,/id="filtroKpiDia"[\s\S]*Todos os dias/);

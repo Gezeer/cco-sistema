@@ -33,6 +33,6 @@ assert.match(fonteKpi,/cfg\.mobile\?"linha":"cilindro"/,"mobile deve preservar o
 assert.match(fonteGraficos,/posicaoRotulo\.distanciaTopo>16/,"deslocamento amplo deve criar linha-guia");
 assert.match(fonteGraficos,/destruirGrafico\(container\)/,"segunda renderização deve destruir a instância anterior");
 assert.match(html,/js\/cco-graficos-3d\.js\?v=20260805-kpi-velocidade-mobile-v1/);
-assert.match(html,/kpi\.js\?v=20260806-kpi-equipe-serie-unica-v1/);
+assert.match(html,/kpi\.js\?v=20260806-kpi-init-primeira-carga-v1/);
 
 console.log("KPI mensal: rótulos iguais/diferentes, legenda, eixo, mobile e ciclo de renderização aprovados.");
