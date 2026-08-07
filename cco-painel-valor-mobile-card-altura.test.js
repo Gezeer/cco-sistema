@@ -21,10 +21,10 @@ assert.match(bloco,/aspect-ratio:auto!important/);
 assert.match(bloco,/contain-intrinsic-size:auto!important/);
 assert.match(bloco,/content-visibility:visible!important/);
 assert.doesNotMatch(bloco,/height:100%/);
-assert.match(bloco,/>\.cco-chart-execucao>#graficoExecucao\{[\s\S]*493px/);
-assert.match(bloco,/>\.cco-chart-financeiro>#graficoFinanceiro\{[\s\S]*469px/);
-assert.equal(493+54+8+24,579,"card de execução deve ficar entre 555 e 585px");
-assert.equal(469+54+8+24,555,"card de valor deve ficar entre 530 e 560px");
+assert.match(bloco,/>\.cco-chart-execucao>#graficoExecucao\{[\s\S]*432px/);
+assert.match(bloco,/>\.cco-chart-financeiro>#graficoFinanceiro\{[\s\S]*432px/);
+assert.equal(432+54+8+24,518,"card de execução deve ficar entre 480 e 520px");
+assert.equal(432+54+8+24,518,"card de valor deve ficar entre 480 e 520px");
 
 assert.deepEqual(ordem,["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"]);
 assert.match(painel,/function sincronizarAlturasGraficosMobile\(\)/);
@@ -33,6 +33,6 @@ assert.match(painel,/\[PAINEL MOBILE ALTURAS REAIS\]/);
 for(const campo of["maxHeight:","flexGrow:","alignSelf:","gridRow:","aspectRatio:","containIntrinsicSize:","paddingBottom:","marginBottom:","clientHeight:","scrollHeight:"])assert.ok(painel.includes(campo));
 assert.match(painel,/instancia\?\.resize\(\{height:grafico\.clientHeight\}\)/);
 assert.match(painel,/window\.addEventListener\("cco:painel-renderizado",sincronizarAlturasGraficosMobile\)/);
-assert.match(html,/20260806-painel-mobile-remover-espaco-v4/);
+assert.match(html,/20260806-painel-mobile-graficos-legenda-v5/);
 
 console.log("Painel mobile: cards de execução e valor acompanham seus gráficos, sem alterar ordem, valores ou desktop.");

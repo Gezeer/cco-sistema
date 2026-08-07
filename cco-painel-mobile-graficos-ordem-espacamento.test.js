@@ -29,24 +29,28 @@ for(const fonte of[execucao,valor]){
 }
 
 assert.doesNotMatch(execucao,/sort\(\(a,b\)=>numero\(b\.percentual\)/,"execução mobile não pode ordenar por percentual");
-assert.match(execucao,/altura=ordenados\.length\*31\+90/);
-assert.match(execucao,/grid=\{left:66,right:16,top:16,bottom:46,containLabel:true\}/);
+assert.match(execucao,/altura=432/);
+assert.match(execucao,/grid=\{top:48,bottom:44,left:64,right:14,containLabel:true\}/);
+assert.match(execucao,/legend:\{show:true,top:8,left:"center"[\s\S]*formatter:"\{name\}     Unidade: %"\}/);
 assert.match(execucao,/categorias:ordenados\.map\(item=>item\.servico\)/);
 assert.match(execucao,/valores=ordenados\.map\(item=>numero\(item\.percentual\)\)/,"percentuais devem permanecer inalterados");
-for(const campo of["Executado:","Previsto:","Percentual:","Status:"])assert.ok(execucao.includes(campo));
+for(const campo of["Serviço:","Executado:","Previsto:","Execução:","Status:"])assert.ok(execucao.includes(campo));
 
-assert.match(valor,/altura=dados\.length\*31\+66/);
-assert.match(valor,/grid=\{left:66,right:16,top:16,bottom:42,containLabel:true\}/);
+assert.match(valor,/altura=432/);
+assert.match(valor,/grid=\{top:48,bottom:44,left:64,right:14,containLabel:true\}/);
+assert.match(valor,/legend:\{show:true,top:8,left:"center"[\s\S]*formatter:"\{name\}     Unidade: R\$"\}/);
 assert.match(valor,/barWidth:17,barCategoryGap:"42%"/);
 assert.match(valor,/valores:dados\.map\(item=>item\.valor\)/,"valores financeiros devem permanecer inalterados");
 assert.match(valor,/rotulosFixos:false/);
 
-assert.match(css,/#graficoFinanceiro[\s\S]*height:var\(--cco-chart-mobile-height,469px\)!important[\s\S]*min-height:0!important/);
-assert.match(css,/#graficoExecucao[\s\S]*height:var\(--cco-chart-mobile-height,493px\)!important[\s\S]*min-height:0!important/);
+assert.match(css,/#graficoFinanceiro[\s\S]*height:var\(--cco-chart-mobile-height,432px\)!important[\s\S]*min-height:0!important/);
+assert.match(css,/#graficoExecucao[\s\S]*height:var\(--cco-chart-mobile-height,432px\)!important[\s\S]*min-height:0!important/);
 assert.match(css,/@media\(max-width:767px\)/,"alterações CSS devem ser somente mobile");
 assert.match(painel,/CCO_DEBUG_PAINEL_MOBILE===true\)console\.debug\("\[PAINEL MOBILE GRÁFICO VALOR\]"/);
 assert.match(painel,/CCO_DEBUG_PAINEL_MOBILE===true\)console\.debug\("\[PAINEL MOBILE EXECUÇÃO SERVIÇO\]"/);
-assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-mobile-remover-espaco-v4/);
-assert.match(html,/painel-geral\.js", "20260806-painel-mobile-remover-espaco-v4"/);
+assert.match(painel,/\[PAINEL MOBILE LAYOUT GRAFICO\]/);
+for(const campo of["largura:","alturaGrafico:","alturaCard:","grid:","categorias:","primeiraCategoria:","ultimaCategoria:"])assert.ok(painel.includes(campo));
+assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-mobile-graficos-legenda-v5/);
+assert.match(html,/painel-geral\.js", "20260806-painel-mobile-graficos-legenda-v5"/);
 
 console.log("Painel mobile: valor e execução com 13 serviços, ordem visual, alturas, tooltips e desktop isolado aprovados.");
