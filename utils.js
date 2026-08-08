@@ -9267,7 +9267,7 @@ function ccoDestroyCompV2(){['graficoCompTopServicoV2','graficoCompPesoViagemV2'
 function ccoBarCompV2(id,nome,label,data,campo,suf=''){let c=document.getElementById(id);if(!c)return;let sec=c.closest('.section'),tem=data.some(i=>ccoNumLegV2(i[campo])>0);if(sec)sec.style.display=tem?'':'none';if(!tem)return;window[nome]=new Chart(c,{type:'bar',data:{labels:data.map(i=>i.mesBrasil||i.servico),datasets:[{label,data:data.map(i=>Number(ccoNumLegV2(i[campo]).toFixed(2))),borderWidth:1,borderRadius:10}]},options:ccoOpCompV2(suf)})}
 function renderComparativoDinamicoV2(){ccoOcultarEstaticosCompV2();ccoAreaCompV2();ccoDestroyCompV2();let mes=ccoDadosMesCompV2(),serv=ccoDadosServCompV2(),area=document.getElementById('comparativoDinamicoGraficos');if(!mes.length&&!serv.length){if(area)area.innerHTML='<section class="section"><div class="section-title"><span>Comparativo Mensal</span><h2>Nenhum dado encontrado para os filtros selecionados</h2></div></section>';return}ccoBarCompV2('graficoCompTopServico','graficoCompTopServicoV2','Comparativo por serviço',serv,'indicador');ccoBarCompV2('graficoCompPesoViagem','graficoCompPesoViagemV2','Peso_t/Viagem',mes,'pesoViagem',' t/viagem');ccoBarCompV2('graficoCompPesoHora','graficoCompPesoHoraV2','Peso por hora',mes,'pesoHora',' t/h');let cv=document.getElementById('graficoCompVariacao');if(cv){let sec=cv.closest('.section'),tem=mes.some(i=>ccoNumLegV2(i.variacao)!==0);if(sec)sec.style.display=tem?'':'none';if(tem)window.graficoCompVariacaoV2=new Chart(cv,{type:'line',data:{labels:mes.map(i=>i.mesBrasil),datasets:[{label:'Variação mensal (%)',data:mes.map(i=>Number(ccoNumLegV2(i.variacao).toFixed(2))),borderWidth:3,tension:.35,fill:false,pointRadius:4}]},options:{...ccoOpCompV2('%'),scales:{x:ccoOpCompV2('%').scales.x,y:{beginAtZero:false,grid:{color:'rgba(15,23,42,.08)'}}}}})}let cp=document.getElementById('graficoCompParticipacao');if(cp){let part=mes.filter(i=>ccoNumLegV2(i.totalBase)>0),sec=cp.closest('.section');if(sec)sec.style.display=part.length?'':'none';if(part.length)window.graficoCompParticipacaoV2=new Chart(cp,{type:'doughnut',data:{labels:part.map(i=>i.mesBrasil),datasets:[{label:'Participação dos meses',data:part.map(i=>Number(ccoNumLegV2(i.totalBase).toFixed(2))),borderWidth:2,hoverOffset:8}]},options:ccoOpRoscaCompV2()})}ccoOcultarEstaticosCompV2();ccoOrdenarSelectsLegV2();ccoLimparLegendasGraficosV2();}
 if(typeof renderComparativoMensal==='function'){const _rcm_v2=renderComparativoMensal;renderComparativoMensal=function(){_rcm_v2();setTimeout(()=>renderComparativoDinamicoV2(),80)}}
-document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{ccoOrdenarSelectsLegV2();ccoLimparLegendasGraficosV2();ccoValorNaBarraV2();renderComparativoDinamicoV2();},1200);setTimeout(()=>{ccoOrdenarSelectsLegV2();ccoLimparLegendasGraficosV2();ccoValorNaBarraV2();},2600);['filtroComparativoServico','comparativoServico','filtroServicoComparativo','filtroComparativoAno','comparativoAno','filtroAnoComparativo','filtroComparativoMes','comparativoMes','filtroMesComparativo'].forEach(id=>{let el=document.getElementById(id);if(el&&el.dataset.comparativoLegendaV2!=='sim'){el.addEventListener('change',()=>setTimeout(()=>renderComparativoDinamicoV2(),60));el.dataset.comparativoLegendaV2='sim';}})});
+document.addEventListener('DOMContentLoaded',()=>{if(window.__CCO_PAINEL_CONTROLADOR_OFICIAL__||window.__CCO_EXECUCAO_CONTROLADOR_OFICIAL__||window.__CCO_KPI_CONTROLADOR_OFICIAL__||window.__CCO_DADOS_CONTROLADOR_OFICIAL__)return;setTimeout(()=>{ccoOrdenarSelectsLegV2();ccoLimparLegendasGraficosV2();ccoValorNaBarraV2();renderComparativoDinamicoV2();},1200);setTimeout(()=>{ccoOrdenarSelectsLegV2();ccoLimparLegendasGraficosV2();ccoValorNaBarraV2();},2600);['filtroComparativoServico','comparativoServico','filtroServicoComparativo','filtroComparativoAno','comparativoAno','filtroAnoComparativo','filtroComparativoMes','comparativoMes','filtroMesComparativo'].forEach(id=>{let el=document.getElementById(id);if(el&&el.dataset.comparativoLegendaV2!=='sim'){el.addEventListener('change',()=>setTimeout(()=>renderComparativoDinamicoV2(),60));el.dataset.comparativoLegendaV2='sim';}})});
 
 
 /* =====================================================
@@ -9446,6 +9446,7 @@ async function ccoAjustarMensagemBancoVazio() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  if(window.__CCO_PAINEL_CONTROLADOR_OFICIAL__||window.__CCO_EXECUCAO_CONTROLADOR_OFICIAL__||window.__CCO_KPI_CONTROLADOR_OFICIAL__||window.__CCO_DADOS_CONTROLADOR_OFICIAL__)return;
   setTimeout(ccoAjustarMensagemBancoVazio, 1200);
   setTimeout(ccoAjustarMensagemBancoVazio, 3000);
 });
@@ -9548,14 +9549,6 @@ function ccoAplicarUltimoMesPrimeiro() {
     console.warn("Não foi possível aplicar último mês primeiro:", erro);
   }
 }
-
-/* Reaplica após carregamento do Supabase/local e criação dos filtros */
-document.addEventListener("DOMContentLoaded", () => {
-  setTimeout(ccoAplicarUltimoMesPrimeiro, 1800);
-  setTimeout(ccoAplicarUltimoMesPrimeiro, 3500);
-  setTimeout(ccoAplicarUltimoMesPrimeiro, 6000);
-});
-
 
 /* =====================================================
    PATCH COMPARATIVO MENSAL POR SERVIÇO
@@ -12169,6 +12162,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.ccoAjustarGraficosVisiveis = ccoAjustarGraficosVisiveis;
 
   document.addEventListener('DOMContentLoaded',()=>{
+    if(window.__CCO_PAINEL_CONTROLADOR_OFICIAL__||window.__CCO_EXECUCAO_CONTROLADOR_OFICIAL__||window.__CCO_KPI_CONTROLADOR_OFICIAL__||window.__CCO_DADOS_CONTROLADOR_OFICIAL__)return;
     setTimeout(async()=>{
       await recarregarKpiMensalDireto();
       carregarFiltrosComparativoServico();
@@ -15788,6 +15782,8 @@ async function sair() {
    - Sem dispatchEvent automático e com trava contra renderização duplicada.
 ===================================================== */
 (function ccoV12FiltroMesRealSemLoop(){
+  const paginaControlada=String(window.CCO_PAGE||"").toLowerCase();
+  if((paginaControlada==="painel"&&window.__CCO_PAINEL_CONTROLADOR_OFICIAL__)||(paginaControlada==="execucao"&&window.__CCO_EXECUCAO_CONTROLADOR_OFICIAL__))return;
   const ORDEM = ["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"];
   const EQUIPES_FIXAS = window.CCO_EQUIPES_FIXAS;
   const NOMES = {

@@ -9,6 +9,6 @@ assert.equal(window.CCOAIAnalista.analisarServico({servico:"P9",registros:[]}).v
 assert.equal(window.CCOAIAnalista.detectarAnomalias([{executado:-1,data_operacao:"2026-07-01",servico:"P1"}]).length,1);
 assert.match(codigo["services/analyticsAIService.js"],/__CCO_CATALOGO_PROMISE__\|\|global\.CCOPainelService\.getCatalogoPeriodos/);assert.match(codigo["services/analyticsAIService.js"],/5\*60\*1000/);assert.match(codigo["services/analyticsAIService.js"],/analytics-ai.*acao/);assert.doesNotMatch(codigo["services/analyticsAIService.js"],/\bselect\s+.+\bfrom\b|\.rpc\(/i);
 assert.match(codigo["services/analyticsAIService.js"],/Promise\.all\(periodos\.map/);assert.match(codigo["services/analyticsAIService.js"],/periodo\.importacao_id/);
-const html=fs.readFileSync("analytics-ai.html","utf8");for(const nome of arquivos)assert.match(html,new RegExp(nome.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\?v=20260806-analytics-ai-specialist-v1"));
+const html=fs.readFileSync("analytics-ai.html","utf8");for(const nome of arquivos.filter(nome=>nome!=="analytics-ai.js"))assert.match(html,new RegExp(nome.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\?v=20260806-analytics-ai-specialist-v1"));assert.match(html,/analytics-ai\.js\?v=20260807-performance-boot-v2/);
 assert.match(html,/Resumo executivo/);assert.match(html,/Mostrar cálculo/);assert.match(fs.readFileSync("js/cco-analytics-consultas.js","utf8"),/CCOPainelService\.getCatalogoPeriodos/);
 console.log("CCO Analytics AI Specialist: arquitetura, métricas nulas, cache, catálogo oficial e consultas seguras aprovados.");

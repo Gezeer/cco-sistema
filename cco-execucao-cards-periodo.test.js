@@ -15,10 +15,8 @@ assert.match(utils,/window\.definirPeriodoExecucaoAtivoCCO=function[\s\S]*filtro
 assert.match(servico,/\.eq\("importacao_id",importacaoId\)\.gte\("data_operacao",inicio\)\.lt\("data_operacao",fim\)/,"UUID e intervalo mensal devem ser aplicados juntos");
 for(const campo of["servico","tipo_servico","data_operacao","peso_t","viagens","km_total","velocidade_media","qtd_equipe","equipe","executado","importacao_id","turno","ra"])assert.match(servico,new RegExp(`(?:^|[,\\\"]|const campos=.*)${campo}`),`consulta deve trazer ${campo}`);
 
-assert.match(servico,/chaveDados\?\.\(contextoCache\)/);
+assert.match(servico,/CCOPageDataCache\.obter\(contextoCache,produtor\)/);
 assert.match(servico,/pagina:"execucao",ano,mes,servico,importacaoId/,"cache deve incluir página, período, serviço e UUID");
-assert.match(servico,/\[EXECUÇÃO CACHE HIT\]/);
-assert.match(servico,/\[EXECUÇÃO CACHE MISS\]/);
 
 assert.match(execucao,/requisicaoPeriodoExecucao/);
 assert.match(execucao,/\[EXECUÇÃO RESPOSTA DESCARTADA\]/);
@@ -44,6 +42,7 @@ assert.equal(localizar(2026,6).importacao_id,"uuid-jun");
 assert.equal(localizar(2026,7).importacao_id,"uuid-jul");
 assert.notEqual(localizar(2026,6).importacao_id,localizar(2026,7).importacao_id);
 
-for(const arquivo of["services/execucaoService.js","utils.js","cco-fixes.js","execucao.js"])assert.match(html,new RegExp(`${arquivo.replace(/[./]/g,"\\$&")}\\?v=20260806-execucao-race-periodo-servico-v1`));
+for(const arquivo of["services/execucaoService.js","utils.js","execucao.js"])assert.match(html,new RegExp(`${arquivo.replace(/[./]/g,"\\$&")}\\?v=20260807-performance-boot-v2`));
+assert.match(html,/cco-fixes\.js\?v=20260806-execucao-race-periodo-servico-v1/);
 
 console.log("Cards por período: UUID, filtro mensal, cache, concorrência e render final aprovados.");

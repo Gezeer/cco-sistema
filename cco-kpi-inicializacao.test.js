@@ -12,10 +12,10 @@ assert.match(fixes,/const periodoPublicado=await carregarPeriodo[\s\S]*if\(perio
 assert.match(fixes,/publicarPeriodo\(linhas, painelLinhas, periodo, diasOperacao\)/,"o caminho central publica os bindings oficiais");
 assert.match(utils,/window\.definirPeriodoKPIAtivo=function definirPeriodoKPIAtivo/);
 assert.match(utils,/__CCO_KPI_CONTEXTO_PERIODO__/);
-assert.match(service,/\["kpi",ano\|\|"",mes\|\|"",servico,importacaoId\|\|"",dia\]/);
+assert.match(service,/contexto=\{pagina:"kpi",ano:ano\|\|"",mes:mes\|\|"",servico,importacaoId:importacaoId\|\|"",dia\}/);
 assert.match(kpi,/definirPeriodoKPIAtivo[\s\S]*const sequencia=\+\+sequenciaCargaKPI,token=\[servico,contextoInicial\.periodo,contextoInicial\.importacaoId,sequencia\]/s,"token nasce somente após serviço, período e importação válidos");
 for(const etapa of["INÍCIO","CATÁLOGO OK","SERVIÇO OK","ANO OK","MÊS OK","FILTROS OK","IMPORTAÇÃO OK","CONSULTA INÍCIO","CONSULTA FIM","PERÍODO SINCRONIZADO","DADOS OK","CARDS OK","GRÁFICO DIÁRIO OK","LAZY REGISTRADO","RENDER OK","CONCLUÍDO"])assert.ok(kpi.includes(`\"${etapa}\"`),`log ausente: ${etapa}`);
-for(const log of["[KPI MÊS INIT]","[KPI MÊS CHANGE]","[KPI MÊS SINCRONIZAÇÃO]","[KPI MÊS RENDER]","[KPI INIT CACHE]","[KPI GRÁFICO INIT]"])assert.ok(`${kpi}\n${fixes}\n${service}`.includes(log),`diagnóstico ausente: ${log}`);
+for(const log of["[KPI MÊS INIT]","[KPI MÊS CHANGE]","[KPI MÊS SINCRONIZAÇÃO]","[KPI MÊS RENDER]","[KPI GRÁFICO INIT]"])assert.ok(`${kpi}\n${fixes}\n${service}`.includes(log),`diagnóstico ausente: ${log}`);
 assert.match(kpi,/estado\.estado="renderizando"[\s\S]*await aguardarDimensaoKPI\(container,10\)[\s\S]*if\(!instancia\)\{estado\.estado="aguardando"/s);
 assert.match(kpi,/new ResizeObserver[\s\S]*clientWidth>0&&container\.clientHeight>0[\s\S]*estado\.executar\(\)/s,"container que ganha dimensão deve retomar sozinho");
 assert.doesNotMatch(kpi,/estado\.estado="renderizado"[^;]+;[^\n]*renderizar\(\)/,"não pode marcar renderizado antes de criar instância");
@@ -23,7 +23,7 @@ assert.match(kpi,/visivelComMargemKPI\(container\).*estado\.executar\(\).*observ
 assert.match(utils,/\["painel","kpi","execucao","dados","historico"\].*return/s,"inicializador genérico permanece bloqueado no KPI");
 assert.match(utils,/function aplicarPeriodoInicialAoAbrirCCO\(\) \{\s*if \(String\(window\.CCO_PAGE \|\| ""\)\.toLowerCase\(\) === "kpi"\) return false;/,"temporizador legado de correção de período deve ser inerte no KPI");
 assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v3/);
-for(const arquivo of["services/kpiService.js","utils.js","cco-fixes.js"])assert.ok(html.includes(`${arquivo}?v=20260806-kpi-init-mes-sincronizado-v2`),`cache-buster ausente: ${arquivo}`);
+assert.ok(html.includes("services/kpiService.js?v=20260807-performance-boot-v2"));for(const arquivo of["utils.js","cco-fixes.js"])assert.ok(html.includes(`${arquivo}?v=20260806-kpi-init-mes-sincronizado-v2`),`cache-buster ausente: ${arquivo}`);
 assert.doesNotMatch(`${kpi}\n${fixes}`,/dispatchEvent\(/,"a inicialização não deve simular change");
 
 async function initUnica(){let promessa,consultas=0,renders=0;return function iniciar(){if(promessa)return promessa;promessa=(async()=>{await Promise.resolve();consultas++;renders++;return{servico:"P1",periodo:"2026-07",importacaoId:"julho",consultas,renders};})();return promessa;};}

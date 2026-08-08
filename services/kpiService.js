@@ -8,16 +8,13 @@
   const debug=()=>global.CCO_DEBUG_KPI_PERFORMANCE===true;
   const SERVICOS_VALIDOS=new Set(["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"]);
   const db = () => { const cliente=global.CCOSupabase?.getClient?.();if(!cliente)throw new Error("Supabase indisponível.");return cliente; };
+  const dadosPagina=(contexto,produtor,ttl)=>global.CCOPageDataCache?.obter?global.CCOPageDataCache.obter(contexto,produtor,ttl):global.CCOCache.lembrar(global.CCOCache.chave("page-data",[contexto.pagina,contexto.servico,contexto.ano,contexto.mes,contexto.dia,contexto.importacaoId]),produtor,ttl);
   async function operacoes(importacaoId, filtros = {}) {
     const ano=Number(filtros.ano),mes=Number(filtros.mes),normalizado=global.CCONormalizarServicoKPIObrigatorio?.(filtros.servico)||global.CCOMetricas?.normalizarServico?.(filtros.servico)||String(filtros.servico||"").trim().toUpperCase(),servico=SERVICOS_VALIDOS.has(normalizado)?normalizado:"P1";
     if(!importacaoId&&(!ano||!mes))throw new Error("importacao_id ou período válido é obrigatório para consultar KPI.");
-    const dia=String(filtros.dia||"").padStart(filtros.dia?2:0,"0"),cacheKey=["kpi",ano||"",mes||"",servico,importacaoId||"",dia].join("|");
-    const item=global.__CCO_KPI_DADOS_CACHE__.get(cacheKey),agora=Date.now();
-    if(global.CCO_DEBUG_KPI_INIT_MES===true)console.log("[KPI INIT CACHE]",{chave:cacheKey,hit:Boolean(item&&agora-item.criadoEm<TTL)||global.__CCO_KPI_DADOS_PROMISES__.has(cacheKey),ano,mes,servico,importacaoId});
-    if(item&&agora-item.criadoEm<TTL){metricas.cacheHits++;if(debug())console.log("[KPI CACHE HIT]",{chave:cacheKey});return item.valor;}
-    if(global.__CCO_KPI_DADOS_PROMISES__.has(cacheKey)){metricas.cacheHits++;if(debug())console.log("[KPI PROMISE REUTILIZADA]",{chave:cacheKey});return global.__CCO_KPI_DADOS_PROMISES__.get(cacheKey);}
-    metricas.cacheMisses++;metricas.consultasSupabase++;if(debug())console.log("[KPI CACHE MISS]",{chave:cacheKey});
-    const promessa=(async () => {
+    const dia=String(filtros.dia||"").padStart(filtros.dia?2:0,"0"),contexto={pagina:"kpi",ano:ano||"",mes:mes||"",servico,importacaoId:importacaoId||"",dia};
+    return dadosPagina(contexto,async()=>{
+      metricas.cacheMisses++;metricas.consultasSupabase++;
       const registros=await global.CCOSupabase.paginar(() => {
         let consulta = db().from("operacoes").select(CAMPOS).order("id");
         if(importacaoId)consulta=consulta.eq("importacao_id",importacaoId);
@@ -32,8 +29,7 @@
       metricas.registrosRecebidos+=registros.length;
       if(debug())console.log("[KPI PERFORMANCE][OPERAÇÕES]",{servico,ano,mes,dia,importacaoId,consultasSupabase:metricas.consultasSupabase,registrosRecebidos:registros.length,cacheHits:metricas.cacheHits,cacheMisses:metricas.cacheMisses,registrosComVelocidade:validos.length});
       return registros;
-    })().then(valor=>{global.__CCO_KPI_DADOS_CACHE__.set(cacheKey,{valor,criadoEm:Date.now()});return valor;}).finally(()=>global.__CCO_KPI_DADOS_PROMISES__.delete(cacheKey));
-    global.__CCO_KPI_DADOS_PROMISES__.set(cacheKey,promessa);return promessa;
+    },TTL);
   }
   async function mensal(importacaoId){
     if(!importacaoId)throw new Error("importacao_id é obrigatório para consultar kpi_mensal.");
@@ -44,7 +40,7 @@
     return global.CCOMobilePerformance?.dados({pagina:"kpi-mensal",ano:"",mes:"",servico:"",importacaoId},produtor)||produtor();
   }
   async function carregar(importacaoId,filtros={}){const[kpis,registros]=await Promise.all([mensal(importacaoId),operacoes(importacaoId,filtros)]);return{kpis,operacoes:registros};}
-  function invalidarCache(){global.__CCO_KPI_DADOS_CACHE__.clear();global.__CCO_KPI_DADOS_PROMISES__.clear();}
+  function invalidarCache(){global.__CCO_KPI_DADOS_CACHE__.clear();global.__CCO_KPI_DADOS_PROMISES__.clear();global.CCOPageDataCache?.invalidar?.("kpi");}
   global.document?.addEventListener?.("cco:importacao-concluida",invalidarCache,{passive:true});
   global.CCOKpiService = Object.freeze({ operacoes, mensal, carregar, invalidarCache, CAMPOS });
 })(window);

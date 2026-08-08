@@ -33,10 +33,10 @@ assert.match(utils,/item\.servico !== servico/,"dados KPI devem ser sempre filtr
 assert.match(utils,/item\.servico === servico/,"mensal KPI não pode executar agregado");
 assert.match(service,/servico=SERVICOS_VALIDOS\.has\(normalizado\)\?normalizado:"P1"/);
 assert.match(service,/consulta = consulta\.eq\("servico", servico\)/,"Supabase deve receber serviço válido");
-assert.match(service,/\["kpi",ano\|\|"",mes\|\|"",servico,importacaoId\|\|"",dia\]/,"cache deve incluir período, serviço obrigatório, importação e dia");
+assert.match(service,/contexto=\{pagina:"kpi",ano:ano\|\|"",mes:mes\|\|"",servico,importacaoId:importacaoId\|\|"",dia\}/,"cache deve incluir período, serviço obrigatório, importação e dia");
 assert.match(fixes,/servico:servicoKpi/);
 
-assert.match(html,/services\/kpiService\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
+assert.match(html,/services\/kpiService\.js\?v=20260807-performance-boot-v2/);
 assert.match(html,/utils\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
 assert.match(html,/cco-fixes\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
 assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v3/);

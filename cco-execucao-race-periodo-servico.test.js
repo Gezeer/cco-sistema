@@ -13,7 +13,7 @@ assert.match(service,/pagina:"execucao",ano,mes,servico,importacaoId/,"cache ope
 assert.match(fixes,/PAGINA==="execucao"&&metricas\.ehServicoEquipe\(servico\)[\s\S]*calcularEquipeMensalServico/,"cards de equipe reutilizam a regra mensal oficial");
 assert.match(utils,/previstoEquipeOficial[^\n]*executado[^\n]*dadosServico\.reduce/,"card Equipes usa o acumulado oficial para serviços de equipe");
 assert.match(fixes,/EXECUÇÃO P3 ABRIL DIAGNÓSTICO/,"diagnóstico de P3 Abril identifica consulta e consolidação");
-assert.ok((html.match(/20260806-execucao-race-periodo-servico-v1/g)||[]).length>=4,"cache-buster atualizado");
+assert.ok((html.match(/20260807-performance-boot-v2/g)||[]).length>=4,"cache-buster estrutural atualizado");
 
 global.window=global;require("./cco-metricas.js");
 assert.deepEqual({...global.CCOMetricas.PREVISTO_EQUIPE_POR_SERVICO},{P3:12,P7:2,P8:2,P9:11,P10:3,P11:1});

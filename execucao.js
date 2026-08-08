@@ -177,7 +177,8 @@
       console.error("Erro ao iniciar Execução P1 a P12:", erro);
     }
   }
-  async function iniciar(){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("execucao.iniciar","execucao.js",iniciarInterno):iniciarInterno();}
+  async function iniciar(){return window.CCOPageRuntime.inicializar("EXECUCAO",()=>window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("execucao.iniciar","execucao.js",iniciarInterno):iniciarInterno());}
+  window.inicializarExecucao=iniciar;
 
   window.CCOBootDiagnostics?.instrumentarFuncao(window,"carregarPeriodoCCO","carregarPeriodoCCO","cco-fixes.js");
   window.CCOBootDiagnostics?.instrumentarFuncao(window,"renderDetalheServicoMensal","renderDetalheServicoMensal","utils.js/execucao.js");

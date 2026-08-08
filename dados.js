@@ -4,6 +4,7 @@
 
   const SERVICOS_VALIDOS = ["P1", "P2.1", "P2.2", "P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10", "P11", "P12"];
   const ESTADO = { pagina: 1, porPagina: 500, dados: [] };
+  const CAMPOS_OPERACOES="id,importacao_id,servico,data_operacao,turno,ra,peso_t,viagens,km_total,equipe,qtd_equipe,executado";
 
   function texto(v){ return String(v ?? "").trim(); }
   function normalizarServico(v){
@@ -98,7 +99,8 @@
       if (!window.operacoes || !window.operacoes.length) {
         const periodo=await window.CCOPainelService.ultimoPeriodo();
         if(!periodo)throw new Error("Nenhum período ativo disponível.");
-        const registros=await window.CCOKpiService.operacoes(periodo.importacao_id);
+        const contexto={pagina:"dados",ano:periodo.ano,mes:periodo.mes,servico:"",dia:"",importacaoId:periodo.importacao_id};
+        const registros=await window.CCOPageDataCache.obter(contexto,()=>window.CCOSupabase.paginar(()=>window.CCOSupabase.getClient().from("operacoes").select(CAMPOS_OPERACOES).eq("importacao_id",periodo.importacao_id).order("id")));
         window.__CCO_IMPORTACAO_ATIVA__=periodo;
         window.__CCO_PERIODO_ATUAL__=periodo.periodo;
         window.operacoes=registros;window.operacoesOriginal=registros;window.dadosBaseAtiva=registros;
@@ -152,7 +154,8 @@
     renderTabelaDadosCompleta();
     });
   }
-  function iniciar(){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("dados.iniciar","dados.js",iniciarInterno):iniciarInterno();}
+  function iniciar(){return window.CCOPageRuntime.inicializar("DADOS",()=>window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("dados.iniciar","dados.js",iniciarInterno):iniciarInterno());}
+  window.inicializarDados=iniciar;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", iniciar, { once: true });

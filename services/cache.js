@@ -55,4 +55,17 @@
   }
 
   global.CCOCache = Object.freeze({ chave, get, set, remove, invalidar, lembrar });
+
+  const contextos=new Map(),inicializacoes=new Map(),listeners=new WeakMap(),TTL_PAGINA=5*60*1000;
+  function normalizarContexto(contexto={}){return{pagina:String(contexto.pagina||global.CCO_PAGE||""),servico:String(contexto.servico||""),ano:String(contexto.ano||""),mes:String(contexto.mes||""),dia:String(contexto.dia||""),importacaoId:String(contexto.importacaoId||contexto.importacao_id||""),token:contexto.token||0};}
+  function chavePagina(contexto){const c=normalizarContexto(contexto);return[c.pagina,c.servico,c.ano,c.mes,c.dia,c.importacaoId].join("|");}
+  function dados(contexto,produtor,ttlMs=TTL_PAGINA){return lembrar(chave("page-data",[chavePagina(contexto)]),produtor,ttlMs);}
+  function definirContexto(pagina,alteracoes={}){const nome=String(pagina||global.CCO_PAGE||"").toLowerCase(),anterior=contextos.get(nome)||normalizarContexto({pagina:nome}),proximo=Object.freeze(normalizarContexto({...anterior,...alteracoes,pagina:nome}));contextos.set(nome,proximo);return proximo;}
+  function obterContexto(pagina=global.CCO_PAGE){return contextos.get(String(pagina||"").toLowerCase())||null;}
+  function inicializar(pagina,produtor){const nome=String(pagina||global.CCO_PAGE||"").toUpperCase(),globalKey=`__CCO_${nome}_INIT_PROMISE__`;if(global[globalKey])return global[globalKey];if(inicializacoes.has(nome))return inicializacoes.get(nome);const promessa=Promise.resolve().then(produtor).catch(error=>{inicializacoes.delete(nome);global[globalKey]=null;throw error;});inicializacoes.set(nome,promessa);global[globalKey]=promessa;return promessa;}
+  function ouvirUmaVez(chaveListener,alvo,tipo,handler,opcoes){if(!alvo?.addEventListener)return false;let registros=listeners.get(alvo);if(!registros){registros=new Set();listeners.set(alvo,registros);}const assinatura=`${tipo}|${chaveListener}`;if(registros.has(assinatura))return false;registros.add(assinatura);alvo.addEventListener(tipo,handler,opcoes);return true;}
+  function invalidarDadosPagina(pagina=""){invalidar(`page-data:${pagina}`);}
+  global.CCOPageDataCache=Object.freeze({chave:chavePagina,obter:dados,invalidar:invalidarDadosPagina,TTL:TTL_PAGINA});
+  global.CCOPageContext=Object.freeze({definir:definirContexto,obter:obterContexto});
+  global.CCOPageRuntime=Object.freeze({inicializar,ouvirUmaVez});
 })(window);

@@ -9,10 +9,8 @@ const html=fs.readFileSync("kpi.html","utf8");
 assert.match(service,/window\.__CCO_KPI_DADOS_PROMISES__|global\.__CCO_KPI_DADOS_PROMISES__/);
 assert.match(service,/global\.__CCO_KPI_DADOS_CACHE__/);
 assert.match(service,/const TTL=5\*60\*1000/);
-assert.match(service,/\["kpi",ano\|\|"",mes\|\|"",servico,importacaoId\|\|"",dia\]\.join\("\|"\)/);
-assert.match(service,/\[KPI CACHE HIT\]/);
-assert.match(service,/\[KPI CACHE MISS\]/);
-assert.match(service,/\[KPI PROMISE REUTILIZADA\]/);
+assert.match(service,/CCOPageDataCache\?\.obter/);
+assert.match(service,/contexto=\{pagina:"kpi",ano:ano\|\|"",mes:mes\|\|"",servico,importacaoId:importacaoId\|\|"",dia\}/);
 assert.equal((service.match(/from\("operacoes"\)/g)||[]).length,1,"deve existir uma única consulta principal de operações");
 assert.doesNotMatch(service,/select\("\*"\)/);
 for(const campo of["servico","tipo_servico","data_operacao","peso_t","viagens","km_total","velocidade_media","qtd_equipe","equipe","executado","turno","ra","importacao_id"])assert.ok(service.includes(campo));
@@ -36,7 +34,7 @@ assert.match(fixes,/tokenKpi!==window\.__CCO_KPI_SEQUENCIA__/);
 assert.match(kpi,/renderVelocidade\(dados\)/,"velocidade deve consumir os registros compartilhados");
 assert.doesNotMatch(kpi,/from\(["']operacoes["']\)/,"renderizadores não podem consultar operações");
 
-assert.match(html,/services\/kpiService\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
+assert.match(html,/services\/kpiService\.js\?v=20260807-performance-boot-v2/);
 assert.match(html,/cco-fixes\.js\?v=20260806-kpi-init-mes-sincronizado-v2/);
 assert.match(html,/kpi\.js\?v=20260806-kpi-producao-altura-v3/);
 
