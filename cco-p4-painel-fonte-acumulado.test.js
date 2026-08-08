@@ -1,0 +1,15 @@
+const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict");
+const fonte=fs.readFileSync("painel-geral.js","utf8"),inicio=fonte.indexOf("function calcularAcumuladoP4Painel"),fim=fonte.indexOf("function obterAcumuladoRealP9",inicio),codigo=fonte.slice(inicio,fim);
+const contexto={window:{CCOMetricas:{calcularAcumuladoServico:(servico,registros)=>{assert.equal(servico,"P4");return registros.reduce((total,item)=>total+Number(item.peso_t||0),0);}}},console,Number,String};vm.createContext(contexto);vm.runInContext(`const numero=v=>Number(v)||0;${codigo};window.calcularAcumuladoP4Painel=calcularAcumuladoP4Painel;`,contexto);
+const calcular=contexto.window.calcularAcumuladoP4Painel;
+assert.equal(calcular([{peso_t:10316.54}],{acumulado:18068.78},{ano:2026,mes:2,importacaoId:"fev"}).valor,10316.54);
+assert.equal(calcular([{peso_t:12379.49}],{acumulado:24979.49},{ano:2025,mes:12,importacaoId:"dez"}).valor,12379.49);
+assert.equal(calcular([],{acumulado:18},{ano:2026,mes:2,importacaoId:"fev"}).valor,18);
+assert.match(fonte,/contexto=\{pagina:"painel",ano:importacao\.ano,mes:importacao\.mes,servico:"P4",dia:"",importacaoId:importacao\.importacao_id\}/,"cache deve separar serviço, ano, mês e UUID oficial");
+assert.match(fonte,/coluna:"importacao_id",valor:importacaoId/);assert.match(fonte,/coluna:"data_operacao",valor:intervalo\.inicio/);assert.match(fonte,/coluna:"data_operacao",valor:intervalo\.fimExclusivo/);
+assert.match(fonte,/linhasPeriodo=servico==="P4"\?estado\.operacoes\.filter/,"P4 deve usar o lote mensal, não dados de outro período ou filtro diário");
+assert.match(fonte,/p4\?resultadoP4\.valor:equipe\?/);assert.match(fonte,/origem=p4\?resultadoP4\.origem:p9\?/);
+assert.match(fonte,/\[P4 PAINEL FONTE ACUMULADO\]/);assert.match(fonte,/\[P4 PAINEL ESCRITA\]/);
+assert.equal((fonte.match(/tb\.innerHTML=dados\.map/g)||[]).length,1,"deve existir uma única escrita final da tabela no controlador oficial");
+assert.match(fs.readFileSync("index.html","utf8"),/painel-geral\.js", "20260807-p4-painel-fonte-acumulado-v1"/);
+console.log("P4 Painel: operações vencem painel_executivo stale, período permanece isolado e escrita final é única.");
