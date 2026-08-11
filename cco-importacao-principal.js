@@ -2,7 +2,7 @@
 (function iniciarImportadorPrincipalCCO() {
   "use strict";
 
-  const BUILD = "20260811-agosto-dias-operacao-26-v2";
+  const BUILD = "20260811-agosto-previsto-recalculo-v1";
   const TAMANHO_MAXIMO_LOTE = 2.5 * 1024 * 1024;
   const TAMANHO_LOTE_RAW = 100;
   const TAMANHO_LOTE_OPERACOES = 100;
@@ -473,6 +473,7 @@
 
   const ORDEM_SERVICOS_PAINEL=Object.freeze(["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"]);
   const CAMPO_ACUMULADO=Object.freeze({P1:"peso_t","P2.1":"viagens","P2.2":"viagens",P3:"equipe",P4:"peso_t",P5:"km_total",P6:"km_total",P7:"equipe",P8:"equipe",P9:"equipe",P10:"equipe",P11:"equipe",P12:"executado"});
+  const SERVICOS_PREVISTO_POR_DIAS=Object.freeze(["P1","P2.1","P2.2","P4","P5","P6","P12"]);
   const MEDICAO_SERVICO=Object.freeze({P1:"Tonelada","P2.1":"Viagens realizadas","P2.2":"Viagens realizadas",P3:"Equipe",P4:"Tonelada",P5:"KM",P6:"KM",P7:"Equipe",P8:"Equipe",P9:"Equipe",P10:"Equipe",P11:"Equipe",P12:"Executado"});
   function calcularAcumuladoPeriodo(servico,linhas){if(servico==="P9"){const valores=(linhas||[]).map(item=>extrairValorP9(item)).filter(valor=>valor>0);return valores.length?Math.min(Math.max(...valores),11):0;}const campo=CAMPO_ACUMULADO[servico];if(campo==="equipe"){const registros=(linhas||[]).map(item=>({data_operacao:item.data_operacao,equipe:item.equipe}));return window.CCOMetricas?.calcularAcumuladoServico?.(servico,registros)??0;}return(linhas||[]).reduce((total,item)=>total+(normalizarNumero(item[campo])||0),0);}
   function gerarPainelExecutivoPeriodo(grupo,metasOriginais){const metas=new Map((metasOriginais||[]).filter(item=>item.servico).map(item=>[normalizarServico(item.servico),item])),totalDias=window.CCO_REGRAS.obterDiasOperacao(grupo.ano,grupo.mes);return ORDEM_SERVICOS_PAINEL.map((servico,indice)=>{const meta=metas.get(servico)||{},linhas=grupo.operacoes.filter(item=>item.servico===servico),acumulado=calcularAcumuladoPeriodo(servico,linhas),previsto=window.CCO_REGRAS.calcularPrevisto(servico,grupo.ano,grupo.mes,normalizarNumero(meta.previsto),normalizarNumero(meta.total_dias_mes)),diasAcumulados=new Set(linhas.map(item=>item.data_operacao).filter(Boolean)).size,valorUnitario=window.CCO_REGRAS.obterValorServico(servico),valorTotal=acumulado*valorUnitario;return{numero_linha:meta.numero_linha||indice+2,ano:grupo.ano,mes:grupo.mes,servico,descricao:meta.descricao||meta.nome_servico||servico,nome_servico:meta.nome_servico||meta.descricao||servico,medicao:meta.medicao||MEDICAO_SERVICO[servico],previsto,acumulado,dias_acumulados:diasAcumulados,total_dias_mes:totalDias,valor_unitario:valorUnitario,valor_total:valorTotal,dados:{fonte:"consolidacao_mensal",periodo:grupo.periodo,registros:linhas.length}};});}
@@ -503,11 +504,62 @@
   function jsonCanonico(valor){if(Array.isArray(valor))return`[${valor.map(jsonCanonico).join(",")}]`;if(valor&&typeof valor==="object")return`{${Object.keys(valor).sort().map(chave=>`${JSON.stringify(chave)}:${jsonCanonico(valor[chave])}`).join(",")}}`;return JSON.stringify(valor??null);}
   function rawCanonico(item){return{aba:item.aba,numero_linha:Number(item.numero_linha),servico:item.servico||null,rd:item.rd||null,data_operacao:item.data_operacao?String(item.data_operacao).slice(0,10):null,ano:Number(item.ano)||null,mes:Number(item.mes)||null,chave_linha:item.chave_linha,dados:item.dados||{},dados_originais:item.dados_originais||{}};}
   async function hashPeriodoRaw(linhas){const ordenadas=(linhas||[]).map(rawCanonico).sort((a,b)=>String(a.chave_linha).localeCompare(String(b.chave_linha))||a.numero_linha-b.numero_linha),dados=new TextEncoder().encode(jsonCanonico(ordenadas)),digest=await crypto.subtle.digest("SHA-256",dados);return[...new Uint8Array(digest)].map(valor=>valor.toString(16).padStart(2,"0")).join("");}
+
+  async function obterBasesOficiaisPrevisto(grupo){
+    const{data:importacoes,error:erroImportacoes}=await banco().from("importacoes").select("id,ano,mes,status,ativa").eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).order("ano",{ascending:false}).order("mes",{ascending:false});
+    if(erroImportacoes)throw erroImportacoes;
+    const anteriores=(importacoes||[]).filter(item=>Number(item.ano)<grupo.ano||(Number(item.ano)===grupo.ano&&Number(item.mes)<grupo.mes));
+    const ids=anteriores.map(item=>item.id).filter(Boolean);
+    if(!ids.length)throw new Error(`Não há período oficial anterior para recalcular o previsto de ${grupo.periodo}.`);
+    const{data:linhas,error}=await banco().from("painel_executivo").select("importacao_id,ano,mes,servico,previsto,total_dias_mes").in("importacao_id",ids).in("servico",SERVICOS_PREVISTO_POR_DIAS).gt("previsto",0).gt("total_dias_mes",0).order("ano",{ascending:false}).order("mes",{ascending:false});
+    if(error)throw error;
+    const bases=new Map();
+    for(const linha of linhas||[]){const servico=normalizarServico(linha.servico);if(!bases.has(servico))bases.set(servico,linha);}
+    return bases;
+  }
+
+  function calcularReparosPrevisto(grupo,painelAtual,bases){
+    const atuais=new Map((painelAtual||[]).map(item=>[normalizarServico(item.servico),item]));
+    return ORDEM_SERVICOS_PAINEL.map(servico=>{
+      const atual=atuais.get(servico)||{},fixo=window.CCO_REGRAS.obterEquipeFixa(servico),base=fixo!==null?null:bases.get(servico);
+      if(fixo===null&&!base)throw new Error(`Base oficial positiva de previsto ausente para ${servico} antes de ${grupo.periodo}.`);
+      const previstoCalculado=window.CCO_REGRAS.calcularPrevisto(servico,grupo.ano,grupo.mes,base?.previsto??0,base?.total_dias_mes??0);
+      if(fixo===null&&previstoCalculado<=0)throw new Error(`A regra oficial retornou previsto inválido para ${servico} em ${grupo.periodo}.`);
+      return{servico,previstoBanco:normalizarNumero(atual.previsto),previstoCalculado,totalDias:Number(grupo.dias?.[0]?.total_dias)||0,fonte:fixo!==null?"regra_oficial_equipe_fixa":`painel_executivo ${base.ano}-${String(base.mes).padStart(2,"0")} + CCO_REGRAS.calcularPrevisto`};
+    });
+  }
+
+  function invalidarCachesPeriodo(importacaoId){
+    window.CCOPainelService?.invalidarCatalogo?.();
+    window.CCOMetricas?.invalidarCaches?.();
+    window.CCOMobilePerformance?.invalidar?.(importacaoId);
+    for(const namespace of["painel","kpi","kpi-mensal","execucao","analytics","dias-operacao-catalogo"])window.CCOCache?.invalidar?.(namespace);
+    for(const pagina of["painel","kpi","execucao"])window.CCOPageDataCache?.invalidar?.(pagina);
+  }
+
   async function verificarPeriodoInalterado(grupo){
     const hashPeriodo=await hashPeriodoRaw(grupo.raw),{data:existente,error}=await executarComRetryTransitório(()=>banco().from("importacoes").select("id,ano,mes,status,ativa,hash_arquivo,detalhes").eq("ano",grupo.ano).eq("mes",grupo.mes).eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).maybeSingle(),{tabela:"importacoes",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:0});
     if(error)throw error;if(!existente)return{inalterado:false,hashPeriodo,existente:null};
-    const valorPlanilha=Number(grupo.dias?.[0]?.total_dias)||0,{data:diasBanco,error:erroDiasBanco}=await banco().from("dias_operacao").select("importacao_id,ano,mes,total_dias").eq("importacao_id",existente.id).eq("ano",grupo.ano).eq("mes",grupo.mes).maybeSingle();if(erroDiasBanco)throw erroDiasBanco;
-    if((existente.detalhes?.periodo_hash===hashPeriodo||String(existente.hash_arquivo||"")===String(grupo.hashArquivo||""))&&valorPlanilha>0&&Number(diasBanco?.total_dias||0)!==valorPlanilha){const metaDias=grupo.dias[0]?.dados||{},resultadoDias=await gravarDiasOperacao(grupo.dias,existente.id);for(const item of grupo.painel){const{error:erroPainel}=await banco().from("painel_executivo").update({total_dias_mes:valorPlanilha,previsto:item.previsto}).eq("importacao_id",existente.id).eq("servico",item.servico);if(erroPainel)throw erroPainel;}window.CCOPainelService?.invalidarDiasOperacao?.();window.CCOPageDataCache?.invalidar?.("painel");window.CCOPageDataCache?.invalidar?.("kpi");window.CCOPageDataCache?.invalidar?.("execucao");if(grupo.ano===2026&&grupo.mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{serialPlanilha:metaDias.__cco_serial_mes??null,dataInterpretada:metaDias.__cco_data_interpretada??null,valorPlanilha,valorBancoAntes:diasBanco?.total_dias??null,valorBancoDepois:resultadoDias.resposta?.data?.[0]?.total_dias??valorPlanilha,importacaoId:existente.id,fonte:metaDias.__cco_fonte||"Dias_Operação"});return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado_dias_reparados",diasReparados:true};}
+    const valorPlanilha=Number(grupo.dias?.[0]?.total_dias)||0;
+    const [{data:diasBanco,error:erroDiasBanco},{data:painelAtual,error:erroPainelAtual}]=await Promise.all([
+      banco().from("dias_operacao").select("importacao_id,ano,mes,total_dias").eq("importacao_id",existente.id).eq("ano",grupo.ano).eq("mes",grupo.mes).maybeSingle(),
+      banco().from("painel_executivo").select("servico,previsto,total_dias_mes,acumulado").eq("importacao_id",existente.id)
+    ]);
+    if(erroDiasBanco)throw erroDiasBanco;if(erroPainelAtual)throw erroPainelAtual;
+    const hashIgual=existente.detalhes?.periodo_hash===hashPeriodo||String(existente.hash_arquivo||"")===String(grupo.hashArquivo||"");
+    const precisaRepararDias=valorPlanilha>0&&Number(diasBanco?.total_dias||0)!==valorPlanilha;
+    const precisaRepararPrevisto=valorPlanilha>0&&(painelAtual||[]).some(item=>SERVICOS_PREVISTO_POR_DIAS.includes(normalizarServico(item.servico))&&normalizarNumero(item.previsto)<=0);
+    if(hashIgual&&(precisaRepararDias||precisaRepararPrevisto)){
+      const metaDias=grupo.dias[0]?.dados||{},resultadoDias=precisaRepararDias?await gravarDiasOperacao(grupo.dias,existente.id):null;
+      const bases=await obterBasesOficiaisPrevisto(grupo),reparos=calcularReparosPrevisto(grupo,painelAtual||[],bases);
+      for(const item of reparos){
+        const{error:erroPainel}=await banco().from("painel_executivo").update({total_dias_mes:valorPlanilha,previsto:item.previstoCalculado}).eq("importacao_id",existente.id).eq("servico",item.servico);if(erroPainel)throw erroPainel;
+        if(grupo.ano===2026&&grupo.mes===8)console.log("[AGOSTO PREVISTO FONTE]",{servico:item.servico,totalDias:valorPlanilha,previstoBanco:item.previstoBanco,previstoCalculado:item.previstoCalculado,previstoFinal:item.previstoCalculado,fonte:item.fonte});
+      }
+      invalidarCachesPeriodo(existente.id);
+      if(grupo.ano===2026&&grupo.mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{serialPlanilha:metaDias.__cco_serial_mes??null,dataInterpretada:metaDias.__cco_data_interpretada??null,valorPlanilha,valorBancoAntes:diasBanco?.total_dias??null,valorBancoDepois:resultadoDias?.resposta?.data?.[0]?.total_dias??valorPlanilha,importacaoId:existente.id,fonte:metaDias.__cco_fonte||"Dias_Operação"});
+      return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado_previsto_recalculado",diasReparados:precisaRepararDias,previstosReparados:reparos.length};
+    }
     if(existente.detalhes?.periodo_hash===hashPeriodo)return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado"};
     if(existente.detalhes?.periodo_hash)return{inalterado:false,hashPeriodo,existente,origem:"hash_armazenado"};
     const rawExistente=await buscarTudoPaginado(()=>banco().from("planilha_linhas").select("aba,numero_linha,servico,rd,data_operacao,ano,mes,chave_linha,dados,dados_originais").eq("importacao_id",existente.id).order("chave_linha"));
@@ -866,7 +918,7 @@
     const novo=antigo.cloneNode(true);antigo.replaceWith(novo);novo.dataset.importadorPrincipal=BUILD;novo.addEventListener("change",importarPlanilhas);
   }
 
-  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairPesoToneladasP4,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,obterQdtEquipeP9,obterDataP9,criarOperacaoP9Raw,prepararReprocessamentoP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
+  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairPesoToneladasP4,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,obterQdtEquipeP9,obterDataP9,criarOperacaoP9Raw,prepararReprocessamentoP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,calcularReparosPrevisto,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
   window.reprocessarP9AtivosCCO=reprocessarP9Ativos;
   window.reprocessarP9Ativo=reprocessarP9Ativos;
   window.reprocessarP9Periodo=reprocessarP9Periodo;

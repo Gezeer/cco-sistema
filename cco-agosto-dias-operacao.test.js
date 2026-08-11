@@ -28,9 +28,24 @@ assert.equal(regras.CCO_REGRAS.obterDiasOperacao(2026,8),26);
 for(const servico of ["P1","P4","P5","P6","P12"])assert.ok(regras.CCO_REGRAS.calcularPrevisto(servico,2026,8,100,10)>0,`${servico} deve manter sua regra com dias oficiais`);
 assert.deepEqual(Object.fromEntries(["P3","P7","P8","P9","P10","P11"].map(servico=>[servico,regras.CCO_REGRAS.calcularPrevisto(servico,2026,8)])),{P3:12,P7:2,P8:2,P9:11,P10:3,P11:1});
 
-const fonte=fs.readFileSync("cco-importacao-principal.js","utf8"),inicioReparo=fonte.indexOf("hash_armazenado_dias_reparados"),trechoReparo=fonte.slice(Math.max(0,inicioReparo-2500),inicioReparo+100);
+contexto.window.CCO_REGRAS=regras.CCO_REGRAS;
+const servicos=["P1","P2.1","P2.2","P4","P5","P6","P12"],bases=new Map(servicos.map(servico=>[servico,{ano:2026,mes:6,servico,previsto:100,total_dias_mes:26}]));
+const painelAntes=[...servicos.map(servico=>({servico,previsto:0,acumulado:77})),...Object.entries({P3:12,P7:2,P8:2,P9:11,P10:3,P11:1}).map(([servico,previsto])=>({servico,previsto,acumulado:33}))];
+const reparos=contexto.window.CCOImportacaoPrincipal.calcularReparosPrevisto({ano:2026,mes:8,periodo:"2026-08",dias:[{total_dias:26}]},painelAntes,bases);
+for(const servico of servicos)assert.ok(reparos.find(item=>item.servico===servico).previstoCalculado>0,`${servico} deve ser recalculado pela base oficial`);
+assert.deepEqual(Object.fromEntries(reparos.filter(item=>!servicos.includes(item.servico)).map(item=>[item.servico,item.previstoCalculado])),{P3:12,P7:2,P8:2,P9:11,P10:3,P11:1});
+assert.ok(reparos.every(item=>!("acumulado" in item)),"reparo não pode transportar nem alterar acumulados");
+
+const metricas={window:{},console};metricas.window.window=metricas.window;vm.createContext(metricas);vm.runInContext(fs.readFileSync("cco-metricas.js","utf8"),metricas);
+assert.notEqual(metricas.window.CCOMetricas.calcularPercentualCumprimento({acumuladoReal:50,previstoAcumulado:reparos.find(item=>item.servico==="P1").previstoCalculado}),null,"% execução deve ser calculável após o reparo");
+
+const fonte=fs.readFileSync("cco-importacao-principal.js","utf8"),inicioReparo=fonte.indexOf("hash_armazenado_previsto_recalculado"),trechoReparo=fonte.slice(Math.max(0,inicioReparo-5000),inicioReparo+100);
 assert.match(trechoReparo,/gravarDiasOperacao/);
 assert.match(trechoReparo,/from\("painel_executivo"\)\.update/);
 assert.doesNotMatch(trechoReparo,/from\("operacoes"\)/,"reparo de dias não pode regravar operações");
+assert.match(trechoReparo,/precisaRepararPrevisto/,"previsto zero deve acionar reparo mesmo quando os dias já são 26");
+assert.match(trechoReparo,/invalidarCachesPeriodo/,"cache com previsto zero deve ser invalidado");
+assert.match(fonte,/\[AGOSTO PREVISTO FONTE\]/);
+assert.match(fonte,/20260811-agosto-previsto-recalculo-v1/);
 
 console.log("Agosto: variantes de Dias_Operação, fonte dinâmica e previstos oficiais aprovados.");
