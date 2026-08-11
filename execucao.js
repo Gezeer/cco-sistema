@@ -76,7 +76,7 @@
   async function alterarMesExecucaoCCO(){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("alterarMesExecucaoCCO","execucao.js",alterarMesExecucaoCCOInterno):alterarMesExecucaoCCOInterno();}
   const debounceExecucao=window.CCOMobilePerformance?.debounce;window.carregarCatalogoExecucaoCCO=carregarCatalogoExecucaoCCO;window.obterMesesDoAnoExecucao=obterMesesDoAnoExecucao;window.localizarPeriodoExecucao=localizarPeriodoExecucao;window.alterarAnoExecucaoCCO=debounceExecucao?debounceExecucao("execucao:filtro-ano",alterarAnoExecucaoCCO,275):alterarAnoExecucaoCCO;window.alterarMesExecucaoCCO=debounceExecucao?debounceExecucao("execucao:filtro-mes",alterarMesExecucaoCCO,275):alterarMesExecucaoCCO;window.aplicarFiltroExecucaoMensal=window.alterarMesExecucaoCCO;
 
-  const cacheEvolucaoExecucao=new Map();
+  const VERSAO_CACHE_EVOLUCAO_EXECUCAO="p4-operacoes-v2",cacheEvolucaoExecucao=new Map();
   let requisicaoEvolucaoExecucao=0;
   function invalidarCacheEvolucaoExecucaoCCO(){cacheEvolucaoExecucao.clear();}
   window.invalidarCacheEvolucaoExecucaoCCO=invalidarCacheEvolucaoExecucaoCCO;
@@ -123,14 +123,26 @@
     grade.insertAdjacentHTML("beforeend",window.ccoFinalSecaoGrafico("Comparativo mensal",`Evolução do serviço ${codigo}`,"graficoExecDetalheEvolucao"));
     return posicionarSecoesDetalheExecucao();
   }
+  function resolverAcumuladoHistoricoP4CCO({periodo,operacoes,acumuladoPainelExecutivo}){
+    const ano=Number(periodo?.ano),mes=Number(periodo?.mes),importacaoId=String(periodo?.importacao_id??periodo?.id??""),inicio=`${ano}-${pad(mes)}-01`,fim=mes===12?`${ano+1}-01-01`:`${ano}-${pad(mes+1)}-01`;
+    const registros=(operacoes||[]).filter(item=>String(item.importacao_id||"")===importacaoId&&window.CCOMetricas.normalizarServico(item.servico||item.tipo_servico)==="P4"&&String(item.data_operacao||"").slice(0,10)>=inicio&&String(item.data_operacao||"").slice(0,10)<fim);
+    const acumuladoOperacoes=registros.length?window.CCOMetricas.calcularAcumuladoServico("P4",registros):null,acumuladoPainel=acumuladoPainelExecutivo==null?null:n(acumuladoPainelExecutivo),acumuladoFinal=acumuladoOperacoes??acumuladoPainel,fonte=registros.length?"operacoes.peso_t + CCOMetricas.calcularAcumuladoServico":"painel_executivo.acumulado (fallback sem operações P4)";
+    if(window.CCO_DEBUG_P4_EXECUCAO===true)console.log("[P4 EXECUÇÃO HISTÓRICO]",{periodo:periodoChave(ano,mes),importacaoId,quantidadeOperacoes:registros.length,acumuladoOperacoes,acumuladoPainelExecutivo:acumuladoPainel,acumuladoFinal,fonte,registrosCorrigidosEncontrados:registros.filter(item=>[112451,136549,136573].includes(Number(item.id))).map(item=>Number(item.id))});
+    return{acumulado:acumuladoFinal,quantidadeOperacoes:registros.length,fonte,registros};
+  }
+  window.resolverAcumuladoHistoricoP4CCO=resolverAcumuladoHistoricoP4CCO;
   async function buscarEvolucaoServicoCCO(servico){
-    const catalogoCompleto=await carregarCatalogoExecucaoCCO(),periodosObrigatorios=new Set(window.CCOExecucaoComparativoMensal.PERIODOS.map(item=>periodoChave(item.ano,item.mes))),catalogo=catalogoCompleto.filter(item=>periodosObrigatorios.has(periodoChave(item.ano,item.mes))),assinatura=catalogo.map(item=>`${periodoChave(item.ano,item.mes)}:${item.importacao_id}`).join("|"),chaveCache=`evolucao|${servico}|${assinatura}`,armazenado=cacheEvolucaoExecucao.get(chaveCache);
+    const catalogoCompleto=await carregarCatalogoExecucaoCCO(),periodosObrigatorios=new Set(window.CCOExecucaoComparativoMensal.PERIODOS.map(item=>periodoChave(item.ano,item.mes))),catalogo=catalogoCompleto.filter(item=>periodosObrigatorios.has(periodoChave(item.ano,item.mes))),assinatura=catalogo.map(item=>`${periodoChave(item.ano,item.mes)}:${item.importacao_id}`).join("|"),chaveCache=`${VERSAO_CACHE_EVOLUCAO_EXECUCAO}|evolucao|${servico}|${assinatura}`,armazenado=cacheEvolucaoExecucao.get(chaveCache);
     if(armazenado)return{catalogo,linhas:armazenado.linhas};
     const idsAtivos=new Set(catalogo.map(item=>String(item.importacao_id))),banco=window.supabaseClient;
     const resposta=await banco.from("painel_executivo").select("importacao_id,ano,mes,servico,acumulado,previsto,valor_total").in("importacao_id",[...idsAtivos]).eq("servico",servico).order("ano",{ascending:true}).order("mes",{ascending:true});
     if(resposta.error)throw resposta.error;
     let linhas=(resposta.data||[]).filter(item=>idsAtivos.has(String(item.importacao_id)));
-    if(window.CCOMetricas?.ehServicoEquipe?.(servico)){
+    if(servico==="P4"){
+      const operacoes=await window.CCOSupabase.paginar(()=>banco.from("operacoes").select("id,importacao_id,servico,tipo_servico,data_operacao,peso_t").in("importacao_id",[...idsAtivos]).eq("servico","P4").gte("data_operacao","2025-11-01").lt("data_operacao","2026-08-01").order("data_operacao",{ascending:true}).order("id",{ascending:true}));
+      const porPeriodo=new Map(linhas.map(item=>[`${periodoChave(item.ano,item.mes)}|${String(item.importacao_id)}`,item]));
+      linhas=catalogo.map(periodo=>{const importacaoId=periodo.importacao_id??periodo.id,base=porPeriodo.get(`${periodoChave(periodo.ano,periodo.mes)}|${String(importacaoId)}`)||{},resultado=resolverAcumuladoHistoricoP4CCO({periodo:{...periodo,importacao_id:importacaoId},operacoes,acumuladoPainelExecutivo:base.acumulado});return{...base,importacao_id:importacaoId,ano:Number(periodo.ano),mes:Number(periodo.mes),servico:"P4",acumulado:resultado.acumulado};});
+    }else if(window.CCOMetricas?.ehServicoEquipe?.(servico)){
       const operacoes=await window.CCOSupabase.paginar(()=>banco.from("operacoes").select("importacao_id,servico,tipo_servico,data_operacao,qtd_equipe,equipe,executado").in("importacao_id",[...idsAtivos]).eq("servico",servico).gte("data_operacao","2025-11-01").lt("data_operacao","2026-08-01").order("data_operacao",{ascending:true}));
       const porPeriodo=new Map(linhas.map(item=>[`${periodoChave(item.ano,item.mes)}|${String(item.importacao_id)}`,item]));
       linhas=catalogo.map(periodo=>{const importacaoId=periodo.importacao_id??periodo.id,base=porPeriodo.get(`${periodoChave(periodo.ano,periodo.mes)}|${String(importacaoId)}`)||{},equipe=window.CCOMetricas.calcularEquipeMensalServico({servico,registros:operacoes,ano:periodo.ano,mes:periodo.mes,importacaoId});return{...base,importacao_id:importacaoId,ano:Number(periodo.ano),mes:Number(periodo.mes),servico,previsto:equipe.previsto,acumulado:equipe.executado,unidade:equipe.unidade};});

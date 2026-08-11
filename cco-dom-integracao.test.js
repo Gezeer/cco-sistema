@@ -41,5 +41,5 @@ assert.match(utilsFonte,/\[RENDER EXECUÇÃO\]/);
 assert.match(utilsFonte,/\[RENDER PAINEL\]/);
 assert.match(utilsFonte,/ccoAtivarListenersExecucaoDinamica\(\) \{\s*if\(String\(window\.CCO_PAGE/);
 assert.match(execucaoHtml,/utils\.js\?v=20260807-performance-boot-v2/);
-assert.match(indexHtml,/const VERSAO_CCO = "20260811-painel-performance-log-real-v3"/);
+assert.match(indexHtml,/const VERSAO_CCO = "20260811-painel-catalogo-fallback-leve-v4"/);
 console.log("Integração DOM: duas renderizações preservaram P1 e P9 sem sobrescrita legada.");

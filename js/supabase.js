@@ -144,7 +144,7 @@
 
   window.testarConexaoCCO=testarConexaoCCO;
   window.diagnosticarSupabaseCCO=diagnosticarSupabaseCCO;
-  Promise.resolve().then(diagnosticarSupabaseCCO).catch(error=>console.error("Erro ao conectar ao Supabase",{codigo:error?.code,status:error?.status,mensagem:error?.message||String(error),tabela:null,consulta:"diagnosticarSupabaseCCO"}));
+  if(window.CCO_DEBUG_BOOT===true||window.CCO_DEBUG_SUPABASE===true||window.sessionStorage?.getItem?.("cco_debug_boot")==="1")Promise.resolve().then(diagnosticarSupabaseCCO).catch(error=>console.error("Erro ao conectar ao Supabase",{codigo:error?.code,status:error?.status,mensagem:error?.message||String(error),tabela:null,consulta:"diagnosticarSupabaseCCO"}));
 
   window.testarConexaoSupabase = async function testarConexaoSupabase() {
     const resultado = { cliente:Boolean(window.supabaseClient),sessao:null,usuario:null,importacoes:null,erro:null };

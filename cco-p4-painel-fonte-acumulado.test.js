@@ -11,5 +11,5 @@ assert.match(fonte,/linhasPeriodo=servico==="P4"\?estado\.operacoes\.filter/,"P4
 assert.match(fonte,/p4\?resultadoP4\.valor:equipe\?/);assert.match(fonte,/origem=p4\?resultadoP4\.origem:p9\?/);
 assert.match(fonte,/\[P4 PAINEL FONTE ACUMULADO\]/);assert.match(fonte,/\[P4 PAINEL ESCRITA\]/);
 assert.equal((fonte.match(/tb\.innerHTML=dados\.map/g)||[]).length,1,"deve existir uma única escrita final da tabela no controlador oficial");
-assert.match(fs.readFileSync("index.html","utf8"),/painel-geral\.js", "20260811-painel-performance-log-real-v3"/);
+assert.match(fs.readFileSync("index.html","utf8"),/painel-geral\.js", "20260811-painel-catalogo-fallback-leve-v4"/);
 console.log("P4 Painel: operações vencem painel_executivo stale, período permanece isolado e escrita final é única.");

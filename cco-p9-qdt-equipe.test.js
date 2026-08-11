@@ -103,6 +103,6 @@ assert.match(fonte,/quantidadeRealmenteInserida/);
 assert.match(fonte,/primeiraLinhaEnviada/);
 assert.match(fonte,/erroSupabase/);
 assert.match(fonte,/window\.confirm\(/);
-assert.match(fs.readFileSync("index.html","utf8"),/20260811-painel-performance-log-real-v3/);
+assert.match(fs.readFileSync("index.html","utf8"),/20260811-painel-catalogo-fallback-leve-v4/);
 assert.doesNotMatch(fonte,/Qdt_Catador[^\n]*valorEquipeEscolhido:\s*(?:original|linha)/);
 console.log("P9 Qdt_Equipe: parser literal, descarte seguro e rotina administrativa aprovados.");

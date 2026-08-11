@@ -22,7 +22,7 @@ returns table (
 )
 language sql
 stable
-security invoker
+security definer
 set search_path = public
 as $$
   select catalogo.ano,
@@ -47,6 +47,7 @@ as $$
   order by catalogo.ano desc, catalogo.mes desc;
 $$;
 
+revoke all on function public.cco_catalogo_periodos() from public;
 grant execute on function public.cco_catalogo_periodos() to authenticated;
 
 commit;

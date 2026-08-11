@@ -153,6 +153,9 @@
       }else if(PAGINA==="execucao"&&metricas.ehServicoEquipe(servico)){
         const equipe=metricas.calcularEquipeMensalServico({servico,registros,ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
         linha={acumulado_mes:equipe.executado,metrica_disponivel:equipe.executado!==null,previsto_mes:equipe.previsto,previsto_acumulado:equipe.previsto,porcentagem_execucao:equipe.percentual,valor:null,status:equipe.executado===null?"Sem dados":"Com dados",fonte_metricas:"CCOMetricas.calcularEquipeMensalServico"};
+      }else if(PAGINA==="execucao"&&servico==="P4"){
+        const acumulado=registros.length?metricas.calcularAcumuladoServico("P4",registros):numeroSeguro(item.acumulado),previsto=numeroSeguro(item.previsto),previstoAcumulado=metricas.calcularPrevistoAcumulado({previstoMensal:previsto,diasExecutados:diasAcumulados,diasOperacaoMes:diasOperacao});
+        linha={acumulado_mes:acumulado,metrica_disponivel:registros.length>0||item.acumulado!=null,previsto_mes:previsto,previsto_acumulado:previstoAcumulado,porcentagem_execucao:metricas.calcularPercentualCumprimento({acumuladoReal:acumulado,previstoAcumulado}),valor:acumulado*valorUnitario,status:registros.length?"Com dados":"Fallback painel executivo",fonte_metricas:registros.length?"operacoes.peso_t + CCOMetricas.calcularAcumuladoServico":"painel_executivo.acumulado (fallback sem operações P4)"};
       }else if(servico==="P12"){
         diasAcumulados=diasAcumulados||metricas.calcularDiasExecutados(registros,"P12");
         const colunaExecutado=schemaOperacoes.opcionaisDisponiveis.includes("executado")||registros.some(r=>Object.prototype.hasOwnProperty.call(r,"executado"));

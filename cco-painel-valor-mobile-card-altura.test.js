@@ -33,6 +33,6 @@ assert.match(painel,/\[PAINEL MOBILE ALTURAS REAIS\]/);
 for(const campo of["maxHeight:","flexGrow:","alignSelf:","gridRow:","aspectRatio:","containIntrinsicSize:","paddingBottom:","marginBottom:","clientHeight:","scrollHeight:"])assert.ok(painel.includes(campo));
 assert.match(painel,/instancia\?\.resize\(\{height:grafico\.clientHeight\}\)/);
 assert.match(painel,/window\.addEventListener\("cco:painel-renderizado",sincronizarAlturasGraficosMobile\)/);
-assert.match(html,/20260811-painel-performance-log-real-v3/);
+assert.match(html,/20260811-painel-catalogo-fallback-leve-v4/);
 
 console.log("Painel mobile: cards de execução e valor acompanham seus gráficos, sem alterar ordem, valores ou desktop.");
