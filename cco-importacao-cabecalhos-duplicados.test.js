@@ -107,32 +107,28 @@ assert.equal(api.detectarChaveUnicaDiasOperacao({
   error:{code:"23505",details:"Key (importacao_id, ano, mes)=(x, 2026, 7) already exists."}
 }),"importacao_id,ano,mes");
 
-async function testarFallbackDiasOperacao() {
+async function testarChaveOficialDiasOperacao() {
   const chamadas=[];
   contexto.window.supabaseClient={
     from(tabela){
       assert.equal(tabela,"dias_operacao");
       return{upsert(payload,opcoes){
         chamadas.push({payload,opcoes});
-        return{select:async()=>chamadas.length===1
-          ?{data:null,status:409,statusText:"Conflict",error:{code:"23505",constraint:null,details:null,hint:null,message:'duplicate key value violates unique constraint "dias_operacao_ano_mes_unique"'}}
-          :{data:payload,status:201,statusText:"Created",error:null}};
+        return{select:async()=>({data:payload,status:201,statusText:"Created",error:null})};
       }};
     }
   };
   const resultado=await api.gravarDiasOperacao([{ano:2026,mes:7,total_dias:26,dados:{origem:"teste"}}],"importacao-teste");
-  assert.equal(chamadas.length,2);
-  assert.equal(chamadas[0].opcoes.onConflict,"importacao_id,ano,mes");
-  assert.equal(chamadas[1].opcoes.onConflict,"ano,mes");
-  assert.equal(resultado.fallback,true);
+  assert.equal(chamadas.length,1);
+  assert.equal(chamadas[0].opcoes.onConflict,"ano,mes");
   assert.equal(resultado.chaveUsada,"ano,mes");
 }
 
-testarFallbackDiasOperacao().then(()=>{
+testarChaveOficialDiasOperacao().then(()=>{
   const painelGeral=fs.readFileSync("painel-geral.js","utf8");
   assert.match(painelGeral,/colunas:"aba,dados,dados_originais".*coluna:"importacao_id".*coluna:"aba",valor:"P9"/s);
   assert.match(painelGeral,/colunas:"id,dados".*coluna:"importacao_id".*coluna:"aba",valor:"P9"/s);
-  console.log("Importador CCO: cabeçalhos únicos, campos literais e fallback de dias_operacao aprovados.");
+  console.log("Importador CCO: cabeçalhos únicos, campos literais e chave oficial de dias_operacao aprovados.");
 }).catch(error=>{
   console.error(error);
   process.exitCode=1;

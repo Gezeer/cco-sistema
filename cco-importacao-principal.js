@@ -2,7 +2,7 @@
 (function iniciarImportadorPrincipalCCO() {
   "use strict";
 
-  const BUILD = "20260811-importacao-incremental-retry-v1";
+  const BUILD = "20260811-agosto-dias-operacao-26-v2";
   const TAMANHO_MAXIMO_LOTE = 2.5 * 1024 * 1024;
   const TAMANHO_LOTE_RAW = 100;
   const TAMANHO_LOTE_OPERACOES = 100;
@@ -77,9 +77,11 @@
   function normalizarData(valor) {
     if (vazio(valor)) return null;
     if (valor instanceof Date && !Number.isNaN(valor.getTime())) return valor.toISOString().slice(0,10);
-    if (typeof valor === "number" && valor > 0 && window.XLSX?.SSF?.parse_date_code) {
-      const d = XLSX.SSF.parse_date_code(valor);
+    if (typeof valor === "number" && valor > 0) {
+      const d = window.XLSX?.SSF?.parse_date_code?.(valor);
       if (d?.y && d?.m && d?.d) return `${d.y}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}`;
+      const excel=new Date(Date.UTC(1899,11,30)+Math.floor(valor)*86400000);
+      if(!Number.isNaN(excel.getTime()))return excel.toISOString().slice(0,10);
     }
     const v = texto(valor);
     let m = v.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
@@ -288,12 +290,12 @@
         }
         const abaNorm=normalizarCabecalho(nomeAba);
         if (abaNorm.includes("dias_operacao")) {
-          const dataRef=normalizarData(linha.data || linha.periodo || linha.mes),periodoDias=periodoInformado(linha),ano=Number(linha.ano || dataRef?.slice(0,4) || periodoDias?.ano),mes=normalizarMes(linha.mes_numero ?? (dataRef?dataRef.slice(5,7):linha.mes)) || periodoDias?.mes;
+          const mesOriginal=linha.mes_ano??linha.mes,serialPlanilha=typeof mesOriginal==="number"?mesOriginal:null,dataRef=normalizarData(linha.data || linha.periodo || mesOriginal),periodoDias=periodoInformado(linha),ano=Number(linha.ano || dataRef?.slice(0,4) || periodoDias?.ano),mes=normalizarMes(linha.mes_numero ?? (dataRef?dataRef.slice(5,7):linha.mes)) || periodoDias?.mes;
           const total=normalizarNumero(linha.total_dias ?? linha.total_de_dias ?? linha.total_dias_mes ?? linha.total_de_dias_no_mes ?? linha.dias_operacao ?? linha.dias_de_operacao ?? linha.quantidade_de_dias ?? linha.qtd_dias ?? linha.dias);
           if (ano && mes && total !== null) {
             rawAtual.ano=ano;rawAtual.mes=mes;
-            dias.push({ano,mes,total_dias:total,dados:jsonSeguro(original)});
-            if(ano===2026&&mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{importacaoId:null,valorPlanilha:total,valorBanco:null,totalDiasUsado:total,fonte:`planilha.${nomeAba}`});
+            dias.push({ano,mes,total_dias:total,dados:jsonSeguro({...original,__cco_serial_mes:serialPlanilha,__cco_data_interpretada:dataRef,__cco_fonte:nomeAba})});
+            if(ano===2026&&mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{serialPlanilha,dataInterpretada:dataRef,valorPlanilha:total,valorBancoAntes:null,valorBancoDepois:null,importacaoId:null,fonte:nomeAba});
           }
         }
         if (abaNorm.includes("painel_executivo")) painel.push({numero_linha:numeroLinha,ano:data?Number(data.slice(0,4)):normalizarNumero(linha.ano),mes:data?Number(data.slice(5,7)):normalizarNumero(linha.mes),servico:SERVICOS.has(servico)?servico:null,descricao:texto(linha.descricao || linha.nome_servico)||null,nome_servico:texto(linha.nome_servico || linha.descricao)||null,medicao:texto(linha.medicao || linha.unidade)||null,previsto:normalizarNumero(linha.previsto ?? linha.previsto_mes),acumulado:normalizarNumero(linha.acumulado ?? linha.acumulado_mes),dias_acumulados:normalizarNumero(linha.dias_acumulados ?? linha.dias_acumulado),total_dias_mes:normalizarNumero(linha.total_dias_mes ?? linha.total_de_dias_no_mes),valor_unitario:normalizarNumero(linha.valor_unitario),valor_total:normalizarNumero(linha.valor_total ?? linha.valor),dados:jsonSeguro(original)});
@@ -443,24 +445,9 @@
     const{payload,duplicidades}=deduplicarDiasOperacao(dias,importacaoId);
     console.log("[IMPORTAÇÃO][dias_operacao] duplicidades no payload",duplicidades);
     if(payload.length!==1)throw new Error(`Cada período deve possuir exatamente um registro único de Dias_Operação; encontrados ${payload.length}.`);
-    try{
-      const resposta=await executarUpsertDiasOperacao(payload,"importacao_id,ano,mes");
-      return{payload,quantidade:payload.length,duplicidades,chaveUsada:"importacao_id,ano,mes",resposta};
-    }catch(error){
-      const mensagem=String(error?.message||"");
-      const ehConstraintLegada=error?.code==="23505"&&(
-        mensagem.includes("dias_operacao_ano_mes_unique")||
-        mensagem.includes("dias_operacao_ano_mes_uidx")||
-        mensagem.includes("(ano, mes)")
-      );
-      if(ehConstraintLegada){
-        console.warn("[IMPORTAÇÃO] tentando fallback ano,mes");
-        const respostaFallback=await executarUpsertDiasOperacao(payload,"ano,mes");
-        console.info("[IMPORTAÇÃO] fallback concluído");
-        return{payload,quantidade:payload.length,duplicidades,chaveUsada:"ano,mes",resposta:respostaFallback,fallback:true};
-      }
-      throw error;
-    }
+    if(window.CCO_DEBUG_AGOSTO===true)console.log("[DIAS OPERACAO PAYLOAD]",payload);
+    const resposta=await executarUpsertDiasOperacao(payload,"ano,mes");
+    return{payload,quantidade:payload.length,duplicidades,chaveUsada:"ano,mes",resposta};
   }
 
   async function obterContagensReais(importacaoId,contagensLocais) {
@@ -517,10 +504,10 @@
   function rawCanonico(item){return{aba:item.aba,numero_linha:Number(item.numero_linha),servico:item.servico||null,rd:item.rd||null,data_operacao:item.data_operacao?String(item.data_operacao).slice(0,10):null,ano:Number(item.ano)||null,mes:Number(item.mes)||null,chave_linha:item.chave_linha,dados:item.dados||{},dados_originais:item.dados_originais||{}};}
   async function hashPeriodoRaw(linhas){const ordenadas=(linhas||[]).map(rawCanonico).sort((a,b)=>String(a.chave_linha).localeCompare(String(b.chave_linha))||a.numero_linha-b.numero_linha),dados=new TextEncoder().encode(jsonCanonico(ordenadas)),digest=await crypto.subtle.digest("SHA-256",dados);return[...new Uint8Array(digest)].map(valor=>valor.toString(16).padStart(2,"0")).join("");}
   async function verificarPeriodoInalterado(grupo){
-    const hashPeriodo=await hashPeriodoRaw(grupo.raw),{data:existente,error}=await executarComRetryTransitório(()=>banco().from("importacoes").select("id,ano,mes,status,ativa,detalhes").eq("ano",grupo.ano).eq("mes",grupo.mes).eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).maybeSingle(),{tabela:"importacoes",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:0});
+    const hashPeriodo=await hashPeriodoRaw(grupo.raw),{data:existente,error}=await executarComRetryTransitório(()=>banco().from("importacoes").select("id,ano,mes,status,ativa,hash_arquivo,detalhes").eq("ano",grupo.ano).eq("mes",grupo.mes).eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).maybeSingle(),{tabela:"importacoes",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:0});
     if(error)throw error;if(!existente)return{inalterado:false,hashPeriodo,existente:null};
     const valorPlanilha=Number(grupo.dias?.[0]?.total_dias)||0,{data:diasBanco,error:erroDiasBanco}=await banco().from("dias_operacao").select("importacao_id,ano,mes,total_dias").eq("importacao_id",existente.id).eq("ano",grupo.ano).eq("mes",grupo.mes).maybeSingle();if(erroDiasBanco)throw erroDiasBanco;
-    if(existente.detalhes?.periodo_hash===hashPeriodo&&valorPlanilha>0&&Number(diasBanco?.total_dias||0)!==valorPlanilha){await gravarDiasOperacao(grupo.dias,existente.id);for(const item of grupo.painel){const{error:erroPainel}=await banco().from("painel_executivo").update({total_dias_mes:valorPlanilha,previsto:item.previsto}).eq("importacao_id",existente.id).eq("servico",item.servico);if(erroPainel)throw erroPainel;}window.CCOPainelService?.invalidarDiasOperacao?.();window.CCOPageDataCache?.invalidar?.("painel");window.CCOPageDataCache?.invalidar?.("kpi");window.CCOPageDataCache?.invalidar?.("execucao");if(grupo.ano===2026&&grupo.mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{importacaoId:existente.id,valorPlanilha,valorBanco:diasBanco?.total_dias??null,totalDiasUsado:valorPlanilha,fonte:"reparo direcionado do RAW oficial"});return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado_dias_reparados",diasReparados:true};}
+    if((existente.detalhes?.periodo_hash===hashPeriodo||String(existente.hash_arquivo||"")===String(grupo.hashArquivo||""))&&valorPlanilha>0&&Number(diasBanco?.total_dias||0)!==valorPlanilha){const metaDias=grupo.dias[0]?.dados||{},resultadoDias=await gravarDiasOperacao(grupo.dias,existente.id);for(const item of grupo.painel){const{error:erroPainel}=await banco().from("painel_executivo").update({total_dias_mes:valorPlanilha,previsto:item.previsto}).eq("importacao_id",existente.id).eq("servico",item.servico);if(erroPainel)throw erroPainel;}window.CCOPainelService?.invalidarDiasOperacao?.();window.CCOPageDataCache?.invalidar?.("painel");window.CCOPageDataCache?.invalidar?.("kpi");window.CCOPageDataCache?.invalidar?.("execucao");if(grupo.ano===2026&&grupo.mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{serialPlanilha:metaDias.__cco_serial_mes??null,dataInterpretada:metaDias.__cco_data_interpretada??null,valorPlanilha,valorBancoAntes:diasBanco?.total_dias??null,valorBancoDepois:resultadoDias.resposta?.data?.[0]?.total_dias??valorPlanilha,importacaoId:existente.id,fonte:metaDias.__cco_fonte||"Dias_Operação"});return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado_dias_reparados",diasReparados:true};}
     if(existente.detalhes?.periodo_hash===hashPeriodo)return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado"};
     if(existente.detalhes?.periodo_hash)return{inalterado:false,hashPeriodo,existente,origem:"hash_armazenado"};
     const rawExistente=await buscarTudoPaginado(()=>banco().from("planilha_linhas").select("aba,numero_linha,servico,rd,data_operacao,ano,mes,chave_linha,dados,dados_originais").eq("importacao_id",existente.id).order("chave_linha"));
@@ -759,6 +746,7 @@
     for(const grupo of grupos.values()){
       if(PERIODOS_ALVO&&!PERIODOS_ALVO.has(grupo.periodo)){console.info("[IMPORTAÇÃO] período fora do filtro explícito",grupo.periodo);continue;}
       try {
+        grupo.hashArquivo=hash;
         const comparacao=await verificarPeriodoInalterado(grupo);grupo.hashPeriodo=comparacao.hashPeriodo;
         if(comparacao.inalterado){ignorados.push({periodo:grupo.periodo,importacaoId:comparacao.existente.id,origem:comparacao.origem});console.info("[IMPORTAÇÃO INCREMENTAL] período inalterado; gravação ignorada",ignorados.at(-1));continue;}
         importacoes.push(await importarPeriodo(arquivo,hash,usuario,grupo));
