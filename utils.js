@@ -13492,6 +13492,7 @@ if (window.Chart && !window.__ccoSapValoresPluginRegistrado) {
    - Remove datalabels antigos que geravam segunda legenda/valor preto.
 ===================================================== */
 (function ccoPatchFinalVerdeSemDuplicidade(){
+  if(window.__CCO_PAINEL_CONTROLADOR_OFICIAL__)return;
   function aplicar(){
     try{
       if(!window.Chart) return;
@@ -13529,6 +13530,7 @@ if (window.Chart && !window.__ccoSapValoresPluginRegistrado) {
    Aplicado por último para vencer configurações antigas.
 ===================================================== */
 (function ccoLimpezaFinalVerdeSemPreto(){
+  if(window.__CCO_PAINEL_CONTROLADOR_OFICIAL__)return;
   if (window.__CCO_LIMPEZA_FINAL_VERDE_SEM_PRETO__) return;
   window.__CCO_LIMPEZA_FINAL_VERDE_SEM_PRETO__ = true;
 
@@ -13720,6 +13722,7 @@ if (window.Chart && !window.__ccoSapValoresPluginRegistrado) {
    - Não remove os gráficos KPI/Execução.
 ===================================================== */
 (function ccoLabelBrancaSombraUnicaFinal(){
+  if(window.__CCO_PAINEL_CONTROLADOR_OFICIAL__)return;
   if (window.__CCO_LABEL_BRANCA_SOMBRA_UNICA_FINAL__) return;
   window.__CCO_LABEL_BRANCA_SOMBRA_UNICA_FINAL__ = true;
 
@@ -14265,6 +14268,7 @@ function renderGraficoVelocidadeMediaMensalKPI(dados){
    - Desliga datalabels duplicado
 ===================================================== */
 (function ccoPatchFinalMobileBarrasFix2(){
+  if(window.__CCO_PAINEL_CONTROLADOR_OFICIAL__)return;
   if (window.__CCO_PATCH_FINAL_MOBILE_BARRAS_FIX2__) return;
   window.__CCO_PATCH_FINAL_MOBILE_BARRAS_FIX2__ = true;
 

@@ -50,7 +50,7 @@ assert.match(painel,/CCO_DEBUG_PAINEL_MOBILE===true\)console\.debug\("\[PAINEL M
 assert.match(painel,/CCO_DEBUG_PAINEL_MOBILE===true\)console\.debug\("\[PAINEL MOBILE EXECUÇÃO SERVIÇO\]"/);
 assert.match(painel,/\[PAINEL MOBILE LAYOUT GRAFICO\]/);
 for(const campo of["largura:","alturaGrafico:","alturaCard:","grid:","categorias:","primeiraCategoria:","ultimaCategoria:"])assert.ok(painel.includes(campo));
-assert.match(html,/css\/painel-geral\.css\?v=20260806-painel-mobile-graficos-legenda-v5/);
-assert.match(html,/painel-geral\.js", "20260807-p4-painel-fonte-acumulado-v1"/);
+assert.match(html,/css\/painel-geral\.css\?v=20260811-painel-performance-log-real-v3/);
+assert.match(html,/painel-geral\.js", "20260811-painel-performance-log-real-v3"/);
 
 console.log("Painel mobile: valor e execução com 13 serviços, ordem visual, alturas, tooltips e desktop isolado aprovados.");

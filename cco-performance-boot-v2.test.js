@@ -15,6 +15,6 @@ assert.match(cache,/CCOPageDataCache/);assert.match(cache,/CCOPageContext/);asse
 for(const [nome,fonte] of [["PAINEL",painel],["EXECUCAO",execucao],["KPI",kpi],["HISTORICO",historico],["DADOS",dados],["ANALYTICS",analytics]])assert.match(fonte,new RegExp(`(?:CCOPageRuntime\\.inicializar\\("${nome}"|__CCO_${nome}_INIT_PROMISE__)`),`init oficial ausente: ${nome}`);
 assert.match(painel,/P9 reutilizado do lote principal de operacoes/);assert.doesNotMatch(painel,/p9PorPeriodo\(importacao\.importacao_id/);assert.doesNotMatch(dados,/CCOKpiService\.operacoes/);assert.match(dados,/from\("operacoes"\).*eq\("importacao_id",periodo\.importacao_id\)/s);
 assert.doesNotMatch(ler("historico.html"),/utils\.js/);assert.match(utils,/paginaControlada[\s\S]*__CCO_PAINEL_CONTROLADOR_OFICIAL__[\s\S]*__CCO_EXECUCAO_CONTROLADOR_OFICIAL__/);
-for(const html of["index.html","kpi.html","execucao.html","historico.html","dados.html","analytics-ai.html"])assert.match(ler(html),/services\/cache\.js\?v=20260807-performance-boot-v2/);
+for(const html of["index.html","kpi.html","execucao.html","historico.html","dados.html","analytics-ai.html"]){const versao=html==="index.html"?"20260811-painel-performance-log-real-v3":"20260807-performance-boot-v2";assert.match(ler(html),new RegExp(`services/cache\\.js\\?v=${versao}`));}
 
 testarRuntime().then(()=>console.log("Performance boot v2: init única, Promise compartilhada, cache isolado, catálogo/controladores e consultas deduplicadas aprovados.")).catch(error=>{console.error(error);process.exitCode=1;});
