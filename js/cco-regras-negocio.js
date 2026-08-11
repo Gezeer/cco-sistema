@@ -21,6 +21,8 @@
   });
 
   const EQUIPES_FIXAS = Object.freeze({ "P3":12, "P7":2, "P8":2, "P9":11, "P10":3, "P11":1 });
+  const DIAS_OPERACAO_BANCO = new Map();
+  if(global.CCO_DEBUG_AGOSTO===undefined)global.CCO_DEBUG_AGOSTO=true;
 
   function chavePeriodo(ano, mes) {
     return `${Number(ano)}-${String(Number(mes)).padStart(2, "0")}`;
@@ -28,10 +30,11 @@
 
   function obterDiasOperacao(ano, mes) {
     const chave = chavePeriodo(ano, mes);
-    const dias = DIAS_OPERACAO[chave] ?? 0;
+    const dias = DIAS_OPERACAO_BANCO.get(chave) ?? DIAS_OPERACAO[chave] ?? 0;
     if (!dias) console.warn(`Dias de operação não configurados para ${chave}`);
     return dias;
   }
+  function registrarDiasOperacao(registros=[]) { for(const item of registros){const total=Number(item?.total_dias);if(Number.isInteger(total)&&total>0)DIAS_OPERACAO_BANCO.set(chavePeriodo(item.ano,item.mes),total);}return DIAS_OPERACAO_BANCO.size; }
 
   function obterValorServico(servico) { return Number(VALORES_SERVICOS[String(servico || "").toUpperCase()] ?? 0); }
   function obterEquipeFixa(servico) { return EQUIPES_FIXAS[String(servico || "").toUpperCase()] ?? null; }
@@ -40,15 +43,15 @@
     return equipe !== null ? Number(equipe) : 0;
   }
   function calcularPrevisto(servico, ano, mes, previstoAtual = 0, diasOrigem = 0) {
-    if (obterEquipeFixa(servico) !== null) return calcularPrevistoEquipeFixa(servico);
+    if (obterEquipeFixa(servico) !== null) { const previstoFixo=calcularPrevistoEquipeFixa(servico);if(Number(ano)===2026&&Number(mes)===8&&global.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO PREVISTO]",{servico,acumulado:null,totalDias:obterDiasOperacao(ano,mes),previsto:previstoFixo,percentual:null});return previstoFixo; }
     const dias = obterDiasOperacao(ano, mes);
-    if (!dias) return 0;
+    if (!dias) {if(Number(ano)===2026&&Number(mes)===8&&global.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO PREVISTO]",{servico,acumulado:null,totalDias:dias,previsto:0,percentual:null});return 0;}
     const previsto = Number(previstoAtual) || 0, baseDias = Number(diasOrigem) || dias;
-    return previsto > 0 && baseDias > 0 ? previsto * dias / baseDias : previsto;
+    const resultado=previsto > 0 && baseDias > 0 ? previsto * dias / baseDias : previsto;if(Number(ano)===2026&&Number(mes)===8&&global.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO PREVISTO]",{servico,acumulado:null,totalDias:dias,previsto:resultado,percentual:null});return resultado;
   }
 
   global.CCO_REGRAS = Object.freeze({
     DIAS_OPERACAO, VALORES_SERVICOS, EQUIPES_FIXAS,
-    obterDiasOperacao, obterValorServico, obterEquipeFixa, calcularPrevistoEquipeFixa, calcularPrevisto
+    registrarDiasOperacao, obterDiasOperacao, obterValorServico, obterEquipeFixa, calcularPrevistoEquipeFixa, calcularPrevisto
   });
 })(typeof window !== "undefined" ? window : globalThis);

@@ -41,7 +41,7 @@
   }
   async function carregarDiasOperacao(catalogo){
     const ids=[...new Set((catalogo||[]).map(item=>String(item.importacao_id||"")).filter(Boolean))].sort(),chave=global.CCOCache.chave("dias-operacao-catalogo",ids);
-    return global.CCOCache.lembrar(chave,async()=>{const inicio=typeof performance!=="undefined"?performance.now():Date.now();if(!ids.length)return{linhas:[],duracaoMs:0,requests:0};const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias").in("importacao_id",ids).order("ano",{ascending:false}).order("mes",{ascending:false});if(error)throw error;const duracaoMs=(typeof performance!=="undefined"?performance.now():Date.now())-inicio;console.log("[DIAS OPERACAO PERFORMANCE]",{duracaoMs,requests:1,registros:(data||[]).length,periodos:ids.length});return{linhas:data||[],duracaoMs,requests:1};},TTL);
+    return global.CCOCache.lembrar(chave,async()=>{const inicio=typeof performance!=="undefined"?performance.now():Date.now();if(!ids.length)return{linhas:[],duracaoMs:0,requests:0};const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias,dados").in("importacao_id",ids).order("ano",{ascending:false}).order("mes",{ascending:false});if(error)throw error;const duracaoMs=(typeof performance!=="undefined"?performance.now():Date.now())-inicio;console.log("[DIAS OPERACAO PERFORMANCE]",{duracaoMs,requests:1,registros:(data||[]).length,periodos:ids.length});return{linhas:data||[],duracaoMs,requests:1};},TTL);
   }
 
   async function produzirCatalogo() {
@@ -64,6 +64,8 @@
         if(item.importacao_id)diasOperacaoCache.set(`${item.importacao_id}|${periodo}`,Number(item.total_dias)||0);
         if(!diasOperacaoCache.has(periodo))diasOperacaoCache.set(periodo,Number(item.total_dias)||0);
       }
+      global.CCO_REGRAS?.registrarDiasOperacao?.(diasOperacao||[]);
+      if(global.CCO_DEBUG_AGOSTO===true){const agosto=resultado.find(item=>Number(item.ano)===2026&&Number(item.mes)===8),diasAgosto=(diasOperacao||[]).find(item=>Number(item.ano)===2026&&Number(item.mes)===8&&String(item.importacao_id)===String(agosto?.importacao_id));console.log("[AGOSTO DIAS OPERACAO]",{importacaoId:agosto?.importacao_id||null,valorPlanilha:diasAgosto?.dados?.valor_planilha??null,valorBanco:diasAgosto?.total_dias??null,totalDiasUsado:global.CCO_REGRAS?.obterDiasOperacao?.(2026,8)??0,fonte:diasAgosto?"public.dias_operacao":"ausente"});}
     const duracaoMs=(typeof performance!=="undefined"?performance.now():Date.now())-inicio;
     global.__CCO_CATALOGO_PERIODOS__=resultado;
     global.__CCO_IMPORTACOES_POR_PERIODO__=Object.fromEntries(resultado.map(item=>[item.periodo,item]));
@@ -81,7 +83,8 @@
     return global.__CCO_CATALOGO_PROMISE__;
   }
   const catalogo=()=>getCatalogoPeriodos();
-  function invalidarCatalogo(){global.CCOCache?.invalidar("periodos");global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;}
+  function invalidarDiasOperacao(){global.CCOCache?.invalidar("dias-operacao-catalogo");diasOperacaoCache.clear();}
+  function invalidarCatalogo(){global.CCOCache?.invalidar("periodos");invalidarDiasOperacao();global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;}
   async function recarregarCatalogo(){invalidarCatalogo();return getCatalogoPeriodos();}
   function obterDiasOperacao(ano,mes,importacaoId=null){
     const periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`;
@@ -110,5 +113,5 @@
     if(data)global.CCODiagnosticoP9Etapa?.("services/painelService.js:p9PorPeriodo → painel_executivo.acumulado",data.acumulado,"leitura direta da coluna painel_executivo.acumulado");
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, recarregarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, invalidarDiasOperacao, recarregarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
 })(window);

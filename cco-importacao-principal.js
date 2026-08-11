@@ -289,10 +289,11 @@
         const abaNorm=normalizarCabecalho(nomeAba);
         if (abaNorm.includes("dias_operacao")) {
           const dataRef=normalizarData(linha.data || linha.periodo || linha.mes),periodoDias=periodoInformado(linha),ano=Number(linha.ano || dataRef?.slice(0,4) || periodoDias?.ano),mes=normalizarMes(linha.mes_numero ?? (dataRef?dataRef.slice(5,7):linha.mes)) || periodoDias?.mes;
-          const total=normalizarNumero(linha.total_dias ?? linha.dias_operacao ?? linha.dias);
+          const total=normalizarNumero(linha.total_dias ?? linha.total_de_dias ?? linha.total_dias_mes ?? linha.total_de_dias_no_mes ?? linha.dias_operacao ?? linha.dias_de_operacao ?? linha.quantidade_de_dias ?? linha.qtd_dias ?? linha.dias);
           if (ano && mes && total !== null) {
             rawAtual.ano=ano;rawAtual.mes=mes;
             dias.push({ano,mes,total_dias:total,dados:jsonSeguro(original)});
+            if(ano===2026&&mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{importacaoId:null,valorPlanilha:total,valorBanco:null,totalDiasUsado:total,fonte:`planilha.${nomeAba}`});
           }
         }
         if (abaNorm.includes("painel_executivo")) painel.push({numero_linha:numeroLinha,ano:data?Number(data.slice(0,4)):normalizarNumero(linha.ano),mes:data?Number(data.slice(5,7)):normalizarNumero(linha.mes),servico:SERVICOS.has(servico)?servico:null,descricao:texto(linha.descricao || linha.nome_servico)||null,nome_servico:texto(linha.nome_servico || linha.descricao)||null,medicao:texto(linha.medicao || linha.unidade)||null,previsto:normalizarNumero(linha.previsto ?? linha.previsto_mes),acumulado:normalizarNumero(linha.acumulado ?? linha.acumulado_mes),dias_acumulados:normalizarNumero(linha.dias_acumulados ?? linha.dias_acumulado),total_dias_mes:normalizarNumero(linha.total_dias_mes ?? linha.total_de_dias_no_mes),valor_unitario:normalizarNumero(linha.valor_unitario),valor_total:normalizarNumero(linha.valor_total ?? linha.valor),dados:jsonSeguro(original)});
@@ -500,6 +501,7 @@
       if(totaisDias.length>1)throw new Error(`Dias_Operação inválido em ${grupo.periodo}: encontrados ${totaisDias.length} totais oficiais diferentes.`);
       if(!totaisDias.length)console.warn(`[IMPORTAÇÃO] Dias de operação não configurados para ${grupo.periodo}; será registrado 0 sem inventar previsão.`);
       grupo.dias=[{ano:grupo.ano,mes:grupo.mes,total_dias:totaisDias[0]??0,dados:diasPeriodo.length===1?diasPeriodo[0].dados:{aviso:"dias_operacao_nao_configurados",linhas_originais:[]}}];
+      window.CCO_REGRAS?.registrarDiasOperacao?.(grupo.dias);
       const metasPeriodo=resultado.painel.filter(item=>(!item.ano&&!item.mes)||(Number(item.ano)===grupo.ano&&Number(item.mes)===grupo.mes));
       grupo.painel=gerarPainelExecutivoPeriodo(grupo,metasPeriodo);
       const linhasRaw=new Set(grupo.raw.map(item=>`${item.aba}|${item.numero_linha}`));
@@ -517,6 +519,8 @@
   async function verificarPeriodoInalterado(grupo){
     const hashPeriodo=await hashPeriodoRaw(grupo.raw),{data:existente,error}=await executarComRetryTransitório(()=>banco().from("importacoes").select("id,ano,mes,status,ativa,detalhes").eq("ano",grupo.ano).eq("mes",grupo.mes).eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).maybeSingle(),{tabela:"importacoes",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:0});
     if(error)throw error;if(!existente)return{inalterado:false,hashPeriodo,existente:null};
+    const valorPlanilha=Number(grupo.dias?.[0]?.total_dias)||0,{data:diasBanco,error:erroDiasBanco}=await banco().from("dias_operacao").select("importacao_id,ano,mes,total_dias").eq("importacao_id",existente.id).eq("ano",grupo.ano).eq("mes",grupo.mes).maybeSingle();if(erroDiasBanco)throw erroDiasBanco;
+    if(existente.detalhes?.periodo_hash===hashPeriodo&&valorPlanilha>0&&Number(diasBanco?.total_dias||0)!==valorPlanilha){await gravarDiasOperacao(grupo.dias,existente.id);for(const item of grupo.painel){const{error:erroPainel}=await banco().from("painel_executivo").update({total_dias_mes:valorPlanilha,previsto:item.previsto}).eq("importacao_id",existente.id).eq("servico",item.servico);if(erroPainel)throw erroPainel;}window.CCOPainelService?.invalidarDiasOperacao?.();window.CCOPageDataCache?.invalidar?.("painel");window.CCOPageDataCache?.invalidar?.("kpi");window.CCOPageDataCache?.invalidar?.("execucao");if(grupo.ano===2026&&grupo.mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{importacaoId:existente.id,valorPlanilha,valorBanco:diasBanco?.total_dias??null,totalDiasUsado:valorPlanilha,fonte:"reparo direcionado do RAW oficial"});return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado_dias_reparados",diasReparados:true};}
     if(existente.detalhes?.periodo_hash===hashPeriodo)return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado"};
     if(existente.detalhes?.periodo_hash)return{inalterado:false,hashPeriodo,existente,origem:"hash_armazenado"};
     const rawExistente=await buscarTudoPaginado(()=>banco().from("planilha_linhas").select("aba,numero_linha,servico,rd,data_operacao,ano,mes,chave_linha,dados,dados_originais").eq("importacao_id",existente.id).order("chave_linha"));
