@@ -14,3 +14,21 @@
 /* Centralização interna exclusiva dos gráficos desta página. */
 .interrupcao-page .graficos-grid .chart-box{width:100%;display:flex;align-items:center;justify-content:center;min-width:0}
 .interrupcao-page .graficos-grid .chart-box canvas{display:block;width:100%!important;max-width:100%}
+
+/* Gráficos expandidos — somente Interrupção de Trecho. */
+.interrupcao-page .graficos-grid>.chart-card{display:flex!important;flex-direction:column;overflow:visible!important}
+.interrupcao-page .graficos-grid>.chart-card>header{flex:0 0 auto}
+.interrupcao-page .graficos-grid .chart-box{flex:1 1 auto;height:auto;overflow:visible}
+.interrupcao-page .graficos-grid .chart-box canvas{width:100%!important;height:100%!important;max-height:none}
+.interrupcao-page .graficos-grid .chart-card:has(#graficoDatas) .chart-box{min-height:440px}
+.interrupcao-page .graficos-grid .chart-card:has(#graficoDefeitos) .chart-box{min-height:400px}
+.interrupcao-page .graficos-grid .chart-ranking .chart-box{min-height:460px}
+.interrupcao-page .graficos-grid .chart-card:has(#graficoServicos) .chart-box{min-height:440px}
+.interrupcao-page .graficos-grid .chart-card:has(#graficoHoras) .chart-box{min-height:420px}
+.interrupcao-page .graficos-grid .chart-card:has(#graficoRespostaRA) .chart-box{min-height:460px}
+@media(max-width:768px){
+  .interrupcao-page .graficos-grid .chart-box,.interrupcao-page .graficos-grid .chart-wide .chart-box{height:auto;min-height:390px}
+  .interrupcao-page .graficos-grid .chart-card:has(#graficoDatas) .chart-box,.interrupcao-page .graficos-grid .chart-card:has(#graficoHoras) .chart-box{min-height:360px}
+  .interrupcao-page .graficos-grid .chart-card:has(#graficoDefeitos) .chart-box{min-height:370px}
+  .interrupcao-page .graficos-grid .chart-ranking .chart-box{height:auto;min-height:460px}
+}
