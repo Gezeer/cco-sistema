@@ -1,0 +1,14 @@
+const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict");
+const context={globalThis:{},console,Date,Set,Map,Number,String,Object,Math,module:{exports:{}}};context.globalThis=context;vm.createContext(context);vm.runInContext(fs.readFileSync("services/interrupcaoTrechoService.js","utf8"),context);const S=context.module.exports;
+assert.equal(S.normalizarCabecalho("  Acionamento de períto ? "),"acionamento_de_perito");
+assert.equal(S.normalizarData("10/08/2026"),"2026-08-10");
+assert.equal(S.normalizarHora("XXX"),null);assert.equal(S.normalizarHora("RG"),null);assert.equal(S.normalizarHora("25:00"),null);assert.equal(S.normalizarHora(0.5),"12:00:00");
+const base={" Mês ":"Agosto","Data":"10/08/2026","Serviço":"P1","Veículo":" ASA01 ","Nº da RD":"123","Mat. Motorista":"99","Hr. Solicitação":"23:55","Hr. DESL SOCORRO":"00:15","TÉRMINO SOCORRO":"RG","Tipo de Defeito":"MECÂNICO","RA":"Plano Piloto","Perímetro":"Urbano","Descrição":"Teste"};
+const r=S.mapearLinha(base);assert.equal(r.mes,8);assert.equal(r.termino_socorro,null);assert.equal(S.minutosResposta(r),20);assert.equal(r.chave_registro,"123|2026-08-10|ASA01|23:55:00");
+const preparado=S.prepararRegistros([base,{...base,"Tipo de Defeito":"ELÉTRICA"}]);assert.equal(preparado.registros.length,2);assert.notEqual(preparado.registros[0].chave_registro,preparado.registros[1].chave_registro);
+let d=S.diferenciar([r],[]);assert.equal(d.novos.length,1);d=S.diferenciar([r],[{...r}]);assert.equal(d.ignorados.length,1);d=S.diferenciar([{...r,descricao:"alterada"}],[r]);assert.equal(d.atualizados.length,1);
+const c=S.consolidar([r,{...r,veiculo:"ASA02",mat_motorista:"100",termino_socorro:"01:00:00"}]);assert.equal(c.total,2);assert.equal(c.veiculos,2);assert.equal(c.motoristas,2);assert.equal(Math.round(c.tempoMedio),20);assert.equal(c.concluidos,50);
+const html=fs.readFileSync("interrupcao-trecho.html","utf8"),js=fs.readFileSync("interrupcao-trecho.js","utf8"),css=fs.readFileSync("css/interrupcao-trecho.css","utf8"),sql=fs.readFileSync("supabase_interrupcao_trecho.sql","utf8");
+assert.match(html,/20260810-interrupcao-trecho-v1/g);assert.doesNotMatch(html,/EMBEDDED_DATA/);assert.match(html,/Importar \/ Atualizar Excel/);assert.match(js,/IntersectionObserver/);assert.match(js,/20:100/);assert.match(css,/@media\(max-width:700px\)/);assert.match(sql,/enable row level security/g);assert.match(sql,/perfil in \('administrador','operador'\)/);assert.match(sql,/chave_registro text not null unique/);
+for(const file of ["index.html","kpi.html","execucao.html","analytics-ai.html","dados.html","historico.html"])assert.match(fs.readFileSync(file,"utf8"),/interrupcao-trecho\.html/,`menu ausente em ${file}`);
+console.log("Interrupção de Trecho: normalização, deduplicação, métricas, RLS, mobile, lazy render e integração validados.");
