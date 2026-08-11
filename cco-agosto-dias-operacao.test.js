@@ -25,13 +25,18 @@ vm.runInContext(fs.readFileSync("js/cco-regras-negocio.js","utf8"),regras);
 regras.CCO_DEBUG_AGOSTO=false;
 regras.CCO_REGRAS.registrarDiasOperacao([{ano:2026,mes:8,total_dias:26}]);
 assert.equal(regras.CCO_REGRAS.obterDiasOperacao(2026,8),26);
-for(const servico of ["P1","P4","P5","P6","P12"])assert.ok(regras.CCO_REGRAS.calcularPrevisto(servico,2026,8,100,10)>0,`${servico} deve manter sua regra com dias oficiais`);
+const metas26={P1:21223,"P2.1":780,"P2.2":260,P4:15779,P5:38541,P6:9040,P12:1698432};
+for(const [servico,esperado] of Object.entries(metas26))assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,26),esperado,`${servico} deve usar a meta-base oficial de 26 dias`);
+const metas27={P1:22039.26923076923,"P2.1":810,"P2.2":270,P4:16385.884615384613,P5:40023.346153846156,P6:9387.692307692307,P12:1763756.3076923077};
+for(const [servico,esperado] of Object.entries(metas27))assert.ok(Math.abs(regras.CCO_REGRAS.calcularPrevisto(servico,27)-esperado)<1e-9,`${servico} deve reproduzir a fórmula oficial para 27 dias`);
+for(const [servico,base] of Object.entries(metas26))assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,24),base/26*24,`${servico} deve generalizar para 24 dias`);
+for(const servico of Object.keys(metas26)){assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,2026,4),regras.CCO_REGRAS.calcularPrevisto(servico,2026,6));assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,2026,6),regras.CCO_REGRAS.calcularPrevisto(servico,2026,8));}
 assert.deepEqual(Object.fromEntries(["P3","P7","P8","P9","P10","P11"].map(servico=>[servico,regras.CCO_REGRAS.calcularPrevisto(servico,2026,8)])),{P3:12,P7:2,P8:2,P9:11,P10:3,P11:1});
 
 contexto.window.CCO_REGRAS=regras.CCO_REGRAS;
-const servicos=["P1","P2.1","P2.2","P4","P5","P6","P12"],bases=new Map(servicos.map(servico=>[servico,{ano:2026,mes:6,servico,previsto:100,total_dias_mes:26}]));
+const servicos=["P1","P2.1","P2.2","P4","P5","P6","P12"];
 const painelAntes=[...servicos.map(servico=>({servico,previsto:0,acumulado:77})),...Object.entries({P3:12,P7:2,P8:2,P9:11,P10:3,P11:1}).map(([servico,previsto])=>({servico,previsto,acumulado:33}))];
-const reparos=contexto.window.CCOImportacaoPrincipal.calcularReparosPrevisto({ano:2026,mes:8,periodo:"2026-08",dias:[{total_dias:26}]},painelAntes,bases);
+const reparos=contexto.window.CCOImportacaoPrincipal.calcularReparosPrevisto({ano:2026,mes:8,periodo:"2026-08",dias:[{total_dias:26}]},painelAntes);
 for(const servico of servicos)assert.ok(reparos.find(item=>item.servico===servico).previstoCalculado>0,`${servico} deve ser recalculado pela base oficial`);
 assert.deepEqual(Object.fromEntries(reparos.filter(item=>!servicos.includes(item.servico)).map(item=>[item.servico,item.previstoCalculado])),{P3:12,P7:2,P8:2,P9:11,P10:3,P11:1});
 assert.ok(reparos.every(item=>!("acumulado" in item)),"reparo não pode transportar nem alterar acumulados");
@@ -45,7 +50,8 @@ assert.match(trechoReparo,/from\("painel_executivo"\)\.update/);
 assert.doesNotMatch(trechoReparo,/from\("operacoes"\)/,"reparo de dias não pode regravar operações");
 assert.match(trechoReparo,/precisaRepararPrevisto/,"previsto zero deve acionar reparo mesmo quando os dias já são 26");
 assert.match(trechoReparo,/invalidarCachesPeriodo/,"cache com previsto zero deve ser invalidado");
-assert.match(fonte,/\[AGOSTO PREVISTO FONTE\]/);
-assert.match(fonte,/20260811-agosto-previsto-recalculo-v1/);
+assert.match(fonte,/\[REGRA PREVISTO 26 DIAS\]/);
+assert.doesNotMatch(fonte,/obterBasesOficiaisPrevisto|último período oficial|painel_executivo .* CCO_REGRAS\.calcularPrevisto/);
+assert.match(fonte,/20260811-previsto-regra-planilha-v3/);
 
 console.log("Agosto: variantes de Dias_Operação, fonte dinâmica e previstos oficiais aprovados.");

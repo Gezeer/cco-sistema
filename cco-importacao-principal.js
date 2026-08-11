@@ -2,7 +2,7 @@
 (function iniciarImportadorPrincipalCCO() {
   "use strict";
 
-  const BUILD = "20260811-agosto-previsto-recalculo-v1";
+  const BUILD = "20260811-previsto-regra-planilha-v3";
   const TAMANHO_MAXIMO_LOTE = 2.5 * 1024 * 1024;
   const TAMANHO_LOTE_RAW = 100;
   const TAMANHO_LOTE_OPERACOES = 100;
@@ -505,27 +505,12 @@
   function rawCanonico(item){return{aba:item.aba,numero_linha:Number(item.numero_linha),servico:item.servico||null,rd:item.rd||null,data_operacao:item.data_operacao?String(item.data_operacao).slice(0,10):null,ano:Number(item.ano)||null,mes:Number(item.mes)||null,chave_linha:item.chave_linha,dados:item.dados||{},dados_originais:item.dados_originais||{}};}
   async function hashPeriodoRaw(linhas){const ordenadas=(linhas||[]).map(rawCanonico).sort((a,b)=>String(a.chave_linha).localeCompare(String(b.chave_linha))||a.numero_linha-b.numero_linha),dados=new TextEncoder().encode(jsonCanonico(ordenadas)),digest=await crypto.subtle.digest("SHA-256",dados);return[...new Uint8Array(digest)].map(valor=>valor.toString(16).padStart(2,"0")).join("");}
 
-  async function obterBasesOficiaisPrevisto(grupo){
-    const{data:importacoes,error:erroImportacoes}=await banco().from("importacoes").select("id,ano,mes,status,ativa").eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).order("ano",{ascending:false}).order("mes",{ascending:false});
-    if(erroImportacoes)throw erroImportacoes;
-    const anteriores=(importacoes||[]).filter(item=>Number(item.ano)<grupo.ano||(Number(item.ano)===grupo.ano&&Number(item.mes)<grupo.mes));
-    const ids=anteriores.map(item=>item.id).filter(Boolean);
-    if(!ids.length)throw new Error(`Não há período oficial anterior para recalcular o previsto de ${grupo.periodo}.`);
-    const{data:linhas,error}=await banco().from("painel_executivo").select("importacao_id,ano,mes,servico,previsto,total_dias_mes").in("importacao_id",ids).in("servico",SERVICOS_PREVISTO_POR_DIAS).gt("previsto",0).gt("total_dias_mes",0).order("ano",{ascending:false}).order("mes",{ascending:false});
-    if(error)throw error;
-    const bases=new Map();
-    for(const linha of linhas||[]){const servico=normalizarServico(linha.servico);if(!bases.has(servico))bases.set(servico,linha);}
-    return bases;
-  }
-
-  function calcularReparosPrevisto(grupo,painelAtual,bases){
+  function calcularReparosPrevisto(grupo,painelAtual){
     const atuais=new Map((painelAtual||[]).map(item=>[normalizarServico(item.servico),item]));
     return ORDEM_SERVICOS_PAINEL.map(servico=>{
-      const atual=atuais.get(servico)||{},fixo=window.CCO_REGRAS.obterEquipeFixa(servico),base=fixo!==null?null:bases.get(servico);
-      if(fixo===null&&!base)throw new Error(`Base oficial positiva de previsto ausente para ${servico} antes de ${grupo.periodo}.`);
-      const previstoCalculado=window.CCO_REGRAS.calcularPrevisto(servico,grupo.ano,grupo.mes,base?.previsto??0,base?.total_dias_mes??0);
-      if(fixo===null&&previstoCalculado<=0)throw new Error(`A regra oficial retornou previsto inválido para ${servico} em ${grupo.periodo}.`);
-      return{servico,previstoBanco:normalizarNumero(atual.previsto),previstoCalculado,totalDias:Number(grupo.dias?.[0]?.total_dias)||0,fonte:fixo!==null?"regra_oficial_equipe_fixa":`painel_executivo ${base.ano}-${String(base.mes).padStart(2,"0")} + CCO_REGRAS.calcularPrevisto`};
+      const atual=atuais.get(servico)||{},totalDias=Number(grupo.dias?.[0]?.total_dias)||0,fixo=window.CCO_REGRAS.obterEquipeFixa(servico),valorBase=window.CCO_REGRAS.METAS_BASE_26_DIAS[servico]??fixo,previstoCalculado=window.CCO_REGRAS.calcularPrevisto(servico,totalDias);
+      if(previstoCalculado<=0)throw new Error(`A regra oficial da planilha retornou previsto inválido para ${servico} em ${grupo.periodo}.`);
+      return{servico,previstoBanco:normalizarNumero(atual.previsto),previstoCalculado,totalDias,regraEncontrada:valorBase!==null&&valorBase!==undefined,valorBase,fonte:fixo!==null?"regra_oficial_equipe_fixa":"METAS_BASE_26_DIAS + CCO_REGRAS.calcularPrevisto"};
     });
   }
 
@@ -548,13 +533,13 @@
     if(erroDiasBanco)throw erroDiasBanco;if(erroPainelAtual)throw erroPainelAtual;
     const hashIgual=existente.detalhes?.periodo_hash===hashPeriodo||String(existente.hash_arquivo||"")===String(grupo.hashArquivo||"");
     const precisaRepararDias=valorPlanilha>0&&Number(diasBanco?.total_dias||0)!==valorPlanilha;
-    const precisaRepararPrevisto=valorPlanilha>0&&(painelAtual||[]).some(item=>SERVICOS_PREVISTO_POR_DIAS.includes(normalizarServico(item.servico))&&normalizarNumero(item.previsto)<=0);
+    const precisaRepararPrevisto=valorPlanilha>0&&ORDEM_SERVICOS_PAINEL.some(servico=>{const atual=(painelAtual||[]).find(item=>normalizarServico(item.servico)===servico),esperado=window.CCO_REGRAS.calcularPrevisto(servico,valorPlanilha);return !atual||Math.abs(normalizarNumero(atual.previsto)-esperado)>1e-9||normalizarNumero(atual.total_dias_mes)!==valorPlanilha;});
     if(hashIgual&&(precisaRepararDias||precisaRepararPrevisto)){
       const metaDias=grupo.dias[0]?.dados||{},resultadoDias=precisaRepararDias?await gravarDiasOperacao(grupo.dias,existente.id):null;
-      const bases=await obterBasesOficiaisPrevisto(grupo),reparos=calcularReparosPrevisto(grupo,painelAtual||[],bases);
+      const reparos=calcularReparosPrevisto(grupo,painelAtual||[]);
       for(const item of reparos){
         const{error:erroPainel}=await banco().from("painel_executivo").update({total_dias_mes:valorPlanilha,previsto:item.previstoCalculado}).eq("importacao_id",existente.id).eq("servico",item.servico);if(erroPainel)throw erroPainel;
-        if(grupo.ano===2026&&grupo.mes===8)console.log("[AGOSTO PREVISTO FONTE]",{servico:item.servico,totalDias:valorPlanilha,previstoBanco:item.previstoBanco,previstoCalculado:item.previstoCalculado,previstoFinal:item.previstoCalculado,fonte:item.fonte});
+        if(grupo.ano===2026&&grupo.mes===8)console.log("[REGRA PREVISTO 26 DIAS]",{servico:item.servico,periodo:"2026-08",totalDiasRecebido:valorPlanilha,regraEncontrada:item.regraEncontrada,valorBase:item.valorBase,previstoBanco:item.previstoBanco,previstoCalculado:item.previstoCalculado,previstoFinal:item.previstoCalculado});
       }
       invalidarCachesPeriodo(existente.id);
       if(grupo.ano===2026&&grupo.mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{serialPlanilha:metaDias.__cco_serial_mes??null,dataInterpretada:metaDias.__cco_data_interpretada??null,valorPlanilha,valorBancoAntes:diasBanco?.total_dias??null,valorBancoDepois:resultadoDias?.resposta?.data?.[0]?.total_dias??valorPlanilha,importacaoId:existente.id,fonte:metaDias.__cco_fonte||"Dias_Operação"});
