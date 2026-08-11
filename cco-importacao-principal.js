@@ -774,29 +774,32 @@
     const input=evento?.target || document.getElementById("arquivoExcel"),arquivos=[...(input?.files||[])];
     if(!arquivos.length)return false;
     if(!window.XLSX)throw new Error("Biblioteca XLSX não carregada.");
-    const overlay=document.getElementById("loadingOverlay"); if(overlay)overlay.style.display="flex";
+    const overlay=document.getElementById("loadingOverlay"),fecharOverlay=()=>{if(!overlay)return;overlay.hidden=true;overlay.setAttribute("aria-hidden","true");overlay.classList.remove("is-active","ativo","show");overlay.style.setProperty("display","none","important");};
+    if(overlay){overlay.hidden=false;overlay.setAttribute("aria-hidden","false");overlay.style.removeProperty("display");overlay.style.display="flex";}
     try {
       const usuario=await usuarioAutorizado();
-      const periodoSelecionado=window.__CCO_PERIODO_ATUAL__||null,resultados=[];
+      const resultados=[];
       for(const arquivo of arquivos)resultados.push(...await importarArquivo(arquivo,usuario));
-      window.__CCO_IMPORTACOES_POR_PERIODO__={};window.__CCO_IMPORTACAO_ATIVA__=null;delete window.__CCO_CATALOGO_PERIODOS__;
+      window.__CCO_IMPORTACOES_POR_PERIODO__={};window.__CCO_IMPORTACAO_ATIVA__=null;window.__CCO_CATALOGO_PROMISE__=null;delete window.__CCO_CATALOGO_PERIODOS__;delete window.__CCO_PERIODOS_REAIS_V12__;delete window.__CCO_CATALOGO_EXECUCAO__;
       window.CCOPainelService?.invalidarCatalogo?.();window.CCOPageDataCache?.invalidar?.("painel");window.CCOPageDataCache?.invalidar?.("kpi");window.CCOPageDataCache?.invalidar?.("execucao");
       window.CCOKpiService?.invalidarCache?.();window.invalidarCacheEvolucaoExecucaoCCO?.();window.CCOMetricas?.invalidarCaches?.();window.CCOAnalyticsCharts?.destruirTodos?.();
       const periodosImportados=resultados.map(item=>item.grupo.periodo).sort(),falhas=window.__CCO_FALHAS_IMPORTACAO__||[];
       const resumoFalhas=falhas.length?`\n\nPeríodos com erro (${falhas.length}):\n${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join("\n")}`:"";
       const ignorados=window.__CCO_PERIODOS_IGNORADOS_IMPORTACAO__||[],resumoIgnorados=ignorados.length?` ${ignorados.length} períodos inalterados foram preservados sem regravação: ${ignorados.map(item=>item.periodo).join(", ")}.`:"";
-      alert(`Importação concluída e auditada. ${periodosImportados.length} períodos atualizados: ${periodosImportados.join(", ")||"nenhum"}.${resumoIgnorados}${resumoFalhas}`);
-      const catalogo=typeof window.recarregarCatalogoPainelGeral==="function"?await window.recarregarCatalogoPainelGeral():typeof window.carregarCatalogoPeriodosCompleto==="function"?await window.carregarCatalogoPeriodosCompleto():typeof window.carregarCatalogoPeriodos==="function"?await window.carregarCatalogoPeriodos(true):[];
-      console.log("[IMPORTAÇÃO] catálogo recarregado",catalogo);
+      const catalogo=await window.CCOPainelService.recarregarCatalogo(),periodosCatalogo=catalogo.map(item=>item.periodo),possuiAgosto2026=periodosCatalogo.includes("2026-08"),ultimo=[...catalogo].sort((a,b)=>Number(b.ano)-Number(a.ano)||Number(b.mes)-Number(a.mes))[0]||null;
+      console.log("[CATALOGO APOS IMPORTACAO]",{periodos:periodosCatalogo,possuiAgosto2026,ultimoPeriodo:ultimo?.periodo||null});
+      if(periodosImportados.includes("2026-08")&&!possuiAgosto2026)throw new Error("Agosto/2026 foi finalizado, mas não apareceu na reconsulta direta do catálogo.");
+      if(typeof window.aplicarCatalogoPainelGeral==="function")await window.aplicarCatalogoPainelGeral(catalogo,true);
       document.dispatchEvent(new CustomEvent("cco:importacao-concluida",{detail:{periodos:periodosImportados,catalogo}}));
-      const manter=catalogo.find(item=>item.periodo===periodoSelecionado)||[...catalogo].sort((a,b)=>Number(b.ano)-Number(a.ano)||Number(b.mes)-Number(a.mes))[0];
-      if(manter&&typeof window.carregarPeriodoCCO==="function")await window.carregarPeriodoCCO(manter);else if(typeof window.carregarBaseSupabase==="function")await window.carregarBaseSupabase();
+      if(typeof window.aplicarCatalogoPainelGeral!=="function"&&ultimo&&typeof window.carregarPeriodoCCO==="function")await window.carregarPeriodoCCO(ultimo);else if(typeof window.aplicarCatalogoPainelGeral!=="function"&&typeof window.carregarBaseSupabase==="function")await window.carregarBaseSupabase();
+      fecharOverlay();
+      alert(`Importação concluída e auditada. ${periodosImportados.length} períodos atualizados: ${periodosImportados.join(", ")||"nenhum"}.${resumoIgnorados}${resumoFalhas}`);
       return true;
     } catch(error) {
       console.error("[IMPORTAÇÃO PRINCIPAL] falha",{message:error?.message,code:error?.code,details:error?.details,hint:error?.hint,error});
       alert(`Falha na importação. Nenhuma base parcial foi ativada. ${error.message||error}`);
       return false;
-    } finally { if(overlay)overlay.style.display="none";if(input)input.value=""; }
+    } finally { fecharOverlay();if(input)input.value=""; }
   }
 
   async function buscarTudoPaginado(criarConsulta,tamanho=1000){

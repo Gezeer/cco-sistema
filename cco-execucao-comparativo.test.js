@@ -51,6 +51,6 @@ assert.match(graficos3d,/prefers-reduced-motion: reduce/);
 assert.match(graficos3d,/movimentoReduzido\?0:cfg\.animacao/);
 assert.match(fonteHtml,/cco-execucao-comparativo\.js\?v=20260805-previsto-acumulado-v1/);
 assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260806-execucao-rotulos-legenda-espacamento-v1/);
-assert.match(fonteHtml,/execucao\.js\?v=20260807-performance-boot-v2/);
+assert.match(fonteHtml,/execucao\.js\?v=20260811-catalogo-apos-importacao-v1/);
 
 console.log("Execução comparativa: catálogo dinâmico, duas séries, isolamento por importação, null e corrida assíncrona aprovados.");

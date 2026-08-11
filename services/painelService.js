@@ -82,6 +82,7 @@
   }
   const catalogo=()=>getCatalogoPeriodos();
   function invalidarCatalogo(){global.CCOCache?.invalidar("periodos");global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;}
+  async function recarregarCatalogo(){invalidarCatalogo();return getCatalogoPeriodos();}
   function obterDiasOperacao(ano,mes,importacaoId=null){
     const periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`;
     return Number((importacaoId&&diasOperacaoCache.get(`${importacaoId}|${periodo}`))??diasOperacaoCache.get(periodo)??0);
@@ -109,5 +110,5 @@
     if(data)global.CCODiagnosticoP9Etapa?.("services/painelService.js:p9PorPeriodo → painel_executivo.acumulado",data.acumulado,"leitura direta da coluna painel_executivo.acumulado");
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, recarregarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
 })(window);
