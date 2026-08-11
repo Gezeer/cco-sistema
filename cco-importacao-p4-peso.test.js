@@ -27,6 +27,6 @@ assert.equal(importar({"Peso(T)":"24,60"}),24.6);
 const fonte=fs.readFileSync("cco-importacao-principal.js","utf8");
 assert.doesNotMatch(fonte,/peso_t:\s*\[[^\]]*"peso_total"/,"peso_total não pode ser alias automático de peso_t");
 assert.doesNotMatch(fonte,/peso_t\s*>\s*100|pesoToneladas\.valor\s*>\s*100/,"a correção não pode depender da grandeza do valor");
-assert.match(fs.readFileSync("index.html","utf8"),/cco-importacao-principal\.js", "20260811-painel-catalogo-fallback-leve-v4"/);
+assert.match(fs.readFileSync("index.html","utf8"),/cco-importacao-principal\.js", "20260811-importacao-incremental-retry-v1"/);
 
 console.log("Parser P4: origem em toneladas, Peso Total explícito em kg e ausência de heurística aprovados.");

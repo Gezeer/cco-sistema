@@ -2,12 +2,15 @@
 (function iniciarImportadorPrincipalCCO() {
   "use strict";
 
-  const BUILD = "20260807-p4-peso-parser-v1";
+  const BUILD = "20260811-importacao-incremental-retry-v1";
   const TAMANHO_MAXIMO_LOTE = 2.5 * 1024 * 1024;
-  const TAMANHO_LOTE_RAW = 200;
-  const TAMANHO_LOTE_OPERACOES = 200;
-  const TAMANHO_LOTE_ERROS = 200;
-  const TAMANHO_LOTE_PADRAO = 200;
+  const TAMANHO_LOTE_RAW = 100;
+  const TAMANHO_LOTE_OPERACOES = 100;
+  const TAMANHO_LOTE_ERROS = 100;
+  const TAMANHO_LOTE_PADRAO = 100;
+  const TAMANHO_PAYLOAD_LOTE = 256 * 1024;
+  const PAUSA_ENTRE_LOTES_MS = 75;
+  const MAX_TENTATIVAS_TRANSITORIAS = 4;
   const PERIODOS_ALVO = Array.isArray(window.CCO_PERIODOS_ALVO_IMPORTACAO)?new Set(window.CCO_PERIODOS_ALVO_IMPORTACAO):null;
   const SERVICOS = new Set(["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"]);
   const ALIASES = Object.freeze({
@@ -275,12 +278,12 @@
           }else if(servico==="P9"&&valorP9===null){
             linhasP9Descartadas++;
             erros.push({aba:nomeAba,numero_linha:numeroLinha,codigo:"P9_QDT_EQUIPE_AUSENTE",mensagem:"Linha P9 sem Qdt_Equipe positiva; preservada no RAW e excluída de operacoes.",dados:jsonSeguro(original)});
-            console.log("[P9 PARSER]",{numeroLinha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:null,operacaoGerada:false,motivoDescarte:"P9_QDT_EQUIPE_AUSENTE"});
+            if(window.CCO_DEBUG_P9===true)console.log("[P9 PARSER]",{numeroLinha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:null,operacaoGerada:false,motivoDescarte:"P9_QDT_EQUIPE_AUSENTE"});
           }else{
             const diagnosticoOriginal=servico==="P9"?{...original,campo_origem_p9:extracaoP9.campo}:servico==="P1"?{...original,campo_origem_km_total:resultadoKmP1.campo,valor_original_km_total:resultadoKmP1.valorOriginal}:original;
             const pesoToneladas=servico==="P4"?extrairPesoToneladasP4(original,linha,metadadosCabecalhos,window.CCO_CONFIG_IMPORTACAO?.P4):{valor:normalizarNumero(campo(linha,"peso_t")),origem:null};
             operacoes.push({aba:abaPersistida,numero_linha:numeroLinha,rd,servico,tipo_servico:servico==="P9"?"P9":texto(campo(linha,"tipo_servico"))||null,data_operacao:data,hora:texto(campo(linha,"hora"))||null,turno:texto(campo(linha,"turno"))||null,ra:texto(campo(linha,"ra"))||null,setor:texto(campo(linha,"setor"))||null,circuito:texto(campo(linha,"circuito"))||null,veiculo:texto(campo(linha,"veiculo"))||null,equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"equipe")),qtd_equipe:servico==="P9"?valorP9:normalizarNumero(campo(linha,"qtd_equipe")),peso_t:pesoToneladas.valor,viagens:normalizarNumero(campo(linha,"viagens")),km_total:kmTotal,executado:servico==="P9"?valorP9:executado,velocidade_media:normalizarNumero(campo(linha,"velocidade_media")),tempo_produtivo_minutos:normalizarNumero(campo(linha,"tempo_produtivo_minutos")),tempo_total_minutos:normalizarNumero(campo(linha,"tempo_total_minutos")),tempo_parada_minutos:normalizarNumero(campo(linha,"tempo_parada_minutos")),km_produtivo:normalizarNumero(campo(linha,"km_produtivo")),km_improdutivo:normalizarNumero(campo(linha,"km_improdutivo")),valor_abastecido:normalizarNumero(campo(linha,"valor_abastecido")),valor_original:jsonSeguro(abaP9PorDescricao?{...diagnosticoOriginal,_aba_original:nomeAba,descricao:diagnosticoOriginal.descricao??nomeAba,nome_servico:diagnosticoOriginal.nome_servico??nomeAba}:diagnosticoOriginal),chave_operacao:chave(abaPersistida,numeroLinha,servico,data,rd)});
-            if(servico==="P9")console.log("[P9 PARSER]",{numeroLinha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:valorP9,operacaoGerada:true,motivoDescarte:null});
+            if(servico==="P9"&&window.CCO_DEBUG_P9===true)console.log("[P9 PARSER]",{numeroLinha,Qdt_Catador:original.Qdt_Catador??linha.qdt_catador??null,Qdt_Equipe:original.Qdt_Equipe??linha.qdt_equipe??null,valorEquipeEscolhido:valorP9,operacaoGerada:true,motivoDescarte:null});
           }
         }
         const abaNorm=normalizarCabecalho(nomeAba);
@@ -303,7 +306,7 @@
         for(const item of operacoesAba){const periodo=String(item.data_operacao||"").slice(0,7)||"sem período",atual=porPeriodo.get(periodo)||{registros:0,somaKmTotal:0};atual.registros++;atual.somaKmTotal+=normalizarNumero(item.km_total)||0;porPeriodo.set(periodo,atual);}
         for(const[periodo,resumo]of porPeriodo)console.log("[P1 KM TOTAL][SOMA]",{periodo,registros:resumo.registros,somaKmTotal:resumo.somaKmTotal,origem:"Km_Total"});
       }
-      if(servicoAba==="P9"){console.log("[P9 Parser]",{linhas_lidas:totalAba,linhas_convertidas:operacoesAba.length,linhas_descartadas:linhasP9Descartadas});console.log("[P9 IMPORTAÇÃO]",{descricaoOriginal:nomeAba,servicoNormalizado:"P9",linhasEncontradas:totalAba,linhasConvertidas:operacoesAba.length});}
+      if(servicoAba==="P9")console.log("[P9 IMPORTAÇÃO RESUMO]",{descricaoOriginal:nomeAba,servicoNormalizado:"P9",linhasLidas:totalAba,linhasConvertidas:operacoesAba.length,linhasDescartadas:linhasP9Descartadas});
       const periodosAba = [...new Set(operacoesAba.map(item => item.data_operacao?.slice(0,7)).filter(Boolean))].sort();
       console.info("[IMPORTAÇÃO][ABA]", {
         aba: nomeAba,
@@ -328,15 +331,31 @@
     return TAMANHO_LOTE_PADRAO;
   }
 
-  function lotesAdaptativos(linhas,tamanhoMaximo=TAMANHO_LOTE_PADRAO) {
+  function lotesAdaptativos(linhas,tamanhoMaximo=TAMANHO_LOTE_PADRAO,tamanhoPayloadMaximo=TAMANHO_PAYLOAD_LOTE) {
     const lotes=[]; let atual=[],tamanho=2;
     linhas.forEach(linha => {
       const tamanhoLinha=bytes(linha)+1;
-      if (atual.length && (atual.length>=tamanhoMaximo || tamanho+tamanhoLinha>TAMANHO_MAXIMO_LOTE)) { lotes.push(atual); atual=[]; tamanho=2; }
+      if (atual.length && (atual.length>=tamanhoMaximo || tamanho+tamanhoLinha>Math.min(TAMANHO_MAXIMO_LOTE,tamanhoPayloadMaximo))) { lotes.push(atual); atual=[]; tamanho=2; }
       atual.push(linha); tamanho+=tamanhoLinha;
     });
     if (atual.length) lotes.push(atual);
     return lotes;
+  }
+
+  const aguardar=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  function statusErro(error,resposta){const texto=[error?.status,resposta?.status,error?.code,error?.message,error?.details].filter(Boolean).join(" "),match=texto.match(/\b(429|502|503|504)\b/);return match?Number(match[1]):Number(error?.status||resposta?.status)||null;}
+  async function executarComRetryTransitório(produtor,{tabela,numeroLote,totalLotes,linhas,tamanhoPayloadAprox}={}){
+    for(let tentativa=1;tentativa<=MAX_TENTATIVAS_TRANSITORIAS;tentativa+=1){
+      const inicio=performance.now();let resposta;
+      try{resposta=await produtor();}catch(error){resposta={error,status:error?.status??null};}
+      const duracaoMs=Math.round(performance.now()-inicio),status=statusErro(resposta?.error,resposta);
+      console.log("[IMPORTAÇÃO LOTE]",{tabela,numeroLote,totalLotes,linhas,tamanhoPayloadAprox,tentativa,duracaoMs,status});
+      if(!resposta?.error)return resposta;
+      if(![429,502,503,504].includes(status)||tentativa===MAX_TENTATIVAS_TRANSITORIAS){resposta.error.status=resposta.status??resposta.error.status;throw resposta.error;}
+      const esperaMs=500*2**(tentativa-1)+Math.floor(Math.random()*100);
+      console.warn("[IMPORTAÇÃO RETRY]",{tabela,numeroLote,tentativa,status,esperaMs});
+      await aguardar(esperaMs);
+    }
   }
 
   async function inserirLotes(tabela,linhas,importacaoId,onConflict) {
@@ -351,11 +370,11 @@
     }
     let inseridos=0;
     for(let indice=0;indice<lotes.length;indice+=1){
-      const lote=lotes[indice];
-      const consulta=onConflict?banco().from(tabela).upsert(lote,{onConflict,ignoreDuplicates:false}):banco().from(tabela).insert(lote);
-      const {error}=await consulta;
+      const lote=lotes[indice],tamanhoPayloadAprox=bytes(lote);
+      const {error}=await executarComRetryTransitório(()=>onConflict?banco().from(tabela).upsert(lote,{onConflict,ignoreDuplicates:false}):banco().from(tabela).insert(lote),{tabela,numeroLote:indice+1,totalLotes:lotes.length,linhas:lote.length,tamanhoPayloadAprox});
       if(error){console.error(`[IMPORTAÇÃO] ${tabela} lote ${indice+1}/${lotes.length}`,{quantidade:lote.length,bytes:bytes(lote),code:error.code,message:error.message,details:error.details,hint:error.hint});throw error;}
       inseridos+=lote.length;
+      if(indice<lotes.length-1)await aguardar(PAUSA_ENTRE_LOTES_MS);
     }
     return inseridos;
   }
@@ -453,7 +472,7 @@
   }
 
   async function atualizarAuditoriaEsperada(importacaoId,contagens,grupo) {
-    const detalhes={build:BUILD,periodo:grupo.periodo,esperado_raw:contagens.raw,esperado_operacoes:contagens.operacoes,esperado_dias:contagens.dias,esperado_painel:contagens.painel,esperado_p12:contagens.p12,esperado_p12_executado:contagens.p12ComExecutado};
+    const detalhes={build:BUILD,periodo:grupo.periodo,periodo_hash:grupo.hashPeriodo,esperado_raw:contagens.raw,esperado_operacoes:contagens.operacoes,esperado_dias:contagens.dias,esperado_painel:contagens.painel,esperado_p12:contagens.p12,esperado_p12_executado:contagens.p12ComExecutado};
     const {error}=await banco().from("importacoes").update({total_linhas:contagens.raw,linhas_importadas:contagens.operacoes,linhas_rejeitadas:contagens.erros,detalhes}).eq("id",importacaoId);
     if(error)throw error;
   }
@@ -478,8 +497,9 @@
       grupo.raw=resultado.raw.filter(item=>{const chave=chaveItem(item);return !chave||chave===grupo.periodo;});
       const diasPeriodo=resultado.dias.filter(item=>Number(item.ano)===grupo.ano&&Number(item.mes)===grupo.mes);
       const totaisDias=[...new Set(diasPeriodo.map(item=>Number(item.total_dias)))];
-      if(totaisDias.length!==1)throw new Error(`Dias_Operação inválido em ${grupo.periodo}: esperado um único total oficial, encontrados ${totaisDias.length}.`);
-      grupo.dias=[{ano:grupo.ano,mes:grupo.mes,total_dias:totaisDias[0],dados:diasPeriodo.length===1?diasPeriodo[0].dados:{linhas_originais:diasPeriodo.map(item=>item.dados)}}];
+      if(totaisDias.length>1)throw new Error(`Dias_Operação inválido em ${grupo.periodo}: encontrados ${totaisDias.length} totais oficiais diferentes.`);
+      if(!totaisDias.length)console.warn(`[IMPORTAÇÃO] Dias de operação não configurados para ${grupo.periodo}; será registrado 0 sem inventar previsão.`);
+      grupo.dias=[{ano:grupo.ano,mes:grupo.mes,total_dias:totaisDias[0]??0,dados:diasPeriodo.length===1?diasPeriodo[0].dados:{aviso:"dias_operacao_nao_configurados",linhas_originais:[]}}];
       const metasPeriodo=resultado.painel.filter(item=>(!item.ano&&!item.mes)||(Number(item.ano)===grupo.ano&&Number(item.mes)===grupo.mes));
       grupo.painel=gerarPainelExecutivoPeriodo(grupo,metasPeriodo);
       const linhasRaw=new Set(grupo.raw.map(item=>`${item.aba}|${item.numero_linha}`));
@@ -489,6 +509,18 @@
       grupo.cabecalhos=resultado.cabecalhos;
     }
     return mapas;
+  }
+
+  function jsonCanonico(valor){if(Array.isArray(valor))return`[${valor.map(jsonCanonico).join(",")}]`;if(valor&&typeof valor==="object")return`{${Object.keys(valor).sort().map(chave=>`${JSON.stringify(chave)}:${jsonCanonico(valor[chave])}`).join(",")}}`;return JSON.stringify(valor??null);}
+  function rawCanonico(item){return{aba:item.aba,numero_linha:Number(item.numero_linha),servico:item.servico||null,rd:item.rd||null,data_operacao:item.data_operacao?String(item.data_operacao).slice(0,10):null,ano:Number(item.ano)||null,mes:Number(item.mes)||null,chave_linha:item.chave_linha,dados:item.dados||{},dados_originais:item.dados_originais||{}};}
+  async function hashPeriodoRaw(linhas){const ordenadas=(linhas||[]).map(rawCanonico).sort((a,b)=>String(a.chave_linha).localeCompare(String(b.chave_linha))||a.numero_linha-b.numero_linha),dados=new TextEncoder().encode(jsonCanonico(ordenadas)),digest=await crypto.subtle.digest("SHA-256",dados);return[...new Uint8Array(digest)].map(valor=>valor.toString(16).padStart(2,"0")).join("");}
+  async function verificarPeriodoInalterado(grupo){
+    const hashPeriodo=await hashPeriodoRaw(grupo.raw),{data:existente,error}=await executarComRetryTransitório(()=>banco().from("importacoes").select("id,ano,mes,status,ativa,detalhes").eq("ano",grupo.ano).eq("mes",grupo.mes).eq("ativa",true).in("status",["concluida","concluida_com_avisos"]).maybeSingle(),{tabela:"importacoes",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:0});
+    if(error)throw error;if(!existente)return{inalterado:false,hashPeriodo,existente:null};
+    if(existente.detalhes?.periodo_hash===hashPeriodo)return{inalterado:true,hashPeriodo,existente,origem:"hash_armazenado"};
+    if(existente.detalhes?.periodo_hash)return{inalterado:false,hashPeriodo,existente,origem:"hash_armazenado"};
+    const rawExistente=await buscarTudoPaginado(()=>banco().from("planilha_linhas").select("aba,numero_linha,servico,rd,data_operacao,ano,mes,chave_linha,dados,dados_originais").eq("importacao_id",existente.id).order("chave_linha"));
+    const hashExistente=await hashPeriodoRaw(rawExistente);return{inalterado:hashExistente===hashPeriodo,hashPeriodo,hashExistente,existente,origem:"comparacao_raw"};
   }
 
   function ehRawP9(item){
@@ -663,23 +695,19 @@
     const {data,error}=await banco().from("importacoes").select("id,ano,mes,status,erro").eq("ano",grupo.ano).eq("mes",grupo.mes).eq("status","erro").ilike("erro","%statement timeout%");
     if(error)throw error;
     const ids=(data||[]).map(item=>item.id).filter(Boolean);
-    console.table((data||[]).map(item=>({periodo:grupo.periodo,id:item.id,status:item.status,erro:item.erro})));
-    if(!ids.length)return 0;
-    const {error:erroExclusao}=await banco().from("importacoes").delete().in("id",ids).eq("status","erro").ilike("erro","%statement timeout%");
-    if(erroExclusao)throw erroExclusao;
-    console.info(`[IMPORTAÇÃO] ${grupo.periodo} tentativas com timeout removidas`,{quantidade:ids.length,ids});
+    if(ids.length)console.warn(`[IMPORTAÇÃO] ${grupo.periodo} tentativas antigas com timeout preservadas`,{quantidade:ids.length,ids});
     return ids.length;
   }
 
   async function importarPeriodo(arquivo,hash,usuario,grupo) {
     console.log("[IMPORTAÇÃO] período",grupo.periodo);
-    await medirEtapa(grupo.periodo,"limpar timeouts anteriores",()=>limparImportacoesTimeoutPeriodo(grupo));
+    try{await medirEtapa(grupo.periodo,"consultar timeouts anteriores",()=>limparImportacoesTimeoutPeriodo(grupo));}catch(error){console.warn("[IMPORTAÇÃO] manutenção opcional de timeouts indisponível; importação continuará",{periodo:grupo.periodo,status:statusErro(error),message:error?.message});}
     const {data:anterior,error:erroAnterior}=await banco().from("v_catalogo_periodos").select("importacao_id").eq("ano",grupo.ano).eq("mes",grupo.mes).maybeSingle();
     if(erroAnterior)throw erroAnterior;
     console.log("[IMPORTAÇÃO] importacao_id anterior",anterior?.importacao_id||null);
     const p12Validos=grupo.operacoes.filter(item=>item.servico==="P12"&&item.executado!==null),contagensLocais={raw:grupo.raw.length,operacoes:grupo.operacoes.length,dias:grupo.dias.length,painel:grupo.painel.length,erros:grupo.erros.length,p12:p12Validos.length,p12ComExecutado:p12Validos.length};
-    const detalhes={build:BUILD,periodo:grupo.periodo,esperado_raw:contagensLocais.raw,esperado_operacoes:contagensLocais.operacoes,esperado_dias:contagensLocais.dias,esperado_painel:contagensLocais.painel,esperado_p12:contagensLocais.p12,esperado_p12_executado:contagensLocais.p12ComExecutado};
-    const {data:importacao,error}=await medirEtapa(grupo.periodo,"criar importação",()=>banco().from("importacoes").insert({nome_arquivo:arquivo.name,hash_arquivo:hash,tamanho_arquivo:arquivo.size,usuario_id:usuario.id,usuario_email:usuario.email,usuario_nome:usuario.nome,ano:grupo.ano,mes:grupo.mes,status:"processando",ativa:false,total_abas:grupo.abas.length,total_linhas:grupo.raw.length,periodos:[grupo.periodo],abas:grupo.abas,detalhes}).select("id,ano,mes,status,ativa").single());
+    const detalhes={build:BUILD,periodo:grupo.periodo,periodo_hash:grupo.hashPeriodo,esperado_raw:contagensLocais.raw,esperado_operacoes:contagensLocais.operacoes,esperado_dias:contagensLocais.dias,esperado_painel:contagensLocais.painel,esperado_p12:contagensLocais.p12,esperado_p12_executado:contagensLocais.p12ComExecutado};
+    const {data:importacao,error}=await medirEtapa(grupo.periodo,"criar importação",()=>executarComRetryTransitório(()=>banco().from("importacoes").insert({nome_arquivo:arquivo.name,hash_arquivo:hash,tamanho_arquivo:arquivo.size,usuario_id:usuario.id,usuario_email:usuario.email,usuario_nome:usuario.nome,ano:grupo.ano,mes:grupo.mes,status:"processando",ativa:false,total_abas:grupo.abas.length,total_linhas:grupo.raw.length,periodos:[grupo.periodo],abas:grupo.abas,detalhes}).select("id,ano,mes,status,ativa").single(),{tabela:"importacoes",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:bytes(detalhes)}));
     if(error)throw error;
     console.log("[IMPORTAÇÃO] importacao_id nova",importacao.id);
     try {
@@ -696,7 +724,7 @@
       console.table([{periodo:grupo.periodo,raw:contagens.raw,operacoes:contagens.operacoes,dias:contagens.dias,painel:contagens.painel,p12:contagens.p12,p12ComExecutado:contagens.p12ComExecutado,erros:contagens.erros}]);
       await medirEtapa(grupo.periodo,"atualizar auditoria",()=>atualizarAuditoriaEsperada(importacao.id,contagens,grupo));
       const auditoria=await medirEtapa(grupo.periodo,"validar auditoria",()=>auditarPeriodo(importacao.id,grupo,contagens));
-      const {data:finalizadaRaw,error:erroFinal}=await medirEtapa(grupo.periodo,"finalizar",()=>banco().rpc("finalizar_importacao",{p_importacao_id:importacao.id,p_com_avisos:grupo.erros.length>0}));
+      const {data:finalizadaRaw,error:erroFinal}=await medirEtapa(grupo.periodo,"finalizar",()=>executarComRetryTransitório(()=>banco().rpc("finalizar_importacao",{p_importacao_id:importacao.id,p_com_avisos:grupo.erros.length>0}),{tabela:"rpc.finalizar_importacao",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:0}));
       if(erroFinal)throw erroFinal;
       const finalizada=Array.isArray(finalizadaRaw)?finalizadaRaw[0]:finalizadaRaw;
       const idsEstado=[importacao.id,anterior?.importacao_id].filter(Boolean),{data:estados,error:erroEstados}=await banco().from("importacoes").select("id,status,ativa").in("id",idsEstado);
@@ -709,7 +737,7 @@
       console.log("[IMPORTAÇÃO] validação",auditoria);
       return {grupo,importacao:finalizada||importacao,auditoria:{...auditoria,nova_ativa:novaAtiva,anterior_desativada:anteriorDesativada},anterior:anterior?.importacao_id||null};
     } catch(error) {
-      await banco().from("importacoes").update({status:"erro",ativa:false,erro:String(error.message||error),concluido_em:new Date().toISOString(),linhas_rejeitadas:grupo.erros.length}).eq("id",importacao.id);
+      try{await executarComRetryTransitório(()=>banco().from("importacoes").update({status:"erro",ativa:false,erro:String(error.message||error),concluido_em:new Date().toISOString(),linhas_rejeitadas:grupo.erros.length}).eq("id",importacao.id),{tabela:"importacoes",numeroLote:1,totalLotes:1,linhas:1,tamanhoPayloadAprox:0});}catch(erroEstado){console.warn("[IMPORTAÇÃO] não foi possível marcar a tentativa como erro",{importacaoId:importacao.id,status:statusErro(erroEstado),message:erroEstado?.message});}
       console.error("[IMPORTAÇÃO] erro",{periodo:grupo.periodo,importacaoId:importacao.id,message:error?.message,code:error?.code,details:error?.details,hint:error?.hint,stack:error?.stack});
       throw error;
     }
@@ -723,10 +751,12 @@
     const servicosDetectados=[...new Set(resultado.operacoes.filter(item=>item.data_operacao).map(item=>item.servico))].sort();
     console.info("[IMPORTAÇÃO] pré-validação concluída",{arquivo:arquivo.name,periodos:resultado.periodos,servicos:servicosDetectados,p5:resultado.operacoes.filter(item=>item.servico==="P5"&&item.data_operacao).length,p6:resultado.operacoes.filter(item=>item.servico==="P6"&&item.data_operacao).length});
     if(!servicosDetectados.includes("P5")||!servicosDetectados.includes("P6"))throw new Error("A pré-validação não encontrou dados válidos de P5 e P6. A importação foi interrompida antes de alterar a base.");
-    const grupos=separarPorPeriodo(resultado),importacoes=[],falhas=[];
+    const grupos=separarPorPeriodo(resultado),importacoes=[],falhas=[],ignorados=[];
     for(const grupo of grupos.values()){
       if(PERIODOS_ALVO&&!PERIODOS_ALVO.has(grupo.periodo)){console.info("[IMPORTAÇÃO] período fora do filtro explícito",grupo.periodo);continue;}
       try {
+        const comparacao=await verificarPeriodoInalterado(grupo);grupo.hashPeriodo=comparacao.hashPeriodo;
+        if(comparacao.inalterado){ignorados.push({periodo:grupo.periodo,importacaoId:comparacao.existente.id,origem:comparacao.origem});console.info("[IMPORTAÇÃO INCREMENTAL] período inalterado; gravação ignorada",ignorados.at(-1));continue;}
         importacoes.push(await importarPeriodo(arquivo,hash,usuario,grupo));
       } catch(error) {
         const falha={periodo:grupo.periodo,mensagem:String(error?.message||error),codigo:error?.code||null,detalhes:error?.details||null};
@@ -734,8 +764,9 @@
         console.error("[IMPORTAÇÃO] período rejeitado; os próximos períodos continuarão",falha);
       }
     }
+    window.__CCO_PERIODOS_IGNORADOS_IMPORTACAO__=ignorados;
     window.__CCO_FALHAS_IMPORTACAO__=falhas;
-    if(!importacoes.length)throw new Error(`Nenhum período válido foi importado. ${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join(" | ")}`);
+    if(!importacoes.length&&!ignorados.length)throw new Error(`Nenhum período válido foi importado. ${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join(" | ")}`);
     return importacoes;
   }
 
@@ -753,7 +784,8 @@
       window.CCOKpiService?.invalidarCache?.();window.invalidarCacheEvolucaoExecucaoCCO?.();window.CCOMetricas?.invalidarCaches?.();window.CCOAnalyticsCharts?.destruirTodos?.();
       const periodosImportados=resultados.map(item=>item.grupo.periodo).sort(),falhas=window.__CCO_FALHAS_IMPORTACAO__||[];
       const resumoFalhas=falhas.length?`\n\nPeríodos com erro (${falhas.length}):\n${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join("\n")}`:"";
-      alert(`Importação concluída e auditada. ${periodosImportados.length} períodos ativos: ${periodosImportados.join(", ")}.${resumoFalhas}`);
+      const ignorados=window.__CCO_PERIODOS_IGNORADOS_IMPORTACAO__||[],resumoIgnorados=ignorados.length?` ${ignorados.length} períodos inalterados foram preservados sem regravação: ${ignorados.map(item=>item.periodo).join(", ")}.`:"";
+      alert(`Importação concluída e auditada. ${periodosImportados.length} períodos atualizados: ${periodosImportados.join(", ")||"nenhum"}.${resumoIgnorados}${resumoFalhas}`);
       const catalogo=typeof window.recarregarCatalogoPainelGeral==="function"?await window.recarregarCatalogoPainelGeral():typeof window.carregarCatalogoPeriodosCompleto==="function"?await window.carregarCatalogoPeriodosCompleto():typeof window.carregarCatalogoPeriodos==="function"?await window.carregarCatalogoPeriodos(true):[];
       console.log("[IMPORTAÇÃO] catálogo recarregado",catalogo);
       document.dispatchEvent(new CustomEvent("cco:importacao-concluida",{detail:{periodos:periodosImportados,catalogo}}));
