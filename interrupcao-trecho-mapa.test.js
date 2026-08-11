@@ -1,0 +1,12 @@
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const M=require("./interrupcao-trecho-mapa.js");
+assert.deepEqual(M.parseLatLong("-15.825277, -47.904769"),{latitude:-15.825277,longitude:-47.904769});
+for(const invalida of [null,"","XXX","-15.8","texto, inválido","91, 0","0, -181"])assert.equal(M.parseLatLong(invalida),null);
+assert.deepEqual(M.parseLatLong("90; 180"),{latitude:90,longitude:180});
+const registros=[{lat_long:"-15.8, -47.9",rd:"1"},{lat_long:null,rd:"2"},{lat_long:"XXX",rd:"3"}],antes=JSON.stringify(registros);
+let resultado=M.prepararRegistrosMapa(registros);assert.equal(resultado.validos.length,1);assert.equal(resultado.invalidos.length,2);assert.equal(JSON.stringify(registros),antes);
+resultado=M.prepararRegistrosMapa(registros.slice(0,1));assert.equal(resultado.validos.length,1);assert.equal(resultado.invalidos.length,0);
+assert.deepEqual(M.prepararRegistrosMapa(registros),M.prepararRegistrosMapa(registros));
+const fonte=fs.readFileSync("interrupcao-trecho-mapa.js","utf8"),pagina=fs.readFileSync("interrupcao-trecho.js","utf8"),html=fs.readFileSync("interrupcao-trecho.html","utf8");
+assert.match(fonte,/if\(estado\.mapa\|\|!L\|\|!elemento\)return estado\.mapa/);assert.match(fonte,/estado\.grupo\.clearLayers\(\)/);assert.match(fonte,/markerClusterGroup/);assert.match(fonte,/fitBounds/);assert.match(fonte,/setView\(\[latitude,longitude\],15\)/);assert.match(fonte,/setView\(\[0,0\],2\)/);assert.doesNotMatch(fonte,/Supabase|\.from\(/);assert.match(pagina,/renderizarMapaOcorrencias\?\.\(estado\.filtrados\)/);assert.match(html,/leaflet/);assert.match(html,/20260810-interrupcao-mapa-v1/);
+console.log("Mapa: parser, inválidos, renderização repetida, cluster, bounds, filtros em memória e ausência de consulta adicional validados.");
