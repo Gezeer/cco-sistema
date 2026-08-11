@@ -8,7 +8,7 @@
   const TAMANHO_LOTE_OPERACOES = 200;
   const TAMANHO_LOTE_ERROS = 200;
   const TAMANHO_LOTE_PADRAO = 200;
-  const PERIODOS_ALVO = new Set(Array.isArray(window.CCO_PERIODOS_ALVO_IMPORTACAO)?window.CCO_PERIODOS_ALVO_IMPORTACAO:["2026-06","2026-07"]);
+  const PERIODOS_ALVO = Array.isArray(window.CCO_PERIODOS_ALVO_IMPORTACAO)?new Set(window.CCO_PERIODOS_ALVO_IMPORTACAO):null;
   const SERVICOS = new Set(["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"]);
   const ALIASES = Object.freeze({
     rd:["rd","registro_diario","registro","numero_rd","n_rd"],
@@ -725,7 +725,7 @@
     if(!servicosDetectados.includes("P5")||!servicosDetectados.includes("P6"))throw new Error("A pré-validação não encontrou dados válidos de P5 e P6. A importação foi interrompida antes de alterar a base.");
     const grupos=separarPorPeriodo(resultado),importacoes=[],falhas=[];
     for(const grupo of grupos.values()){
-      if(!PERIODOS_ALVO.has(grupo.periodo)){console.info("[IMPORTAÇÃO] período ignorado nesta correção",grupo.periodo);continue;}
+      if(PERIODOS_ALVO&&!PERIODOS_ALVO.has(grupo.periodo)){console.info("[IMPORTAÇÃO] período fora do filtro explícito",grupo.periodo);continue;}
       try {
         importacoes.push(await importarPeriodo(arquivo,hash,usuario,grupo));
       } catch(error) {
@@ -735,7 +735,7 @@
       }
     }
     window.__CCO_FALHAS_IMPORTACAO__=falhas;
-    if(!importacoes.length)throw new Error(`Nenhum período alvo (2026-06 ou 2026-07) foi importado. ${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join(" | ")}`);
+    if(!importacoes.length)throw new Error(`Nenhum período válido foi importado. ${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join(" | ")}`);
     return importacoes;
   }
 
@@ -749,12 +749,14 @@
       const periodoSelecionado=window.__CCO_PERIODO_ATUAL__||null,resultados=[];
       for(const arquivo of arquivos)resultados.push(...await importarArquivo(arquivo,usuario));
       window.__CCO_IMPORTACOES_POR_PERIODO__={};window.__CCO_IMPORTACAO_ATIVA__=null;delete window.__CCO_CATALOGO_PERIODOS__;
-      window.CCOMetricas?.invalidarCaches?.();window.CCOAnalyticsCharts?.destruirTodos?.();
+      window.CCOPainelService?.invalidarCatalogo?.();window.CCOPageDataCache?.invalidar?.("painel");window.CCOPageDataCache?.invalidar?.("kpi");window.CCOPageDataCache?.invalidar?.("execucao");
+      window.CCOKpiService?.invalidarCache?.();window.invalidarCacheEvolucaoExecucaoCCO?.();window.CCOMetricas?.invalidarCaches?.();window.CCOAnalyticsCharts?.destruirTodos?.();
       const periodosImportados=resultados.map(item=>item.grupo.periodo).sort(),falhas=window.__CCO_FALHAS_IMPORTACAO__||[];
       const resumoFalhas=falhas.length?`\n\nPeríodos com erro (${falhas.length}):\n${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join("\n")}`:"";
       alert(`Importação concluída e auditada. ${periodosImportados.length} períodos ativos: ${periodosImportados.join(", ")}.${resumoFalhas}`);
       const catalogo=typeof window.recarregarCatalogoPainelGeral==="function"?await window.recarregarCatalogoPainelGeral():typeof window.carregarCatalogoPeriodosCompleto==="function"?await window.carregarCatalogoPeriodosCompleto():typeof window.carregarCatalogoPeriodos==="function"?await window.carregarCatalogoPeriodos(true):[];
       console.log("[IMPORTAÇÃO] catálogo recarregado",catalogo);
+      document.dispatchEvent(new CustomEvent("cco:importacao-concluida",{detail:{periodos:periodosImportados,catalogo}}));
       const manter=catalogo.find(item=>item.periodo===periodoSelecionado)||[...catalogo].sort((a,b)=>Number(b.ano)-Number(a.ano)||Number(b.mes)-Number(a.mes))[0];
       if(manter&&typeof window.carregarPeriodoCCO==="function")await window.carregarPeriodoCCO(manter);else if(typeof window.carregarBaseSupabase==="function")await window.carregarBaseSupabase();
       return true;

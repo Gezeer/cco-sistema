@@ -1,19 +1,11 @@
 (function criarComparativoMensalExecucao(global){
   "use strict";
-  const PERIODOS=Object.freeze([
-    Object.freeze({ano:2025,mes:11,rotulo:"Nov/2025"}),
-    Object.freeze({ano:2025,mes:12,rotulo:"Dez/2025"}),
-    Object.freeze({ano:2026,mes:1,rotulo:"Jan/2026"}),
-    Object.freeze({ano:2026,mes:2,rotulo:"Fev/2026"}),
-    Object.freeze({ano:2026,mes:3,rotulo:"Mar/2026"}),
-    Object.freeze({ano:2026,mes:4,rotulo:"Abr/2026"}),
-    Object.freeze({ano:2026,mes:5,rotulo:"Mai/2026"}),
-    Object.freeze({ano:2026,mes:6,rotulo:"Jun/2026"}),
-    Object.freeze({ano:2026,mes:7,rotulo:"Jul/2026"})
-  ]);
+  const INICIO=Object.freeze({ano:2025,mes:11});
+  const MESES=Object.freeze(["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]);
   const chave=(ano,mes)=>`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`;
   const numeroOficial=valor=>valor===null||valor===undefined||valor===""?null:(Number.isFinite(Number(valor))?Number(valor):null);
   function montar({catalogo=[],linhas=[]}={}){
+    const PERIODOS=[...new Map(catalogo.filter(item=>Number(item.ano)*12+Number(item.mes)>=INICIO.ano*12+INICIO.mes).map(item=>[chave(item.ano,item.mes),{ano:Number(item.ano),mes:Number(item.mes),rotulo:`${MESES[Number(item.mes)-1]}/${Number(item.ano)}`}])).values()].sort((a,b)=>a.ano-b.ano||a.mes-b.mes);
     const catalogoPorPeriodo=new Map(catalogo.map(item=>[chave(item.ano,item.mes),item]));
     const linhaPorImportacao=new Map(linhas.map(item=>[`${String(item.importacao_id)}|${chave(item.ano,item.mes)}`,item]));
     const itens=PERIODOS.map(periodo=>{
@@ -31,5 +23,5 @@
       percentuais:itens.map(item=>item.previsto!==null&&item.previsto!==0&&item.acumulado!==null?item.acumulado/item.previsto*100:null)
     };
   }
-  global.CCOExecucaoComparativoMensal=Object.freeze({PERIODOS,chave,montar});
+  global.CCOExecucaoComparativoMensal=Object.freeze({INICIO,chave,montar});
 })(window);
