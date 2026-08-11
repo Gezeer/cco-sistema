@@ -1,0 +1,14 @@
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const css=fs.readFileSync("css/interrupcao-trecho.css","utf8"),html=fs.readFileSync("interrupcao-trecho.html","utf8");
+assert.match(css,/\.interrupcao-page \.interrupcao-cards\{[\s\S]*grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+assert.match(css,/\.interrupcao-page \.interrupcao-cards article\{[\s\S]*min-height:150px/);
+assert.match(css,/grid-template-columns:44px minmax\(0,1fr\)/);
+assert.match(css,/\.interrupcao-page \.interrupcao-cards strong\{[\s\S]*font-size:clamp\(30px,2\.1vw,34px\)[\s\S]*overflow-wrap:normal[\s\S]*word-break:normal/);
+assert.match(css,/#cardDefeito\{[\s\S]*word-break:keep-all/);
+assert.match(css,/#cardTempo,[\s\S]*#cardConcluidos\{[\s\S]*white-space:nowrap/);
+assert.match(css,/@media\(max-width:1200px\)[\s\S]*repeat\(3,minmax\(0,1fr\)\)/);
+assert.match(css,/@media\(max-width:768px\)[\s\S]*repeat\(2,minmax\(0,1fr\)\)/);
+assert.match(css,/@media\(max-width:460px\)[\s\S]*grid-template-columns:minmax\(0,1fr\)/);
+assert.match(css,/@media\(prefers-reduced-motion:reduce\)[\s\S]*transition:none/);
+assert.match(html,/css\/interrupcao-trecho\.css\?v=20260811-interrupcao-cards-premium-v8/);
+assert.equal((html.match(/<section class="interrupcao-cards">[\s\S]*?<\/section>/)||[""])[0].match(/<article>/g)?.length,6);

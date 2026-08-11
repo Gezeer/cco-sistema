@@ -32,3 +32,125 @@
   .interrupcao-page .graficos-grid .chart-card:has(#graficoDefeitos) .chart-box{min-height:370px}
   .interrupcao-page .graficos-grid .chart-ranking .chart-box{height:auto;min-height:460px}
 }
+
+/* Indicadores executivos — escopo exclusivo dos seis cards. */
+.interrupcao-page .interrupcao-cards{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  align-items:stretch;
+  gap:16px;
+}
+.interrupcao-page .interrupcao-cards article{
+  position:relative;
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  align-items:center;
+  gap:13px;
+  min-width:0;
+  min-height:150px;
+  padding:18px 16px;
+  overflow:hidden;
+  box-sizing:border-box;
+  border:1px solid rgba(62,231,255,.18);
+  border-radius:16px;
+  background:linear-gradient(145deg,#07342a,#0a4033);
+  box-shadow:0 12px 28px rgba(0,0,0,.22),inset 0 1px rgba(36,226,154,.12);
+  transition:transform 200ms ease,box-shadow 200ms ease,border-color 200ms ease;
+}
+.interrupcao-page .interrupcao-cards article::before{
+  content:"";
+  position:absolute;
+  inset:0 14px auto;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(36,226,154,.68),rgba(62,231,255,.48),transparent);
+  box-shadow:0 0 9px rgba(36,226,154,.16);
+}
+.interrupcao-page .interrupcao-cards article>i{
+  display:grid;
+  width:44px;
+  height:44px;
+  flex:none;
+  place-items:center;
+  box-sizing:border-box;
+  border:1px solid rgba(62,231,255,.25);
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(36,226,154,.14),rgba(62,231,255,.1));
+  color:#67f1c5;
+  font-size:22px;
+  font-style:normal;
+  line-height:1;
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 5px 14px rgba(0,0,0,.14);
+}
+.interrupcao-page .interrupcao-cards article>div{
+  display:grid;
+  align-content:center;
+  min-width:0;
+}
+.interrupcao-page .interrupcao-cards small{
+  display:-webkit-box;
+  min-height:31px;
+  margin:0 0 7px;
+  overflow:hidden;
+  color:#d8f7ea;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.2;
+  opacity:1;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+}
+.interrupcao-page .interrupcao-cards strong{
+  display:block;
+  min-width:0;
+  margin:0;
+  color:#9ff7c8;
+  font-size:clamp(30px,2.1vw,34px);
+  font-weight:800;
+  line-height:1.05;
+  overflow-wrap:normal;
+  word-break:normal;
+}
+.interrupcao-page .interrupcao-cards #cardDefeito{
+  font-size:clamp(22px,1.65vw,30px);
+  white-space:normal;
+  overflow-wrap:normal;
+  word-break:keep-all;
+}
+.interrupcao-page .interrupcao-cards #cardTempo,
+.interrupcao-page .interrupcao-cards #cardConcluidos{
+  white-space:nowrap;
+}
+.interrupcao-page .interrupcao-cards article span{
+  display:block;
+  margin-top:7px;
+  color:#9fcfc0;
+  font-size:11px;
+  font-weight:500;
+  line-height:1.2;
+  opacity:.92;
+}
+@media(hover:hover) and (pointer:fine){
+  .interrupcao-page .interrupcao-cards article:hover{
+    transform:translateY(-2px);
+    border-color:rgba(62,231,255,.27);
+    box-shadow:0 16px 32px rgba(0,0,0,.27),0 0 18px rgba(36,226,154,.055),inset 0 1px rgba(36,226,154,.15);
+  }
+}
+@media(max-width:1200px){
+  .interrupcao-page .interrupcao-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:768px){
+  .interrupcao-page .interrupcao-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .interrupcao-page .interrupcao-cards article{grid-template-columns:42px minmax(0,1fr);min-height:132px;padding:15px}
+  .interrupcao-page .interrupcao-cards article>i{width:42px;height:42px;font-size:21px}
+  .interrupcao-page .interrupcao-cards strong{font-size:clamp(26px,7vw,30px)}
+  .interrupcao-page .interrupcao-cards #cardDefeito{font-size:clamp(21px,5.7vw,27px)}
+}
+@media(max-width:460px){
+  .interrupcao-page .interrupcao-cards{grid-template-columns:minmax(0,1fr)}
+  .interrupcao-page .interrupcao-cards article{min-height:128px}
+}
+@media(prefers-reduced-motion:reduce){
+  .interrupcao-page .interrupcao-cards article{transition:none}
+  .interrupcao-page .interrupcao-cards article:hover{transform:none}
+}
