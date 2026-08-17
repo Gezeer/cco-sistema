@@ -1,0 +1,16 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
+const minutos=r=>r.minutos??null,consolidar=rs=>{const tempos=rs.map(minutos).filter(Number.isFinite);return{total:rs.length,veiculos:new Set(rs.map(r=>r.veiculo).filter(Boolean)).size,motoristas:0,principalDefeito:"—",tempoMedio:tempos.length?tempos.reduce((a,b)=>a+b,0)/tempos.length:null,concluidos:0,contagens:{}}};
+const contexto={globalThis:{},console,Number,String,Object,Math,Set,Array,Date,InterrupcaoTrechoService:{minutosResposta:minutos,consolidar},module:{exports:{}}};contexto.globalThis=contexto;vm.createContext(contexto);vm.runInContext(fs.readFileSync("interrupcao-trecho-comparativo.js","utf8"),contexto);const C=contexto.module.exports;
+const dados=[
+ {data_ocorrencia:"2025-01-10",mes:1,veiculo:"A",minutos:20,atendimento:"X",termino_socorro:"10:00:00",tipo_defeito:"M",ra:"R"},
+ {data_ocorrencia:"2025-08-13",mes:8,veiculo:"B",minutos:40,atendimento:"X",tipo_defeito:"E",ra:"R"},
+ {data_ocorrencia:"2025-08-14",mes:8,veiculo:"C",minutos:60,atendimento:"X",tipo_defeito:"M",ra:"S"},
+ {data_ocorrencia:"2026-01-11",mes:1,veiculo:"A",minutos:30,atendimento:"X",termino_socorro:"10:00:00",tipo_defeito:"M",ra:"R"},
+ {data_ocorrencia:"2026-08-13",mes:8,veiculo:"D",minutos:50,atendimento:"X",tipo_defeito:"E",ra:"S"}
+];
+assert.equal(C.filtrarPorAno(dados,2025).length,3);assert.equal(C.filtrarPorAno(dados,2026).length,2);
+const eq=C.calcularComparacaoEquivalente(dados);assert.equal(eq.ultimaData,"2026-08-13");assert.equal(eq.corte,"08-13");assert.equal(eq.porAno[2025].length,2);assert.equal(eq.porAno[2026].length,2);assert.ok(!eq.porAno[2025].some(r=>r.data_ocorrencia==="2025-08-14"));
+const c=C.montarComparativo(dados);assert.equal(c.mensal[2025][0],1);assert.equal(c.mensal[2026][0],1);assert.equal(c.mensal[2026][1],null);assert.equal(c.metricas[2025].total,2);assert.equal(c.metricas[2026].total,2);
+const service=fs.readFileSync("services/interrupcaoTrechoService.js","utf8"),pagina=fs.readFileSync("interrupcao-trecho.js","utf8"),html=fs.readFileSync("interrupcao-trecho.html","utf8"),css=fs.readFileSync("css/interrupcao-trecho.css","utf8");
+assert.match(pagina,/filtrarLocal\(\{ignorarAno:true\}\)/);assert.equal((pagina.match(/S\(\)\.consultar\(/g)||[]).length,1);assert.match(service,/global\.CCOCache\?\.invalidar\?\.\("interrupcao"\)/);assert.match(html,/interrupcao-trecho-comparativo\.js\?v=20260816-interrupcao-comparativo-anual-agosto-v1/);assert.match(css,/\.comparativo-graficos/);assert.match(css,/@media\(max-width:768px\)\{\.comparativo-cards,\.comparativo-graficos\{grid-template-columns:1fr\}/);
+console.log("Comparativo anual: anos, meses, corte equivalente até 13/08, memória, cache e mobile validados.");
