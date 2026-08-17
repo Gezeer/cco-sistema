@@ -1,8 +1,9 @@
-const assert=require("node:assert/strict"),fs=require("node:fs");
+const assert=require("node:assert/strict"),fs=require("node:fs");global.formatarDataBR=require("./interrupcao-trecho-formatacao.js").formatarDataBR;
 const M=require("./interrupcao-trecho-mapa.js");
 assert.deepEqual(M.parseLatLong("-15.825277, -47.904769"),{latitude:-15.825277,longitude:-47.904769});
 for(const invalida of [null,"","XXX","-15.8","texto, inválido","91, 0","0, -181"])assert.equal(M.parseLatLong(invalida),null);
 assert.deepEqual(M.parseLatLong("90; 180"),{latitude:90,longitude:180});
+assert.match(M.popup({data_ocorrencia:"2026-02-25",rd:"1"}),/Data:<\/strong> 25\/02\/2026/);
 assert.equal(M.coordenadaNaAreaOperacional({latitude:-15.8,longitude:-47.9},{ra:"PLANO PILOTO"}),true);assert.equal(M.coordenadaNaAreaOperacional({latitude:-16.089656,longitude:-48.508215},{id:3684,ra:"GOIÁS"}),true);assert.equal(M.coordenadaNaAreaOperacional({latitude:-16.093936,longitude:-48.490271},{id:791,ra:"GOIÁS"}),true);assert.equal(M.coordenadaNaAreaOperacional({latitude:15.8,longitude:-47.9},{ra:"GOIÁS"}),false);
 const limitados=M.limitarAreaOperacional(M.prepararRegistrosMapa([{id:1,ra:"PLANO PILOTO",lat_long:"-15.8, -47.9"},{id:3684,ra:"GOIÁS",lat_long:"-16.089656, -48.508215"},{id:2,ra:"PLANO PILOTO",lat_long:"15.8, -47.9"},{id:3,lat_long:"XXX"}]));assert.equal(limitados.validos.length,2);assert.equal(limitados.foraArea.length,1);assert.equal(limitados.invalidos.length,1);assert.match(limitados.foraArea[0].motivo,/latitude positiva/);
 const registros=[{lat_long:"-15.8, -47.9",rd:"1"},{lat_long:null,rd:"2"},{lat_long:"XXX",rd:"3"}],antes=JSON.stringify(registros);

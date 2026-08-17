@@ -64,7 +64,7 @@
     requestAnimationFrame(()=>{mapa.invalidateSize(false);if(preparados.validos.length===1){const {latitude,longitude}=preparados.validos[0].coordenada;mapa.setView([latitude,longitude],15);}else if(preparados.validos.length>1){const pontos=preparados.validos.map(({coordenada})=>[coordenada.latitude,coordenada.longitude]),limites=global.L.latLngBounds(pontos);if(limites.isValid())mapa.fitBounds(limites,{padding:[30,30],maxZoom:15});}else mapa.setView([0,0],2);});
     return preparados;
   }
-  const api=Object.freeze({AREA_OPERACIONAL,AREA_GOIAS_ADJACENTE,parseLatLong,prepararRegistrosMapa,avaliarCoordenadaOperacional,coordenadaNaAreaOperacional,limitarAreaOperacional,calcularDiagnosticoBounds,renderizarMapaOcorrencias});
+  const api=Object.freeze({AREA_OPERACIONAL,AREA_GOIAS_ADJACENTE,parseLatLong,prepararRegistrosMapa,avaliarCoordenadaOperacional,coordenadaNaAreaOperacional,limitarAreaOperacional,calcularDiagnosticoBounds,popup,renderizarMapaOcorrencias});
   global.InterrupcaoTrechoMapa=api;global.renderizarMapaOcorrencias=renderizarMapaOcorrencias;
   if(typeof module!=="undefined")module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
