@@ -34,7 +34,7 @@
     return{totalRegistros,coordenadasValidas:pontos.length,minLat:Math.min(...latitudes),maxLat:Math.max(...latitudes),minLng:Math.min(...longitudes),maxLng:Math.max(...longitudes),centroCalculado,outliers};
   }
   function linhaPopup(rotulo,valor){return limparTexto(valor)?`<div><strong>${rotulo}:</strong> ${escapar(valor)}</div>`:"";}
-  function popup(registro){return `<div class="interrupcao-map-popup">${linhaPopup("Data",registro.data_ocorrencia)}${linhaPopup("RD",registro.rd)}${linhaPopup("Veículo",registro.veiculo)}${linhaPopup("Serviço",registro.servico)}${linhaPopup("RA",registro.ra)}${linhaPopup("Defeito",registro.tipo_defeito)}${linhaPopup("Atendimento",registro.atendimento)}${linhaPopup("Perímetro",registro.perimetro)}${linhaPopup("Descrição",registro.descricao)}</div>`;}
+  function popup(registro){return `<div class="interrupcao-map-popup">${linhaPopup("Data",global.formatarDataBR?.(registro.data_ocorrencia)||registro.data_ocorrencia)}${linhaPopup("RD",registro.rd)}${linhaPopup("Veículo",registro.veiculo)}${linhaPopup("Serviço",registro.servico)}${linhaPopup("RA",registro.ra)}${linhaPopup("Defeito",registro.tipo_defeito)}${linhaPopup("Atendimento",registro.atendimento)}${linhaPopup("Perímetro",registro.perimetro)}${linhaPopup("Descrição",registro.descricao)}</div>`;}
   function tooltip(registro){const partes=[registro.rd&&`RD ${escapar(registro.rd)}`,registro.veiculo&&escapar(registro.veiculo),registro.tipo_defeito&&escapar(registro.tipo_defeito)].filter(Boolean);return partes.join(" · ")||"Ocorrência";}
   function criarMapa(){
     const L=global.L,elemento=document.getElementById("mapaOcorrencias");
