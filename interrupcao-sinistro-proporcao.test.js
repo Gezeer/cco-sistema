@@ -1,0 +1,14 @@
+const assert=require("node:assert/strict");
+const P=require("./interrupcao-sinistro-proporcao.js");
+const sinistro=descricao=>({id:descricao,tipo_defeito:"SINISTRO",descricao});
+assert.equal(P.classificarProporcaoSinistro(sinistro("")).categoria,"Incidente");
+assert.equal(P.classificarProporcaoSinistro(sinistro("Ocorrência registrada sem detalhes adicionais")).categoria,"Incidente");
+assert.equal(P.classificarProporcaoSinistro(sinistro("Colisão leve, sem vítima")).categoria,"Pequena proporção");
+assert.equal(P.classificarProporcaoSinistro(sinistro("Colisão, veículo removido por guincho")).categoria,"Média proporção");
+assert.equal(P.classificarProporcaoSinistro(sinistro("Capotamento com vítima")).categoria,"Grande proporção");
+const fora=P.classificarProporcaoSinistro({tipo_defeito:"MECÂNICO",descricao:"capotamento com vítima"});
+assert.equal(fora.categoria,null);assert.equal(fora.confianca,null);
+assert.equal(P.classificarProporcaoSinistro(sinistro("Não precisou de guincho")).scores.media,0);
+const contagem=P.contarProporcoes([sinistro(""),sinistro("colisão leve sem vítima"),sinistro("capotamento"),{tipo_defeito:"ELÉTRICO",descricao:"capotamento"}]);
+assert.deepEqual(contagem,{total:3,contagens:{Incidente:1,"Pequena proporção":1,"Média proporção":0,"Grande proporção":1}});
+console.log("Classificação de sinistros: incidente, proporções, precedência, negações e escopo validados.");
