@@ -32,8 +32,8 @@
   .interrupcao-page .graficos-grid .chart-card:has(#graficoDefeitos) .chart-box{min-height:370px}
   .interrupcao-page .graficos-grid .chart-ranking .chart-box{height:auto;min-height:460px}
 }
-.sinistro-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.sinistro-cards article{padding:14px 16px;border:1px solid rgba(62,231,255,.2);border-radius:14px;background:linear-gradient(145deg,#0a352b,#06231b)}.sinistro-cards small{display:block;color:#b8dfd3;margin-bottom:5px}.sinistro-cards strong{font-size:1.45rem;color:#3ee7ff}.sinistro-aviso{margin:-10px 2px 0;color:#9fcfc0;font-size:.78rem}.proporcao-cell{min-width:128px;font-weight:700;color:#a7f3d0}
-@media(max-width:768px){.sinistro-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.graficos-grid>.sinistro-grafico-card{grid-column:1/-1;background:linear-gradient(145deg,#07342a,#05271f)!important}.sinistro-grafico-box{height:340px;min-height:320px;max-height:360px;overflow:hidden}.sinistro-grafico-vazio{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;background:#07342a}.sinistro-grafico-vazio[hidden]{display:none}.sinistro-aviso{margin:4px 2px 0;color:#9fcfc0;font-size:.78rem}.proporcao-cell{min-width:128px;font-weight:700;color:#a7f3d0}
+@media(max-width:768px){.sinistro-grafico-box{height:320px;min-height:320px}.graficos-grid>.sinistro-grafico-card{grid-column:1}}
 
 .comparativo-anual{margin-top:22px;background:linear-gradient(145deg,rgba(5,48,39,.98),rgba(3,31,27,.98));border:1px solid rgba(62,231,255,.16)}
 .comparativo-anual[hidden]{display:none!important}

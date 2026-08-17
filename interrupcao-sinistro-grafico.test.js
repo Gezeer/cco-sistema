@@ -1,0 +1,13 @@
+const assert=require("node:assert/strict"),fs=require("node:fs");
+const P=require("./interrupcao-sinistro-proporcao.js");
+const html=fs.readFileSync("interrupcao-trecho.html","utf8"),js=fs.readFileSync("interrupcao-trecho.js","utf8"),css=fs.readFileSync("css/interrupcao-trecho.css","utf8");
+for(const id of ["cardSinistrosTotal","cardSinistrosIncidente","cardSinistrosPequena","cardSinistrosMedia","cardSinistrosGrande"])assert.doesNotMatch(html,new RegExp(id),`${id} não deve existir`);
+assert.doesNotMatch(html,/class="sinistro-cards"/);assert.doesNotMatch(css,/\.sinistro-cards/);
+assert.match(html,/sinistro-grafico-card/);assert.match(html,/sinistrosProporcaoTotal/);assert.match(html,/Nenhum sinistro no período selecionado\./);assert.match(html,/Classificação estimada automaticamente a partir da descrição da ocorrência\./);
+assert.deepEqual(P.CATEGORIAS,["Incidente","Pequena proporção","Média proporção","Grande proporção"]);
+const dados=[{tipo_defeito:"SINISTRO",descricao:""},{tipo_defeito:"SINISTRO",descricao:"colisão leve sem vítima"},{tipo_defeito:"SINISTRO",descricao:"capotamento"},{tipo_defeito:"MECÂNICO",descricao:"capotamento"}],r=P.contarProporcoes(dados),percentuais=P.CATEGORIAS.map(c=>r.contagens[c]/r.total*100);
+assert.equal(Object.values(r.contagens).reduce((a,b)=>a+b,0),r.total);assert.ok(Math.abs(percentuais.reduce((a,b)=>a+b,0)-100)<0.01);
+assert.match(js,/criarGraficoSinistrosProporcao\(estado\.filtrados\)/);assert.match(js,/estado\.charts\[id\]\?\.destroy\(\)/);assert.match(js,/delete estado\.charts\[id\]/);assert.match(js,/if\(!resumo\.total\)/);assert.match(js,/indexAxis:horizontal\?"y":"x"/);
+assert.match(css,/\.graficos-grid>\.sinistro-grafico-card\{grid-column:1\/-1/);assert.match(css,/sinistro-grafico-box\{height:340px;min-height:320px;max-height:360px/);assert.match(css,/@media\(max-width:768px\).*sinistro-grafico-box\{height:320px/s);
+assert.equal((html.match(/id="graficoSinistrosProporcao"/g)||[]).length,1);assert.match(html,/20260817-interrupcao-sinistro-grafico-v3/g);
+console.log("Gráfico operacional de sinistros: estrutura, totais, percentuais, atualização, estado vazio, ciclo Chart.js e mobile validados.");
