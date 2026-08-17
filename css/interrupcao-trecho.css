@@ -167,11 +167,15 @@
 .interrupcao-page .content,
 .interrupcao-page .graficos-grid,
 .interrupcao-page .graficos-grid>.chart-wide{min-width:0;max-width:100%}
-.interrupcao-page .graficos-grid .chart-card:has(#graficoDatas) .chart-box{display:block;overflow:hidden;min-width:0}
-.interrupcao-page .evolucao-scroll{width:100%;height:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#24e29a #062b23}
-.interrupcao-page .evolucao-scroll-track{min-width:100%;height:100%}
+.interrupcao-page .graficos-grid .chart-card:has(#graficoDatas) .chart-box{display:block;flex:0 0 400px;height:400px;min-height:400px;max-height:400px;overflow:hidden;min-width:0}
+.interrupcao-page .evolucao-scroll{width:100%;height:400px;min-height:400px;max-height:400px;max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#24e29a #062b23}
+.interrupcao-page .evolucao-scroll-track{min-width:100%;height:400px;min-height:400px;max-height:400px}
 .interrupcao-page .evolucao-scroll-track canvas{display:block;width:100%!important;max-width:none!important;height:100%!important;touch-action:pan-x pan-y}
 .interrupcao-page .evolucao-scroll::-webkit-scrollbar{height:7px}
 .interrupcao-page .evolucao-scroll::-webkit-scrollbar-track{border-radius:999px;background:#062b23}
 .interrupcao-page .evolucao-scroll::-webkit-scrollbar-thumb{border:1px solid #062b23;border-radius:999px;background:#24e29a}
 .interrupcao-page .evolucao-scroll:not(.is-scrollable){overflow-x:hidden}
+@media(max-width:768px){
+  .interrupcao-page .graficos-grid .chart-card:has(#graficoDatas) .chart-box{flex-basis:340px;height:340px;min-height:340px;max-height:340px}
+  .interrupcao-page .evolucao-scroll,.interrupcao-page .evolucao-scroll-track{height:340px;min-height:340px;max-height:340px}
+}
