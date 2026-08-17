@@ -2,6 +2,7 @@
   "use strict";
 
   const CORES=Object.freeze({mecanico:"#22c55e",borracharia:"#f59e0b",eletrica:"#22d3ee",hidraulico:"#3b82f6",sinistro:"#ef4444",atolado:"#a78bfa",outros:"#94a3b8"});
+  const AREA_OPERACIONAL=Object.freeze({minLat:-16.5,maxLat:-15.3,minLng:-49,maxLng:-47.2});
   const estado={mapa:null,grupo:null,legenda:null,camadaBase:null};
   const limparTexto=valor=>String(valor??"").trim();
   const escapar=valor=>limparTexto(valor).replace(/[&<>"']/g,caractere=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[caractere]));
@@ -15,6 +16,8 @@
     return Number.isFinite(latitude)&&Number.isFinite(longitude)&&latitude>=-90&&latitude<=90&&longitude>=-180&&longitude<=180?{latitude,longitude}:null;
   }
   function prepararRegistrosMapa(registros=[]){const validos=[],invalidos=[];(registros||[]).forEach(registro=>{const coordenada=parseLatLong(registro?.lat_long);(coordenada?validos:invalidos).push(coordenada?{registro,coordenada}:registro)});return{validos,invalidos};}
+  function coordenadaNaAreaOperacional({latitude,longitude}={}){return Number.isFinite(latitude)&&Number.isFinite(longitude)&&latitude>=AREA_OPERACIONAL.minLat&&latitude<=AREA_OPERACIONAL.maxLat&&longitude>=AREA_OPERACIONAL.minLng&&longitude<=AREA_OPERACIONAL.maxLng;}
+  function limitarAreaOperacional(preparados){const validos=[],foraArea=[];preparados.validos.forEach(item=>(coordenadaNaAreaOperacional(item.coordenada)?validos:foraArea).push(item));return{validos,invalidos:preparados.invalidos,foraArea};}
   function calcularDiagnosticoBounds(preparados,totalRegistros=0){
     const pontos=preparados.validos.map(item=>item.coordenada);
     if(!pontos.length)return{totalRegistros,coordenadasValidas:0,minLat:null,maxLat:null,minLng:null,maxLng:null,centroCalculado:null,outliers:[]};
@@ -43,11 +46,12 @@
   }
   function atualizarLegenda(chaves){const elemento=estado.legenda?.getContainer?.();if(!elemento)return;const nomes={mecanico:"Mecânico",borracharia:"Borracharia",eletrica:"Elétrica",hidraulico:"Hidráulico",sinistro:"Sinistro",atolado:"Atolado",outros:"Outros"},itens=[...chaves].map(chave=>`<span><i style="--marker-color:${CORES[chave]}"></i>${nomes[chave]}</span>`).join("");elemento.innerHTML=`<details open><summary>Defeitos</summary>${itens}</details>`;}
   function renderizarMapaOcorrencias(registros=[]){
-    const preparados=prepararRegistrosMapa(registros),contador=document.getElementById("mapaOcorrenciasContador"),vazio=document.getElementById("mapaOcorrenciasVazio"),mapa=criarMapa();
+    const preparados=limitarAreaOperacional(prepararRegistrosMapa(registros)),contador=document.getElementById("mapaOcorrenciasContador"),vazio=document.getElementById("mapaOcorrenciasVazio"),mapa=criarMapa();
+    preparados.foraArea.forEach(({registro})=>console.warn("[INTERRUPCAO COORDENADA FORA DA AREA]",{id:registro?.id,rd:registro?.rd,ra:registro?.ra,lat_long:registro?.lat_long,motivo:"coordenada válida, porém fora da área operacional plausível; mantida na tabela e ignorada somente no mapa"}));
     const diagnostico=calcularDiagnosticoBounds(preparados,registros?.length||0);
     if(global.CCO_DEBUG_MAPA_BOUNDS)console.info("[INTERRUPÇÃO MAPA BOUNDS]",diagnostico);
     if(diagnostico.outliers.length)console.warn("[INTERRUPÇÃO MAPA BOUNDS] Coordenadas geograficamente distantes (mantidas no mapa):",diagnostico.outliers);
-    if(contador)contador.textContent=`${preparados.validos.length.toLocaleString("pt-BR")} georreferenciadas • ${preparados.invalidos.length.toLocaleString("pt-BR")} sem coordenada`;
+    if(contador)contador.textContent=`${preparados.validos.length.toLocaleString("pt-BR")} georreferenciadas • ${preparados.invalidos.length.toLocaleString("pt-BR")} sem coordenada • ${preparados.foraArea.length.toLocaleString("pt-BR")} fora da área`;
     if(!mapa||!estado.grupo)return preparados;
     estado.grupo.clearLayers();
     const categorias=new Set();
@@ -57,7 +61,7 @@
     requestAnimationFrame(()=>{mapa.invalidateSize(false);if(preparados.validos.length===1){const {latitude,longitude}=preparados.validos[0].coordenada;mapa.setView([latitude,longitude],15);}else if(preparados.validos.length>1){const pontos=preparados.validos.map(({coordenada})=>[coordenada.latitude,coordenada.longitude]),limites=global.L.latLngBounds(pontos);if(limites.isValid())mapa.fitBounds(limites,{padding:[30,30],maxZoom:15});}else mapa.setView([0,0],2);});
     return preparados;
   }
-  const api=Object.freeze({parseLatLong,prepararRegistrosMapa,calcularDiagnosticoBounds,renderizarMapaOcorrencias});
+  const api=Object.freeze({AREA_OPERACIONAL,parseLatLong,prepararRegistrosMapa,coordenadaNaAreaOperacional,limitarAreaOperacional,calcularDiagnosticoBounds,renderizarMapaOcorrencias});
   global.InterrupcaoTrechoMapa=api;global.renderizarMapaOcorrencias=renderizarMapaOcorrencias;
   if(typeof module!=="undefined")module.exports=api;
 })(typeof window!=="undefined"?window:globalThis);
