@@ -189,10 +189,11 @@
     const servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),chaveCompleta=[PAGINA,periodo.ano,periodo.mes,servico,periodo.importacao_id].join("|");
     if (cargaPromise?.chave === chaveCompleta) return cargaPromise.promise;
     const promise = (async () => {
+      const medir=(campo,tarefa)=>PAGINA==="execucao"&&window.CCOExecucaoPerformance?.medir?window.CCOExecucaoPerformance.medir(campo,tarefa):tarefa();
       const [linhas, painelLinhas, registroDiasOperacao] = await Promise.all([
-        buscarTodasOperacoes(periodo),
-        buscarPainel(periodo),
-        window.CCOPainelService.diasOperacaoPorPeriodo(periodo.importacao_id,periodo.ano,periodo.mes)
+        medir("operacoesMs",()=>buscarTodasOperacoes(periodo)),
+        medir("painelMs",()=>buscarPainel(periodo)),
+        medir("diasOperacaoMs",()=>window.CCOPainelService.diasOperacaoPorPeriodo(periodo.importacao_id,periodo.ano,periodo.mes))
       ]);
       const diasOperacao=Number(registroDiasOperacao?.total_dias);
       if(!Number.isInteger(diasOperacao)||diasOperacao<=0)throw new Error(`Dias de operação indisponíveis para ${periodo.ano}-${pad(periodo.mes)}.`);

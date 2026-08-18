@@ -6,6 +6,8 @@
   const diasOperacaoCache=new Map();
   const diasOperacaoRegistros=new Map(),diasOperacaoPendentes=new Map();
   const importacaoPeriodoCache=new Map(),importacaoPeriodoPendentes=new Map();
+  const importacoesCatalogoPendentes=new Map();
+  const perf=(tipo,quantidade=1)=>global.CCOExecucaoPerformance?.contar?.(tipo,quantidade);
   const contador=global.__CCO_CONTADOR_CATALOGO__=global.__CCO_CONTADOR_CATALOGO__||{consultasRPC:0,paginacaoCompleta:0,consumidores:0,promiseCompartilhada:false};
   if(!Number.isFinite(contador.chamadasLegado))contador.chamadasLegado=0;
 
@@ -43,7 +45,7 @@
   }
   async function carregarDiasOperacao(catalogo){
     const ids=[...new Set((catalogo||[]).map(item=>String(item.importacao_id||"")).filter(Boolean))].sort(),chave=global.CCOCache.chave("dias-operacao-catalogo",ids);
-    return global.CCOCache.lembrar(chave,async()=>{const inicio=typeof performance!=="undefined"?performance.now():Date.now();if(!ids.length)return{linhas:[],duracaoMs:0,requests:0};const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias,dados").in("importacao_id",ids).order("ano",{ascending:false}).order("mes",{ascending:false});if(error)throw error;const duracaoMs=(typeof performance!=="undefined"?performance.now():Date.now())-inicio;console.log("[DIAS OPERACAO PERFORMANCE]",{duracaoMs,requests:1,registros:(data||[]).length,periodos:ids.length});return{linhas:data||[],duracaoMs,requests:1};},TTL);
+    return global.CCOCache.lembrar(chave,async()=>{const inicio=typeof performance!=="undefined"?performance.now():Date.now();if(!ids.length)return{linhas:[],duracaoMs:0,requests:0};perf("requestsSupabase");const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias,dados").in("importacao_id",ids).order("ano",{ascending:false}).order("mes",{ascending:false});if(error)throw error;const duracaoMs=(typeof performance!=="undefined"?performance.now():Date.now())-inicio;console.log("[DIAS OPERACAO PERFORMANCE]",{duracaoMs,requests:1,registros:(data||[]).length,periodos:ids.length});return{linhas:data||[],duracaoMs,requests:1};},TTL);
   }
 
   async function produzirCatalogo() {
@@ -61,8 +63,10 @@
     const diasResultado=await carregarDiasOperacao(resultado),diasOperacao=diasResultado.linhas,diasOperacaoMs=diasResultado.duracaoMs;
       if(global.CCOMobilePerformance)global.CCOMobilePerformance.metricas.consultasSupabase+=1;
       diasOperacaoCache.clear();
+      diasOperacaoRegistros.clear();
       for(const item of diasOperacao||[]){
         const periodo=`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`;
+        if(!diasOperacaoRegistros.has(periodo))diasOperacaoRegistros.set(periodo,item);
         if(item.importacao_id)diasOperacaoCache.set(`${item.importacao_id}|${periodo}`,Number(item.total_dias)||0);
         if(!diasOperacaoCache.has(periodo))diasOperacaoCache.set(periodo,Number(item.total_dias)||0);
       }
@@ -86,7 +90,7 @@
   }
   const catalogo=()=>getCatalogoPeriodos();
   function invalidarDiasOperacao(){global.CCOCache?.invalidar("dias-operacao-catalogo");global.CCOCache?.invalidar("dias-operacao-periodo");diasOperacaoCache.clear();diasOperacaoRegistros.clear();diasOperacaoPendentes.clear();}
-  function invalidarCatalogo(){global.CCOCache?.invalidar("periodos");invalidarDiasOperacao();importacaoPeriodoCache.clear();importacaoPeriodoPendentes.clear();global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;}
+  function invalidarCatalogo(){global.CCOCache?.invalidar("periodos");invalidarDiasOperacao();importacaoPeriodoCache.clear();importacaoPeriodoPendentes.clear();importacoesCatalogoPendentes.clear();global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;}
   async function recarregarCatalogo(){invalidarCatalogo();return getCatalogoPeriodos();}
   function obterDiasOperacao(ano,mes,importacaoId=null){
     const periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`;
@@ -94,10 +98,12 @@
   }
   async function diasOperacaoPorPeriodo(importacaoId,ano,mes){
     const id=validarId(importacaoId),periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`,salvo=diasOperacaoRegistros.get(periodo);
-    if(salvo){if(global.CCO_DEBUG_PAINEL_DIAS===true)console.log("[PAINEL DIAS OPERACAO]",{fonte:"cache-memoria-valido",ano:Number(ano),mes:Number(mes),importacaoId:id,resultadoBanco:salvo.total_dias,cacheHit:true});return salvo;}
-    if(diasOperacaoPendentes.has(periodo))return diasOperacaoPendentes.get(periodo);
+    if(salvo){perf("cacheHits");if(global.CCO_DEBUG_PAINEL_DIAS===true)console.log("[PAINEL DIAS OPERACAO]",{fonte:"cache-memoria-valido",ano:Number(ano),mes:Number(mes),importacaoId:id,resultadoBanco:salvo.total_dias,cacheHit:true});return salvo;}
+    const totalCache=Number(diasOperacaoCache.get(`${id}|${periodo}`)??diasOperacaoCache.get(periodo));
+    if(Number.isInteger(totalCache)&&totalCache>0){perf("cacheHits");return{importacao_id:id,ano:Number(ano),mes:Number(mes),total_dias:totalCache,dados:null};}
+    if(diasOperacaoPendentes.has(periodo)){perf("cacheHits");return diasOperacaoPendentes.get(periodo);}
     const promessa=(async()=>{
-      const usuario=await global.CCOSupabase?.exigirSessao?.({redirecionar:false});if(!usuario)throw new Error("Sessão autenticada obrigatória para consultar dias_operacao.");
+      const usuario=await global.CCOSupabase?.exigirSessao?.({redirecionar:false});if(!usuario)throw new Error("Sessão autenticada obrigatória para consultar dias_operacao.");perf("requestsSupabase");
       const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias,dados").eq("ano",Number(ano)).eq("mes",Number(mes)).maybeSingle();
       if(error)throw error;
       const total=Number(data?.total_dias),oficial=Number.isInteger(total)&&total>0?data:null;
@@ -113,6 +119,33 @@
       global.CCOSupabase.paginar(()=>cliente.from("painel_executivo").select("id,importacao_id,ano,mes,servico").eq("ano",a).eq("mes",m).order("id"))
     ]),normalizar=valor=>global.CCOMetricas?.normalizarServico?.(valor)||String(valor||"").trim().toUpperCase(),ids=new Set([String(importacaoPreferida||""),...operacoes.map(item=>String(item.importacao_id||"")),...painel.map(item=>String(item.importacao_id||""))].filter(Boolean)),candidatos=[...ids].map(id=>{const linhasOperacoes=operacoes.filter(item=>String(item.importacao_id)===id),linhasPainel=painel.filter(item=>String(item.importacao_id)===id),servicosOperacoes=[...new Set(linhasOperacoes.map(item=>normalizar(item.servico||item.aba)).filter(Boolean))],servicosPainel=[...new Set(linhasPainel.map(item=>normalizar(item.servico)).filter(Boolean))],servicos=[...new Set([...servicosPainel,...servicosOperacoes])];return{importacao_id:id,ano:a,mes:m,periodo,operacoesCount:linhasOperacoes.length,painelExecutivoCount:linhasPainel.length,servicosOperacoes,servicosPainel,servicos};}).sort((x,y)=>y.servicos.length-x.servicos.length||(y.operacoesCount+y.painelExecutivoCount)-(x.operacoesCount+x.painelExecutivoCount)||Number(y.importacao_id===String(importacaoPreferida))-Number(x.importacao_id===String(importacaoPreferida))),resultado=candidatos[0]?{...candidatos[0],candidatos}:null;if(resultado)importacaoPeriodoCache.set(periodo,resultado);return resultado;})();
     importacaoPeriodoPendentes.set(periodo,promessa);try{return await promessa;}finally{importacaoPeriodoPendentes.delete(periodo);}
+  }
+  async function resolverImportacoesCatalogo(catalogo){
+    const periodos=(catalogo||[]).map(item=>({...item,ano:Number(item.ano),mes:Number(item.mes),periodo:`${Number(item.ano)}-${String(Number(item.mes)).padStart(2,"0")}`}));
+    const chave=periodos.map(item=>`${item.periodo}:${item.importacao_id||""}`).join("|");
+    if(importacoesCatalogoPendentes.has(chave)){perf("cacheHits");return importacoesCatalogoPendentes.get(chave);}
+    const promessa=(async()=>{
+      const faltantes=periodos.filter(item=>!importacaoPeriodoCache.has(item.periodo));
+      perf("cacheHits",periodos.length-faltantes.length);
+      if(faltantes.length){
+        const desejados=new Set(faltantes.map(item=>item.periodo)),primeiro=[...faltantes].sort((a,b)=>a.ano-b.ano||a.mes-b.mes)[0],ultimo=[...faltantes].sort((a,b)=>b.ano-a.ano||b.mes-a.mes)[0],inicio=`${primeiro.periodo}-01`,fim=ultimo.mes===12?`${ultimo.ano+1}-01-01`:`${ultimo.ano}-${String(ultimo.mes+1).padStart(2,"0")}-01`,anos=[...new Set(faltantes.map(item=>item.ano))],cliente=db();
+        perf("requestsSupabase",2);
+        const resultados=await Promise.allSettled([
+          global.CCOSupabase.paginar(()=>cliente.from(`operacoes`).select("id,importacao_id,servico,aba,data_operacao").gte("data_operacao",inicio).lt("data_operacao",fim).order("id")),
+          global.CCOSupabase.paginar(()=>cliente.from("painel_executivo").select("id,importacao_id,ano,mes,servico").in("ano",anos).order("id"))
+        ]);
+        const operacoes=resultados[0].status==="fulfilled"?resultados[0].value:[],painel=resultados[1].status==="fulfilled"?resultados[1].value:[];
+        if(resultados.some(item=>item.status==="rejected"))throw resultados.find(item=>item.status==="rejected").reason;
+        const normalizar=valor=>global.CCOMetricas?.normalizarServico?.(valor)||String(valor||"").trim().toUpperCase();
+        for(const item of faltantes){
+          const ops=operacoes.filter(linha=>String(linha.data_operacao||"").slice(0,7)===item.periodo),paineis=painel.filter(linha=>`${Number(linha.ano)}-${String(Number(linha.mes)).padStart(2,"0")}`===item.periodo&&desejados.has(item.periodo)),ids=new Set([String(item.importacao_id||""),...ops.map(linha=>String(linha.importacao_id||"")),...paineis.map(linha=>String(linha.importacao_id||""))].filter(Boolean));
+          const candidatos=[...ids].map(id=>{const linhasOperacoes=ops.filter(linha=>String(linha.importacao_id)===id),linhasPainel=paineis.filter(linha=>String(linha.importacao_id)===id),servicosOperacoes=[...new Set(linhasOperacoes.map(linha=>normalizar(linha.servico||linha.aba)).filter(Boolean))],servicosPainel=[...new Set(linhasPainel.map(linha=>normalizar(linha.servico)).filter(Boolean))],servicos=[...new Set([...servicosPainel,...servicosOperacoes])];return{importacao_id:id,ano:item.ano,mes:item.mes,periodo:item.periodo,operacoesCount:linhasOperacoes.length,painelExecutivoCount:linhasPainel.length,servicosOperacoes,servicosPainel,servicos};}).sort((x,y)=>y.servicos.length-x.servicos.length||(y.operacoesCount+y.painelExecutivoCount)-(x.operacoesCount+x.painelExecutivoCount)||Number(y.importacao_id===String(item.importacao_id))-Number(x.importacao_id===String(item.importacao_id)));
+          if(candidatos[0])importacaoPeriodoCache.set(item.periodo,{...candidatos[0],candidatos});
+        }
+      }
+      return periodos.map(item=>importacaoPeriodoCache.get(item.periodo)||null);
+    })();
+    importacoesCatalogoPendentes.set(chave,promessa);try{return await promessa;}finally{importacoesCatalogoPendentes.delete(chave);}
   }
   async function ultimoPeriodo() { return (await catalogo())[0] || null; }
   async function porImportacao(importacaoId) {
@@ -137,5 +170,5 @@
     if(data)global.CCODiagnosticoP9Etapa?.("services/painelService.js:p9PorPeriodo → painel_executivo.acumulado",data.acumulado,"leitura direta da coluna painel_executivo.acumulado");
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, invalidarDiasOperacao, recarregarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, diasOperacaoPorPeriodo, resolverImportacaoPeriodo, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, invalidarDiasOperacao, recarregarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, diasOperacaoPorPeriodo, resolverImportacaoPeriodo, resolverImportacoesCatalogo, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
 })(window);

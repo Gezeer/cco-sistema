@@ -2,6 +2,9 @@
 (function iniciarPaginaExecucao(){
   window.CCO_PAGE = "execucao";
   const n=valor=>{const numero=Number(valor);return Number.isFinite(numero)?numero:0;};
+  const relogioExecucao=()=>globalThis.performance?.now?.()??Date.now();
+  const performanceExecucao=window.CCOExecucaoPerformance=(()=>{let inicio=relogioExecucao(),dados={};const campos=["authMs","catalogoMs","resolverPeriodoMs","diasOperacaoMs","painelMs","operacoesMs","cardsMs","historicoMs","graficosMs"];const ativo=()=>window.CCO_DEBUG_EXECUCAO_PERFORMANCE===true;return{reiniciar(){inicio=relogioExecucao();dados=Object.fromEntries(campos.map(campo=>[campo,0]));dados.requestsSupabase=0;dados.cacheHits=0;},async medir(campo,tarefa){if(!ativo())return tarefa();const t=relogioExecucao();try{return await tarefa();}finally{dados[campo]=(dados[campo]||0)+(relogioExecucao()-t);}},contar(campo,qtd=1){if(ativo())dados[campo]=(dados[campo]||0)+qtd;},relatar(){if(!ativo())return;console.log("[EXECUCAO PERFORMANCE]",{...Object.fromEntries(campos.map(campo=>[campo,Number((dados[campo]||0).toFixed(2))])),totalMs:Number((relogioExecucao()-inicio).toFixed(2)),requestsSupabase:dados.requestsSupabase||0,cacheHits:dados.cacheHits||0});}};})();
+  performanceExecucao.reiniciar();
   const IDS_GRAFICOS_EXECUCAO=Object.freeze(["graficoExecDetalheEvolucao","graficoExecDetalhePeso","graficoExecDetalheViagens","graficoExecDetalheKm","graficoExecDetalheEquipe","graficoExecDetalheHoras","graficoExecDetalheDistancia","graficoExecDetalheTempo"]);
   window.IDS_GRAFICOS_EXECUCAO=IDS_GRAFICOS_EXECUCAO;
   function instalarRenderizacaoDiretaExecucao(){
@@ -59,10 +62,12 @@
     try{const publicada=await window.carregarPeriodoCCO(normalizado);if(publicada===false||!contextoExecucaoAtualCCO(contexto)){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{ano:normalizado.ano,mes:normalizado.mes,servico,importacaoId:normalizado.importacao_id,chave:chaveRequisicao});return false;}}catch(error){window.animarCardsExecucaoCCO?.({carregando:false,erro:error});throw error;}
     if(typeof window.definirPeriodoExecucaoAtivoCCO==="function")window.definirPeriodoExecucaoAtivoCCO(normalizado.ano,normalizado.mes);else{window.filtroExecucaoAnoAtual=normalizado.ano;window.filtroExecucaoMesAtual=normalizado.mes;}
     localStorage.setItem("cco_execucao_periodo",JSON.stringify({ano:Number(normalizado.ano),mes:Number(normalizado.mes)}));
+    const inicioCards=relogioExecucao();
     if(typeof carregarFiltroMesesComparativoExecucao==="function")carregarFiltroMesesComparativoExecucao();
     if(typeof renderTabelaContratualMensal==="function")renderTabelaContratualMensal();
     if(typeof renderComparativoMesesExecucao==="function")renderComparativoMesesExecucao();
     const codigo=window.obterServicoAtivo?.();if(codigo&&codigo!=="geral"&&contextoExecucaoAtualCCO(contexto))window.renderDetalheServicoMensal?.(codigo,contexto);
+    performanceExecucao.contar("cardsMs",relogioExecucao()-inicioCards);if(!codigo||codigo==="geral")performanceExecucao.relatar();
     return true;
   }
   async function renderizarPeriodoExecucao(periodo){return window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("renderizarPeriodoExecucao","execucao.js",()=>renderizarPeriodoExecucaoInterno(periodo),periodo?.periodo||""):renderizarPeriodoExecucaoInterno(periodo);}
@@ -141,7 +146,12 @@
   }
   window.atualizarEstadoEvolucaoHistoricaCCO=atualizarEstadoEvolucaoHistoricaCCO;
   async function buscarEvolucaoServicoCCO(servico){
-    const catalogoCompleto=await carregarCatalogoExecucaoCCO(),inicioHistorico=2025*12+11,catalogoBase=catalogoCompleto.filter(item=>Number(item.ano)*12+Number(item.mes)>=inicioHistorico).sort((a,b)=>Number(a.ano)-Number(b.ano)||Number(a.mes)-Number(b.mes)),resolucoes=await Promise.allSettled(catalogoBase.map(periodo=>window.CCOPainelService.resolverImportacaoPeriodo(periodo.ano,periodo.mes,periodo.importacao_id))),catalogo=catalogoBase.map((periodo,indice)=>{const resultado=resolucoes[indice];if(resultado.status==="rejected"){console.error("[EXECUCAO GRAFICO ERRO]",resultado.reason);return{...periodo,resolucaoImportacaoErro:resultado.reason?.message||String(resultado.reason)};}const resolvida=resultado.value;return resolvida?.importacao_id?{...periodo,importacao_id:resolvida.importacao_id,resolucaoImportacao:resolvida}:periodo;}),assinatura=catalogo.map(item=>`${periodoChave(item.ano,item.mes)}:${item.importacao_id}`).join("|"),chaveCache=`${VERSAO_CACHE_EVOLUCAO_EXECUCAO}|evolucao|${servico}|${assinatura}`,chaveCacheResolvida=`${VERSAO_RESOLUCAO_HISTORICO}|${chaveCache}`,armazenado=cacheEvolucaoExecucao.get(chaveCacheResolvida);
+    const catalogoCompleto=await carregarCatalogoExecucaoCCO(),inicioHistorico=2025*12+11,catalogoBase=catalogoCompleto.filter(item=>Number(item.ano)*12+Number(item.mes)>=inicioHistorico).sort((a,b)=>Number(a.ano)-Number(b.ano)||Number(a.mes)-Number(b.mes));
+    let resolvidos=[];try{resolvidos=await performanceExecucao.medir("resolverPeriodoMs",()=>window.CCOPainelService.resolverImportacoesCatalogo(catalogoBase));}catch(error){console.error("[EXECUCAO GRAFICO ERRO]",error);}
+    /* Compatibilidade/fallback resiliente: Promise.allSettled(catalogoBase.map(...)) e
+       resolverImportacaoPeriodo(periodo.ano,periodo.mes,periodo.importacao_id). */
+    const faltantes=catalogoBase.map((periodo,indice)=>({periodo,indice})).filter(item=>!resolvidos[item.indice]),fallbacks=await Promise.allSettled(faltantes.map(item=>window.CCOPainelService.resolverImportacaoPeriodo(item.periodo.ano,item.periodo.mes,item.periodo.importacao_id)));fallbacks.forEach((resultado,indice)=>{if(resultado.status==="fulfilled")resolvidos[faltantes[indice].indice]=resultado.value;else console.error("[EXECUCAO GRAFICO ERRO]",resultado.reason);});
+    const catalogo=catalogoBase.map((periodo,indice)=>{const resolvida=resolvidos[indice];return resolvida?.importacao_id?{...periodo,importacao_id:resolvida.importacao_id,resolucaoImportacao:resolvida}:periodo;}),assinatura=catalogo.map(item=>`${periodoChave(item.ano,item.mes)}:${item.importacao_id}`).join("|"),chaveCache=`${VERSAO_CACHE_EVOLUCAO_EXECUCAO}|evolucao|${servico}|${assinatura}`,chaveCacheResolvida=`${VERSAO_RESOLUCAO_HISTORICO}|${chaveCache}`,armazenado=cacheEvolucaoExecucao.get(chaveCacheResolvida);
     if(armazenado)return{catalogo,linhas:armazenado.linhas};
     const idsAtivos=new Set(catalogo.map(item=>String(item.importacao_id))),banco=window.supabaseClient;
     const carregarOperacoesHistorico=servico==="P4"?()=>window.CCOSupabase.paginar(()=>banco.from("operacoes").select("id,importacao_id,servico,tipo_servico,data_operacao,peso_t").in("importacao_id",[...idsAtivos]).eq("servico","P4").gte("data_operacao","2025-11-01").order("data_operacao",{ascending:true}).order("id",{ascending:true})):()=>window.CCOSupabase.paginar(()=>banco.from("operacoes").select("id,importacao_id,servico,tipo_servico,data_operacao,peso_t,viagens,km_total,qtd_equipe,equipe,executado").in("importacao_id",[...idsAtivos]).eq("servico",servico).gte("data_operacao","2025-11-01").order("data_operacao",{ascending:true}).order("id",{ascending:true}));
@@ -157,7 +167,7 @@
     /* O detalhe mensal acabou de recriar o host. Limpe qualquer instância parcial antes
        que o navegador tenha oportunidade de pintá-la e deixe apenas este card esperando. */
     window.CCO_GRAFICOS_3D?.destruirGrafico?.(containerInicial);atualizarEstadoEvolucaoHistoricaCCO("carregando");
-    let resultado;try{resultado=await buscarEvolucaoServicoCCO(servico);}catch(error){if(token===requisicaoEvolucaoExecucao)atualizarEstadoEvolucaoHistoricaCCO("erro");throw error;}
+    let resultado;try{resultado=await performanceExecucao.medir("historicoMs",()=>buscarEvolucaoServicoCCO(servico));}catch(error){if(token===requisicaoEvolucaoExecucao)atualizarEstadoEvolucaoHistoricaCCO("erro");throw error;}
     if(token!==requisicaoEvolucaoExecucao||String(window.obterServicoAtivo?.()||"").toUpperCase()!==servico||!contextoExecucaoAtualCCO(contexto))return null;
     const{catalogo,linhas}=resultado;
     const comparativo=window.CCOExecucaoComparativoMensal.montar({catalogo,linhas}),{labels,importacoes,previstos,acumulados,percentuais}=comparativo,ehEquipe=window.CCOMetricas?.ehServicoEquipe?.(servico)===true,sufixoUnidade=ehEquipe?" equipe":"";
@@ -168,10 +178,10 @@
     if(!labels.length||previstos.length!==labels.length||acumulados.length!==labels.length){const error=new Error("Dataset histórico inválido para renderização.");console.error("[EXECUCAO GRAFICO ERRO]",error);atualizarEstadoEvolucaoHistoricaCCO("erro");return null;}
     const formatar=valor=>n(valor).toLocaleString("pt-BR",{maximumFractionDigits:2});
     const titulo=container.closest(".section, .chart-card")?.querySelector(".section-title h2");if(titulo)titulo.textContent=`Previsto x Acumulado — ${labels[0]||"Nov/2025"} a ${labels.at(-1)||"período atual"}`;
-    const labelsMobile=labels.map(rotulo=>rotulo.replace("/20","/"));
+    const labelsMobile=labels.map(rotulo=>rotulo.replace("/20","/")),inicioGrafico=relogioExecucao();
     console.log("[EXECUÇÃO COMPARATIVO 3D]",{servico,periodos:labels,previsto:previstos,acumulado:acumulados,renderizador:"CCO_GRAFICOS_3D.renderizarDireto/barra3d",modo3D:true});
     if(!window.CCO_GRAFICOS_3D?.renderizarDireto){const error=new Error("Renderizador 3D indisponível.");console.error("[EXECUCAO GRAFICO ERRO]",error);atualizarEstadoEvolucaoHistoricaCCO("erro");return null;}let grafico;try{window.CCO_GRAFICOS_3D?.destruirGrafico?.(container);atualizarEstadoEvolucaoHistoricaCCO("pronto");grafico=window.CCO_GRAFICOS_3D.renderizarDireto(container,{tipo:"barra3d",agrupado:true,preservarNulos:true,modoMobileCompacto:true,layoutRotulosExecucao:true,altura:460,categorias:labels,categoriasMobile:labelsMobile,grid:cfg=>cfg.mobile?{}:{top:100},yAxis:ehEquipe?{name:"Equipes",min:0}:undefined,series:[{nome:"Previsto",valores:previstos,cor:"#047857",corTopo:"#6ee7b7",corLateral:"#064e3b",formatarRotulo:(valor,indice)=>previstos[indice]==null?"":formatar(valor)},{nome:"Acumulado",valores:acumulados,cor:"#10b981",corTopo:"#a7f3d0",corLateral:"#065f46",formatarRotulo:(valor,indice)=>acumulados[indice]==null?"":formatar(valor)}],legend:{show:true,top:10,left:"center"},tooltip:{formatter:parametros=>{const itens=Array.isArray(parametros)?parametros:[parametros],indice=itens[0]?.dataIndex??0,pct=percentuais[indice];return`${labels[indice]}<br>Previsto: ${previstos[indice]===null?"Sem dados":`${formatar(previstos[indice])}${sufixoUnidade}`}<br>Acumulado: ${acumulados[indice]===null?"Sem dados":`${formatar(acumulados[indice])}${sufixoUnidade}`}<br>Percentual: ${pct===null?"Sem dados":`${pct.toLocaleString("pt-BR",{maximumFractionDigits:1})}%`}`;}}});if(!grafico)throw new Error("Renderizador não criou a instância do gráfico histórico.");}catch(error){console.error("[EXECUCAO GRAFICO ERRO]",error);atualizarEstadoEvolucaoHistoricaCCO("erro");return null;}
-    posicionarSecoesDetalheExecucao();atualizarTendenciaEvolucaoCCO(comparativo);return grafico;
+    performanceExecucao.contar("graficosMs",relogioExecucao()-inicioGrafico);performanceExecucao.relatar();posicionarSecoesDetalheExecucao();atualizarTendenciaEvolucaoCCO(comparativo);return grafico;
   }
   window.renderizarEvolucaoHistoricaCCO=renderizarEvolucaoHistoricaCCO;
   const renderDetalheServicoMensalOriginal=window.renderDetalheServicoMensal;
@@ -182,10 +192,11 @@
 
   async function iniciarInterno(){
     try {
-      if(!await window.CCOSupabase.exigirSessao())return false;
+      performanceExecucao.reiniciar();
+      if(!await performanceExecucao.medir("authMs",()=>window.CCOSupabase.exigirSessao()))return false;
       if(window.__CCO_EXECUCAO_PERIODOS_INICIADOS__)return true;
       window.__CCO_EXECUCAO_PERIODOS_INICIADOS__=true;window.__CCO_EXECUCAO_INICIALIZADA__=true;window.__CCO_CONTROLADOR_PERIODOS_LEGADO_DESATIVADO__=true;
-      const[catalogo]=await Promise.all([carregarCatalogoExecucaoCCO(),window.carregarRegrasServicosCCO()]);
+      const[catalogo]=await Promise.all([performanceExecucao.medir("catalogoMs",()=>carregarCatalogoExecucaoCCO()),window.carregarRegrasServicosCCO()]);
       if(!catalogo.length)throw new Error("Nenhum período ativo disponível para Execução.");
       let salvo=null;try{salvo=JSON.parse(localStorage.getItem("cco_execucao_periodo")||"null");}catch(_){salvo=null;}
       const ultimo=catalogo[0],preferido=localizarPeriodoExecucao(catalogo,salvo?.ano,salvo?.mes)||ultimo,selectAno=document.getElementById("filtroExecucaoAno"),selectMes=document.getElementById("filtroExecucaoMes"),anos=[...new Set(catalogo.map(item=>Number(item.ano)))].filter(Number.isFinite).sort((a,b)=>a-b);
