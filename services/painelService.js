@@ -128,18 +128,18 @@
       const faltantes=periodos.filter(item=>!importacaoPeriodoCache.has(item.periodo));
       perf("cacheHits",periodos.length-faltantes.length);
       if(faltantes.length){
-        const desejados=new Set(faltantes.map(item=>item.periodo)),primeiro=[...faltantes].sort((a,b)=>a.ano-b.ano||a.mes-b.mes)[0],ultimo=[...faltantes].sort((a,b)=>b.ano-a.ano||b.mes-a.mes)[0],inicio=`${primeiro.periodo}-01`,fim=ultimo.mes===12?`${ultimo.ano+1}-01-01`:`${ultimo.ano}-${String(ultimo.mes+1).padStart(2,"0")}-01`,anos=[...new Set(faltantes.map(item=>item.ano))],cliente=db();
-        perf("requestsSupabase",2);
-        const resultados=await Promise.allSettled([
-          global.CCOSupabase.paginar(()=>cliente.from(`operacoes`).select("id,importacao_id,servico,aba,data_operacao").gte("data_operacao",inicio).lt("data_operacao",fim).order("id")),
-          global.CCOSupabase.paginar(()=>cliente.from("painel_executivo").select("id,importacao_id,ano,mes,servico").in("ano",anos).order("id"))
-        ]);
-        const operacoes=resultados[0].status==="fulfilled"?resultados[0].value:[],painel=resultados[1].status==="fulfilled"?resultados[1].value:[];
-        if(resultados.some(item=>item.status==="rejected"))throw resultados.find(item=>item.status==="rejected").reason;
+        const desejados=new Set(faltantes.map(item=>item.periodo)),anos=[...new Set(faltantes.map(item=>item.ano))],cliente=db();
+        perf("requestsSupabase");
+        /* painel_executivo já possui uma linha agregada por serviço. Usá-lo para medir
+           cobertura evita transferir todas as operações de todos os 12 serviços. */
+        const [resultadoPainel]=await Promise.allSettled([
+          global.CCOSupabase.paginar(()=>cliente.from("painel_executivo").select("importacao_id,ano,mes,servico").in("ano",anos).order("id"))
+        ]),painel=resultadoPainel.status==="fulfilled"?resultadoPainel.value:[];
+        if(resultadoPainel.status==="rejected")console.warn("[EXEC HIST] resolvedor agregado indisponível; catálogo oficial preservado.",resultadoPainel.reason);
         const normalizar=valor=>global.CCOMetricas?.normalizarServico?.(valor)||String(valor||"").trim().toUpperCase();
         for(const item of faltantes){
-          const ops=operacoes.filter(linha=>String(linha.data_operacao||"").slice(0,7)===item.periodo),paineis=painel.filter(linha=>`${Number(linha.ano)}-${String(Number(linha.mes)).padStart(2,"0")}`===item.periodo&&desejados.has(item.periodo)),ids=new Set([String(item.importacao_id||""),...ops.map(linha=>String(linha.importacao_id||"")),...paineis.map(linha=>String(linha.importacao_id||""))].filter(Boolean));
-          const candidatos=[...ids].map(id=>{const linhasOperacoes=ops.filter(linha=>String(linha.importacao_id)===id),linhasPainel=paineis.filter(linha=>String(linha.importacao_id)===id),servicosOperacoes=[...new Set(linhasOperacoes.map(linha=>normalizar(linha.servico||linha.aba)).filter(Boolean))],servicosPainel=[...new Set(linhasPainel.map(linha=>normalizar(linha.servico)).filter(Boolean))],servicos=[...new Set([...servicosPainel,...servicosOperacoes])];return{importacao_id:id,ano:item.ano,mes:item.mes,periodo:item.periodo,operacoesCount:linhasOperacoes.length,painelExecutivoCount:linhasPainel.length,servicosOperacoes,servicosPainel,servicos};}).sort((x,y)=>y.servicos.length-x.servicos.length||(y.operacoesCount+y.painelExecutivoCount)-(x.operacoesCount+x.painelExecutivoCount)||Number(y.importacao_id===String(item.importacao_id))-Number(x.importacao_id===String(item.importacao_id)));
+          const paineis=painel.filter(linha=>`${Number(linha.ano)}-${String(Number(linha.mes)).padStart(2,"0")}`===item.periodo&&desejados.has(item.periodo)),ids=new Set([String(item.importacao_id||""),...paineis.map(linha=>String(linha.importacao_id||""))].filter(Boolean));
+          const candidatos=[...ids].map(id=>{const linhasPainel=paineis.filter(linha=>String(linha.importacao_id)===id),servicosPainel=[...new Set(linhasPainel.map(linha=>normalizar(linha.servico)).filter(Boolean))];return{importacao_id:id,ano:item.ano,mes:item.mes,periodo:item.periodo,operacoesCount:0,painelExecutivoCount:linhasPainel.length,servicosOperacoes:[],servicosPainel,servicos:servicosPainel};}).sort((x,y)=>y.servicos.length-x.servicos.length||y.painelExecutivoCount-x.painelExecutivoCount||Number(y.importacao_id===String(item.importacao_id))-Number(x.importacao_id===String(item.importacao_id)));
           if(candidatos[0])importacaoPeriodoCache.set(item.periodo,{...candidatos[0],candidatos});
         }
       }
