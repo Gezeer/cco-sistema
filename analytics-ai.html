@@ -70,14 +70,14 @@
           <div class="cco-ai-executive-summary" aria-label="Resumo executivo de todos os períodos"><article><span>Melhor período</span><strong id="ccoAnalyticsMelhor">—</strong></article><article><span>Pior período</span><strong id="ccoAnalyticsPior">—</strong></article><article><span>Maior valor financeiro</span><strong id="ccoAnalyticsMaiorValor">—</strong></article><article><span>Serviços em atenção</span><strong id="ccoAnalyticsAtencao">—</strong></article></div>
 
           <div id="ccoAnalyticsSugestoes" class="quick-questions cco-ai-suggestions" aria-label="Sugestões rápidas">
-            <button type="button">Analisar período</button><button type="button">Comparar com mês anterior</button><button type="button">Ranking de serviços</button><button type="button">Qual RA teve maior atividade?</button><button type="button">Qual turno executou mais?</button><button type="button">Evolução do P5</button><button type="button">Analisar P12</button><button type="button">Qualidade dos dados</button><button type="button">Encontrar problemas</button><button type="button">Resumo executivo</button>
+            <button type="button">Resumir período atual</button><button type="button">Comparar com mês anterior</button><button type="button">Principais problemas</button><button type="button">Analisar por RA</button><button type="button">Analisar sinistros</button><button type="button">Encontrar anomalias</button><button type="button">Resumo para diretoria</button>
           </div>
 
           <div id="ccoAnalyticsMensagens" class="copilot-messages cco-ai-messages" aria-live="polite" aria-busy="true"></div>
 
           <form id="ccoAnalyticsForm" class="cco-ai-composer">
             <label for="ccoAnalyticsPergunta">Pergunta</label>
-            <textarea id="ccoAnalyticsPergunta" maxlength="1600" rows="3" placeholder="Pergunte qualquer coisa sobre todos os dados do CCO..."></textarea>
+            <textarea id="ccoAnalyticsPergunta" maxlength="1600" rows="3" placeholder="Pergunte ao CCO Analytics AI..."></textarea>
             <div><small>Enter envia • Shift + Enter cria uma nova linha</small><button id="ccoAnalyticsEnviar" type="submit">Analisar</button></div>
           </form>
         </div>
@@ -104,6 +104,15 @@
   <script src="js/cco-analytics-formatacao.js?v=20260721-analytics-chat-v2" defer></script>
   <script src="js/cco-analytics-intencoes.js?v=20260721-analytics-chat-v2" defer></script>
   <script src="js/cco-analytics-consultas.js?v=20260806-analytics-ai-services-oficiais-v1" defer></script>
+  <script src="services/interrupcaoTrechoService.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="interrupcao-sinistro-proporcao.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="js/cco-analytics-domains.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="js/cco-analytics-context.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="js/cco-analytics-data.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="js/cco-analytics-engine.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="js/cco-analytics-evidence.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="js/cco-analytics-response.js?v=20260818-analytics-ai-v2" defer></script>
+  <script src="js/cco-analytics-validator.js?v=20260818-analytics-ai-v2" defer></script>
   <script src="js/cco-analytics-graficos.js?v=20260805-mobile-performance-v1" defer></script>
   <script src="js/cco-ai-conhecimento.js?v=20260806-analytics-ai-specialist-v1" defer></script>
   <script src="js/cco-ai-intencoes.js?v=20260806-analytics-ai-specialist-v1" defer></script>
@@ -113,7 +122,7 @@
   <script src="services/analyticsAIService.js?v=20260806-analytics-ai-specialist-v1" defer></script>
   <script src="analytics-ai.js?v=20260807-performance-boot-v2" defer></script>
   <script src="js/cco-robo-ai.js?v=20260721-analytics-robo-v1" defer></script>
-  <script src="js/cco-analytics-ai.js?v=20260806-analytics-ai-specialist-v1" defer></script>
+  <script src="js/cco-analytics-orchestrator.js?v=20260818-analytics-ai-v2" defer></script>
   <script src="js/theme.js?v=20260718-enterprise-v1"></script>
   <script src="js/navbar.js?v=20260718-cco-enterprise-ui-v1"></script>
 </body>

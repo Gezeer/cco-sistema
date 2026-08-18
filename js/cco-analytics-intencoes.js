@@ -75,5 +75,21 @@
     const agrupamento=intencao==="ranking_ra"?"ra":intencao==="ranking_turnos"?"turno":"mes",anos=[...new Set(periodos.map(item=>item.ano))],meses=[...new Set(periodos.map(item=>item.mes))];
     return{intencao,servicos,periodos,anos,meses,ras:[],datas,turnos,metricas:metricas.length?metricas:["acumulado","percentual_execucao","valor_total"],agrupamento,textoOriginal:String(pergunta||"")};
   }
-  global.CCOAnalyticsIntencoes=Object.freeze({INTENCOES_PERMITIDAS,SINONIMOS_SERVICOS,normalizar,interpretar});
+  function estruturar(pergunta,{catalogo=[],contexto={}}={}){
+    const base=interpretar(pergunta,{catalogo,contexto}),texto=normalizar(pergunta),followup=/^(e\b|e em\b|e agosto\b|agora\b|nesse caso\b)/.test(texto),anterior=contexto.domain?contexto:{};
+    let domain=followup&&anterior.domain?anterior.domain:global.CCOAnalyticsDomains.infer(texto,base.servicos);if(/pior servico/.test(texto))domain="EXECUCAO";
+    const metric=global.CCOAnalyticsDomains.metric(domain,texto,followup?anterior.metrics?.[0]:null);
+    let periods=base.periodos.map(p=>({year:Number(p.ano),month:Number(p.mes)}));
+    if(!periods.length&&followup)periods=(anterior.periods||[]).map(p=>({...p}));
+    if(followup&&/\be\s+(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b/.test(texto))periods=[...(anterior.periods||[]),...periods].filter((p,i,a)=>a.findIndex(x=>x.year===p.year&&x.month===p.month)===i);
+    const explicitYear=/\b20\d{2}\b/.test(texto);if(followup&&explicitYear&&periods.length)periods=periods;
+    let intent=base.intencao;if(domain==="SINISTROS"||domain==="INTERRUPCOES"){if(/compar|versus|\bvs\b/.test(texto))intent="comparar_periodos";else if(/ranking|qual .*mais|principa/.test(texto))intent="ranking";else intent=/resumo|analise|diretoria/.test(texto)?"analisar_periodo":"consultar_total";}
+    if(/pior servico/.test(texto)&&!/(percent|execu|valor|ocorr|veloc|km|peso|viage)/.test(texto))intent="metrica_ambigua";
+    else if(domain==="EXECUCAO"&&/qual servico.*(?:maior|menor)|(?:maior|menor).*servico/.test(texto))intent="ranking_servicos";
+    else if(/compar|versus|\bvs\b/.test(texto))intent="comparar_periodos";
+    if(/some.*percent/.test(texto))intent="operacao_invalida";
+    const ui=global.CCOAIChat?.contexto||{},filters={services:base.servicos.length?base.servicos:[...(anterior.filters?.services||[])]||[],ras:base.ras.length?base.ras:[...(anterior.filters?.ras||[])],shifts:base.turnos.length?base.turnos:[...(anterior.filters?.shifts||[])]};if(!filters.services.length&&ui.servico)filters.services=[ui.servico];if(!filters.ras.length&&ui.ra)filters.ras=[ui.ra];if(!filters.shifts.length&&ui.turno)filters.shifts=[ui.turno];if(!periods.length&&ui.ano&&ui.mes)periods=[{year:Number(ui.ano),month:Number(ui.mes)}];
+    return{question:String(pergunta||""),intent,domain,metrics:[metric],periods,filters,grouping:base.agrupamento,dates:base.datas,followup};
+  }
+  global.CCOAnalyticsIntencoes=Object.freeze({INTENCOES_PERMITIDAS,SINONIMOS_SERVICOS,normalizar,interpretar,estruturar});
 })(window);

@@ -90,6 +90,16 @@
     const periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`;
     return Number((importacaoId&&diasOperacaoCache.get(`${importacaoId}|${periodo}`))??diasOperacaoCache.get(periodo)??0);
   }
+  async function diasOperacaoPorPeriodo(importacaoId,ano,mes){
+    const id=validarId(importacaoId),periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`,chave=global.CCOCache.chave("dias-operacao-periodo",[id,periodo]);
+    return global.CCOCache.lembrar(chave,async()=>{
+      const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias,dados").eq("ano",Number(ano)).eq("mes",Number(mes)).or(`importacao_id.eq.${id},importacao_id.is.null`);
+      if(error)throw error;
+      const oficial=(data||[]).find(item=>String(item.importacao_id)===id)||(data||[]).find(item=>item.importacao_id===null)||null;
+      if(oficial){diasOperacaoCache.set(`${id}|${periodo}`,Number(oficial.total_dias)||0);diasOperacaoCache.set(periodo,Number(oficial.total_dias)||0);global.CCO_REGRAS?.registrarDiasOperacao?.([oficial]);}
+      return oficial;
+    },TTL);
+  }
   async function ultimoPeriodo() { return (await catalogo())[0] || null; }
   async function porImportacao(importacaoId) {
     const id = validarId(importacaoId), chave = global.CCOCache.chave("painel", [id]);
@@ -113,5 +123,5 @@
     if(data)global.CCODiagnosticoP9Etapa?.("services/painelService.js:p9PorPeriodo → painel_executivo.acumulado",data.acumulado,"leitura direta da coluna painel_executivo.acumulado");
     return data||null;
   }
-  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, invalidarDiasOperacao, recarregarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
+  global.CCOPainelService = Object.freeze({ catalogo, getCatalogoPeriodos, invalidarCatalogo, invalidarDiasOperacao, recarregarCatalogo, ultimoPeriodo, porImportacao, p9PorPeriodo, obterDiasOperacao, diasOperacaoPorPeriodo, montarCatalogoPorOperacoes, buscarFallbackLeveCatalogo, carregarDiasOperacao });
 })(window);

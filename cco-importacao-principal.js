@@ -11,7 +11,6 @@
   const TAMANHO_PAYLOAD_LOTE = 256 * 1024;
   const PAUSA_ENTRE_LOTES_MS = 75;
   const MAX_TENTATIVAS_TRANSITORIAS = 4;
-  const PERIODOS_ALVO = Array.isArray(window.CCO_PERIODOS_ALVO_IMPORTACAO)?new Set(window.CCO_PERIODOS_ALVO_IMPORTACAO):null;
   const SERVICOS = new Set(["P1","P2.1","P2.2","P3","P4","P5","P6","P7","P8","P9","P10","P11","P12"]);
   const ALIASES = Object.freeze({
     rd:["rd","registro_diario","registro","numero_rd","n_rd"],
@@ -77,7 +76,7 @@
   function normalizarData(valor) {
     if (vazio(valor)) return null;
     if (valor instanceof Date && !Number.isNaN(valor.getTime())) return valor.toISOString().slice(0,10);
-    if (typeof valor === "number" && valor > 0) {
+    if (typeof valor === "number" && valor >= 20000 && valor <= 100000) {
       const d = window.XLSX?.SSF?.parse_date_code?.(valor);
       if (d?.y && d?.m && d?.d) return `${d.y}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}`;
       const excel=new Date(Date.UTC(1899,11,30)+Math.floor(valor)*86400000);
@@ -96,6 +95,8 @@
     }
     return null;
   }
+
+  function anoOperacionalPlausivel(ano) { return Number.isInteger(Number(ano))&&Number(ano)>=2000&&Number(ano)<=2100; }
 
   function normalizarMes(valor) {
     const numero=normalizarNumero(valor);if(numero>=1&&numero<=12)return numero;
@@ -292,7 +293,7 @@
         if (abaNorm.includes("dias_operacao")) {
           const mesOriginal=linha.mes_ano??linha.mes,serialPlanilha=typeof mesOriginal==="number"?mesOriginal:null,dataRef=normalizarData(linha.data || linha.periodo || mesOriginal),periodoDias=periodoInformado(linha),ano=Number(linha.ano || dataRef?.slice(0,4) || periodoDias?.ano),mes=normalizarMes(linha.mes_numero ?? (dataRef?dataRef.slice(5,7):linha.mes)) || periodoDias?.mes;
           const total=normalizarNumero(linha.total_dias ?? linha.total_de_dias ?? linha.total_dias_mes ?? linha.total_de_dias_no_mes ?? linha.dias_operacao ?? linha.dias_de_operacao ?? linha.quantidade_de_dias ?? linha.qtd_dias ?? linha.dias);
-          if (ano && mes && total !== null) {
+          if (anoOperacionalPlausivel(ano) && mes && total !== null && Number.isInteger(total) && total>0 && total<=31) {
             rawAtual.ano=ano;rawAtual.mes=mes;
             dias.push({ano,mes,total_dias:total,dados:jsonSeguro({...original,__cco_serial_mes:serialPlanilha,__cco_data_interpretada:dataRef,__cco_fonte:nomeAba})});
             if(ano===2026&&mes===8&&window.CCO_DEBUG_AGOSTO===true)console.log("[AGOSTO DIAS OPERACAO]",{serialPlanilha,dataInterpretada:dataRef,valorPlanilha:total,valorBancoAntes:null,valorBancoDepois:null,importacaoId:null,fonte:nomeAba});
@@ -323,7 +324,7 @@
       });
       abas.push({nome:nomeAba,total_linhas:totalAba,linha_cabecalho:indiceCabecalho+1,arquivo:nomeArquivo});
     });
-    const periodos=[...new Set(raw.map(item=>item.data_operacao?.slice(0,7)).filter(Boolean))].sort();
+    const periodos=[...new Set([...raw.map(item=>item.data_operacao?.slice(0,7)),...dias.map(item=>`${item.ano}-${String(item.mes).padStart(2,"0")}`)].filter(Boolean))].sort();
     return {abas,cabecalhos,raw,operacoes,dias,painel,erros,periodos,preValidacao};
   }
 
@@ -487,8 +488,8 @@
       const diasPeriodo=resultado.dias.filter(item=>Number(item.ano)===grupo.ano&&Number(item.mes)===grupo.mes);
       const totaisDias=[...new Set(diasPeriodo.map(item=>Number(item.total_dias)))];
       if(totaisDias.length>1)throw new Error(`Dias_Operação inválido em ${grupo.periodo}: encontrados ${totaisDias.length} totais oficiais diferentes.`);
-      if(!totaisDias.length)console.warn(`[IMPORTAÇÃO] Dias de operação não configurados para ${grupo.periodo}; será registrado 0 sem inventar previsão.`);
-      grupo.dias=[{ano:grupo.ano,mes:grupo.mes,total_dias:totaisDias[0]??0,dados:diasPeriodo.length===1?diasPeriodo[0].dados:{aviso:"dias_operacao_nao_configurados",linhas_originais:[]}}];
+      if(!totaisDias.length)throw new Error(`Dias_Operação não configurado para ${grupo.periodo}; o período não será importado sem o total oficial da planilha.`);
+      grupo.dias=[{ano:grupo.ano,mes:grupo.mes,total_dias:totaisDias[0],dados:diasPeriodo.length===1?diasPeriodo[0].dados:{linhas_originais:diasPeriodo.map(item=>item.dados)}}];
       window.CCO_REGRAS?.registrarDiasOperacao?.(grupo.dias);
       const metasPeriodo=resultado.painel.filter(item=>(!item.ano&&!item.mes)||(Number(item.ano)===grupo.ano&&Number(item.mes)===grupo.mes));
       grupo.painel=gerarPainelExecutivoPeriodo(grupo,metasPeriodo);
@@ -781,7 +782,6 @@
     if(!servicosDetectados.includes("P5")||!servicosDetectados.includes("P6"))throw new Error("A pré-validação não encontrou dados válidos de P5 e P6. A importação foi interrompida antes de alterar a base.");
     const grupos=separarPorPeriodo(resultado),importacoes=[],falhas=[],ignorados=[];
     for(const grupo of grupos.values()){
-      if(PERIODOS_ALVO&&!PERIODOS_ALVO.has(grupo.periodo)){console.info("[IMPORTAÇÃO] período fora do filtro explícito",grupo.periodo);continue;}
       try {
         grupo.hashArquivo=hash;
         const comparacao=await verificarPeriodoInalterado(grupo);grupo.hashPeriodo=comparacao.hashPeriodo;
@@ -815,14 +815,17 @@
       const periodosImportados=resultados.map(item=>item.grupo.periodo).sort(),falhas=window.__CCO_FALHAS_IMPORTACAO__||[];
       const resumoFalhas=falhas.length?`\n\nPeríodos com erro (${falhas.length}):\n${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join("\n")}`:"";
       const ignorados=window.__CCO_PERIODOS_IGNORADOS_IMPORTACAO__||[],resumoIgnorados=ignorados.length?` ${ignorados.length} períodos inalterados foram preservados sem regravação: ${ignorados.map(item=>item.periodo).join(", ")}.`:"";
-      const catalogo=await window.CCOPainelService.recarregarCatalogo(),periodosCatalogo=catalogo.map(item=>item.periodo),possuiAgosto2026=periodosCatalogo.includes("2026-08"),ultimo=[...catalogo].sort((a,b)=>Number(b.ano)-Number(a.ano)||Number(b.mes)-Number(a.mes))[0]||null;
-      console.log("[CATALOGO APOS IMPORTACAO]",{periodos:periodosCatalogo,possuiAgosto2026,ultimoPeriodo:ultimo?.periodo||null});
-      if(periodosImportados.includes("2026-08")&&!possuiAgosto2026)throw new Error("Agosto/2026 foi finalizado, mas não apareceu na reconsulta direta do catálogo.");
+      const catalogo=await window.CCOPainelService.recarregarCatalogo(),periodosCatalogo=catalogo.map(item=>item.periodo),ausentes=periodosImportados.filter(periodo=>!periodosCatalogo.includes(periodo)),ultimo=[...catalogo].sort((a,b)=>Number(b.ano)-Number(a.ano)||Number(b.mes)-Number(a.mes))[0]||null;
+      console.log("[CATALOGO APOS IMPORTACAO]",{periodos:periodosCatalogo,periodosImportados,ausentes,ultimoPeriodo:ultimo?.periodo||null});
+      if(ausentes.length)throw new Error(`Períodos finalizados ausentes do catálogo: ${ausentes.join(", ")}.`);
+      const diagnosticoPeriodos=resultados.map(item=>({periodo:item.grupo.periodo,dias_operacao:item.grupo.dias[0]?.total_dias??null,status:item.anterior?"atualizado":"novo"}));
+      console.log("[PERÍODOS IMPORTADOS]");console.table(diagnosticoPeriodos);
       if(typeof window.aplicarCatalogoPainelGeral==="function")await window.aplicarCatalogoPainelGeral(catalogo,true);
       document.dispatchEvent(new CustomEvent("cco:importacao-concluida",{detail:{periodos:periodosImportados,catalogo}}));
       if(typeof window.aplicarCatalogoPainelGeral!=="function"&&ultimo&&typeof window.carregarPeriodoCCO==="function")await window.carregarPeriodoCCO(ultimo);else if(typeof window.aplicarCatalogoPainelGeral!=="function"&&typeof window.carregarBaseSupabase==="function")await window.carregarBaseSupabase();
       fecharOverlay();
-      alert(`Importação concluída e auditada. ${periodosImportados.length} períodos atualizados: ${periodosImportados.join(", ")||"nenhum"}.${resumoIgnorados}${resumoFalhas}`);
+      const novos=diagnosticoPeriodos.filter(item=>item.status==="novo").length,atualizados=diagnosticoPeriodos.length-novos,diasImportados=diagnosticoPeriodos.reduce((total,item)=>total+Number(item.dias_operacao||0),0),registrosImportados=resultados.reduce((total,item)=>total+Number(item.grupo.operacoes.length||0),0),rejeitados=falhas.length+resultados.reduce((total,item)=>total+Number(item.grupo.erros.length||0),0);
+      alert(`Importação concluída e auditada. Períodos encontrados: ${periodosImportados.length+ignorados.length}. Novos: ${novos}. Atualizados: ${atualizados}. Inalterados: ${ignorados.length}. Dias de operação importados: ${diasImportados}. Registros novos/atualizados: ${registrosImportados}. Rejeitados: ${rejeitados}.${resumoIgnorados}${resumoFalhas}`);
       return true;
     } catch(error) {
       console.error("[IMPORTAÇÃO PRINCIPAL] falha",{message:error?.message,code:error?.code,details:error?.details,hint:error?.hint,error});

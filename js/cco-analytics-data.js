@@ -1,0 +1,13 @@
+(function(global){
+  "use strict";
+  const cache=new Map(),pending=new Map(),TTL=300000;let version="unknown";
+  const key=(name,plan)=>`${version}|${name}|${JSON.stringify({periods:plan.periods,filters:plan.filters,metrics:plan.metrics,domain:plan.domain})}`;
+  async function memo(name,plan,producer){const id=key(name,plan),saved=cache.get(id);if(saved&&Date.now()-saved.time<TTL)return{...saved.value,cacheHit:true};if(pending.has(id))return pending.get(id);const p=Promise.resolve().then(producer).then(value=>{cache.set(id,{time:Date.now(),value});return{...value,cacheHit:false};}).finally(()=>pending.delete(id));pending.set(id,p);return p;}
+  async function initialize(){const imports=await global.CCOAnalyticsConsultas.buscarImportacoes();version=imports.map(x=>`${x.id}:${x.concluido_em||x.criado_em||""}:${x.linhas_importadas||0}`).sort().join("|")||"empty";return version;}
+  async function interruptions(plan){return memo("interruptions",plan,async()=>{let query=global.supabaseClient.from("interrupcoes_trecho").select("id,importacao_id,mes,data_ocorrencia,servico,veiculo,rd,mat_motorista,hora_saida_garagem,ra,hora_solicitacao,tipo_defeito,atendimento,veiculo_atendimento,local_saida_socorro,hora_deslocamento_socorro,mat_socorrista,termino_socorro,acionamento_sesmt,acionamento_perito,perimetro,descricao").order("data_ocorrencia");const years=[...new Set(plan.periods.map(p=>p.year))];if(years.length===1)query=query.gte("data_ocorrencia",`${years[0]}-01-01`).lt("data_ocorrencia",`${years[0]+1}-01-01`);const dados=await global.CCOSupabase.paginar(()=>query);return{tipo:"interrupcoes",dados,fontes:["interrupcoes_trecho"]};});}
+  async function monthly(plan,catalog){let intent=plan.intent;if(plan.domain==="KPI")intent="consultar_velocidade";else if(plan.domain==="OPERACAO")intent=plan.metrics[0]==="equipes"?"consultar_equipes":"consultar_dia";const legacy={intencao:intent,servicos:plan.filters.services,periodos:plan.periods.map(p=>({ano:p.year,mes:p.month})),metricas:plan.metrics,ras:plan.filters.ras,turnos:plan.filters.shifts,agrupamento:plan.grouping,datas:plan.dates};return memo("monthly",plan,()=>global.CCOAnalyticsConsultas.executar(legacy,catalog));}
+  const execute=(plan,catalog)=>["INTERRUPCOES","SINISTROS"].includes(plan.domain)?interruptions(plan):monthly(plan,catalog);
+  function invalidate(){cache.clear();pending.clear();version=`changed:${Date.now()}`;global.CCOAnalyticsConsultas.invalidarCache();}
+  global.document?.addEventListener?.("cco:importacao-concluida",invalidate,{passive:true});
+  global.CCOAnalyticsData=Object.freeze({initialize,execute,invalidate,getVersion:()=>version,TTL});
+})(window);

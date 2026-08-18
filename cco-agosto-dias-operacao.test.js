@@ -25,6 +25,7 @@ vm.runInContext(fs.readFileSync("js/cco-regras-negocio.js","utf8"),regras);
 regras.CCO_DEBUG_AGOSTO=false;
 regras.CCO_REGRAS.registrarDiasOperacao([{ano:2026,mes:8,total_dias:26}]);
 assert.equal(regras.CCO_REGRAS.obterDiasOperacao(2026,8),26);
+assert.equal(regras.CCO_REGRAS.calcularPrevisto("P1",2026,9),null,"sem dias_operacao oficial, previsto proporcional deve ficar indisponível");
 const metas26={P1:21223,"P2.1":780,"P2.2":260,P4:15779,P5:38541,P6:9040,P12:1698432};
 for(const [servico,esperado] of Object.entries(metas26))assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,26),esperado,`${servico} deve usar a meta-base oficial de 26 dias`);
 const metas27={P1:22039.26923076923,"P2.1":810,"P2.2":270,P4:16385.884615384613,P5:40023.346153846156,P6:9387.692307692307,P12:1763756.3076923077};
@@ -32,6 +33,8 @@ for(const [servico,esperado] of Object.entries(metas27))assert.ok(Math.abs(regra
 for(const [servico,base] of Object.entries(metas26))assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,24),base/26*24,`${servico} deve generalizar para 24 dias`);
 for(const servico of Object.keys(metas26)){assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,2026,4),regras.CCO_REGRAS.calcularPrevisto(servico,2026,6));assert.equal(regras.CCO_REGRAS.calcularPrevisto(servico,2026,6),regras.CCO_REGRAS.calcularPrevisto(servico,2026,8));}
 assert.deepEqual(Object.fromEntries(["P3","P7","P8","P9","P10","P11"].map(servico=>[servico,regras.CCO_REGRAS.calcularPrevisto(servico,2026,8)])),{P3:12,P7:2,P8:2,P9:11,P10:3,P11:1});
+assert.equal(regras.CCO_REGRAS.calcularPrevisto("P1",2026,8,0,26),21223);
+assert.notEqual(9,regras.CCO_REGRAS.obterDiasOperacao(2026,8),"dias acumulados de mês incompleto não podem substituir total_dias_mes");
 
 contexto.window.CCO_REGRAS=regras.CCO_REGRAS;
 const servicos=["P1","P2.1","P2.2","P4","P5","P6","P12"];
@@ -51,6 +54,11 @@ assert.doesNotMatch(trechoReparo,/from\("operacoes"\)/,"reparo de dias não pode
 assert.match(trechoReparo,/precisaRepararPrevisto/,"previsto zero deve acionar reparo mesmo quando os dias já são 26");
 assert.match(trechoReparo,/invalidarCachesPeriodo/,"cache com previsto zero deve ser invalidado");
 assert.match(fonte,/\[REGRA PREVISTO 26 DIAS\]/);
+const fontePainel=fs.readFileSync("painel-geral.js","utf8"),fonteService=fs.readFileSync("services/painelService.js","utf8");
+assert.match(fontePainel,/diasOperacaoPorPeriodo\(importacao\.importacao_id,importacao\.ano,importacao\.mes\)/,"Painel deve carregar dias_operacao explicitamente para o período selecionado");
+assert.match(fontePainel,/total_dias_mes:diasOperacao\?\.total_dias\?\?null/,"diagnóstico deve expor o total oficial recebido");
+assert.match(fonteService,/from\("dias_operacao"\).*eq\("ano",Number\(ano\)\).*eq\("mes",Number\(mes\)\).*importacao_id\.eq\.\$\{id\},importacao_id\.is\.null/s,"consulta oficial deve ser vinculada à importação e ao período, aceitando configuração global");
+assert.doesNotMatch(fonteService,/MAX\(data_operacao\)|max\("data_operacao"\)|dias distintos/i);
 assert.doesNotMatch(fonte,/obterBasesOficiaisPrevisto|último período oficial|painel_executivo .* CCO_REGRAS\.calcularPrevisto/);
 assert.match(fonte,/20260811-previsto-regra-planilha-v3/);
 

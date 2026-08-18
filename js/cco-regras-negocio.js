@@ -49,9 +49,9 @@
   }
   function calcularPrevisto(servico, anoOuTotalDias, mes, _previstoAtual = 0, totalDiasInformado = 0) {
     const codigo=String(servico||"").trim().toUpperCase(),chamadaDireta=arguments.length===2;
-    const dias=chamadaDireta?Number(anoOuTotalDias):(obterDiasOperacao(anoOuTotalDias,mes)||Number(totalDiasInformado)||0);
+    const dias=chamadaDireta?Number(anoOuTotalDias):obterDiasOperacao(anoOuTotalDias,mes);
     const equipe=obterEquipeFixa(codigo),valorBase=METAS_BASE_26_DIAS[codigo]??null;
-    const resultado=equipe!==null?Number(equipe):(valorBase!==null&&dias>0?valorBase/26*dias:0);
+    const resultado=equipe!==null?Number(equipe):(valorBase!==null&&dias>0?valorBase/26*dias:null);
     if((chamadaDireta&&dias===26)||(Number(anoOuTotalDias)===2026&&Number(mes)===8&&global.CCO_DEBUG_AGOSTO===true))console.log("[REGRA PREVISTO 26 DIAS]",{servico:codigo,periodo:chamadaDireta?null:chavePeriodo(anoOuTotalDias,mes),totalDiasRecebido:dias,regraEncontrada:equipe!==null||valorBase!==null,valorBase:equipe??valorBase,previstoBanco:Number(_previstoAtual)||0,previstoCalculado:resultado,previstoFinal:resultado});
     return resultado;
   }
