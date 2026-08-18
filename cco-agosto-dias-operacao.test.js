@@ -37,6 +37,17 @@ assert.equal(regras.CCO_REGRAS.calcularPrevisto("P1",2026,8,0,26),21223);
 assert.notEqual(9,regras.CCO_REGRAS.obterDiasOperacao(2026,8),"dias acumulados de mês incompleto não podem substituir total_dias_mes");
 
 contexto.window.CCO_REGRAS=regras.CCO_REGRAS;
+assert.equal(contexto.window.CCOImportacaoPrincipal.normalizarData(28),null,"número pequeno não pode virar data de 1900");
+const futuro=contexto.window.CCOImportacaoPrincipal.analisarWorkbook({SheetNames:["Dias_Operação"],Sheets:{"Dias_Operação":[
+  ["Ano","Mês","Dias de Operação"],
+  [2026,"Agosto",26],[2026,"Setembro",25],[2026,"Outubro",27],[2026,"Dezembro",24],[2027,"Janeiro",26]
+] }},"periodos-futuros.xlsx");
+assert.deepEqual(Array.from(futuro.periodos),["2026-08","2026-09","2026-10","2026-12","2027-01"]);
+const gruposFuturos=contexto.window.CCOImportacaoPrincipal.separarPorPeriodo(futuro);
+assert.equal(gruposFuturos.get("2026-09").dias[0].total_dias,25);
+assert.equal(gruposFuturos.get("2027-01").dias[0].total_dias,26);
+assert.equal(gruposFuturos.get("2026-10").painel.find(item=>item.servico==="P1").previsto,21223/26*27);
+assert.equal(gruposFuturos.get("2027-01").painel.find(item=>item.servico==="P3").previsto,12);
 const servicos=["P1","P2.1","P2.2","P4","P5","P6","P12"];
 const painelAntes=[...servicos.map(servico=>({servico,previsto:0,acumulado:77})),...Object.entries({P3:12,P7:2,P8:2,P9:11,P10:3,P11:1}).map(([servico,previsto])=>({servico,previsto,acumulado:33}))];
 const reparos=contexto.window.CCOImportacaoPrincipal.calcularReparosPrevisto({ano:2026,mes:8,periodo:"2026-08",dias:[{total_dias:26}]},painelAntes);

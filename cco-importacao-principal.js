@@ -810,7 +810,7 @@
       const resultados=[];
       for(const arquivo of arquivos)resultados.push(...await importarArquivo(arquivo,usuario));
       window.__CCO_IMPORTACOES_POR_PERIODO__={};window.__CCO_IMPORTACAO_ATIVA__=null;window.__CCO_CATALOGO_PROMISE__=null;delete window.__CCO_CATALOGO_PERIODOS__;delete window.__CCO_PERIODOS_REAIS_V12__;delete window.__CCO_CATALOGO_EXECUCAO__;
-      window.CCOPainelService?.invalidarCatalogo?.();window.CCOPageDataCache?.invalidar?.("painel");window.CCOPageDataCache?.invalidar?.("kpi");window.CCOPageDataCache?.invalidar?.("execucao");
+      window.CCOPainelService?.invalidarCatalogo?.();for(const namespace of["periodos","dias-operacao-catalogo","dias-operacao-periodo","painel","kpi","execucao","analytics"])window.CCOCache?.invalidar?.(namespace);for(const pagina of["painel","kpi","execucao","analytics"])window.CCOPageDataCache?.invalidar?.(pagina);
       window.CCOKpiService?.invalidarCache?.();window.invalidarCacheEvolucaoExecucaoCCO?.();window.CCOMetricas?.invalidarCaches?.();window.CCOAnalyticsCharts?.destruirTodos?.();
       const periodosImportados=resultados.map(item=>item.grupo.periodo).sort(),falhas=window.__CCO_FALHAS_IMPORTACAO__||[];
       const resumoFalhas=falhas.length?`\n\nPeríodos com erro (${falhas.length}):\n${falhas.map(item=>`${item.periodo}: ${item.mensagem}`).join("\n")}`:"";
@@ -824,8 +824,8 @@
       document.dispatchEvent(new CustomEvent("cco:importacao-concluida",{detail:{periodos:periodosImportados,catalogo}}));
       if(typeof window.aplicarCatalogoPainelGeral!=="function"&&ultimo&&typeof window.carregarPeriodoCCO==="function")await window.carregarPeriodoCCO(ultimo);else if(typeof window.aplicarCatalogoPainelGeral!=="function"&&typeof window.carregarBaseSupabase==="function")await window.carregarBaseSupabase();
       fecharOverlay();
-      const novos=diagnosticoPeriodos.filter(item=>item.status==="novo").length,atualizados=diagnosticoPeriodos.length-novos,diasImportados=diagnosticoPeriodos.reduce((total,item)=>total+Number(item.dias_operacao||0),0),registrosImportados=resultados.reduce((total,item)=>total+Number(item.grupo.operacoes.length||0),0),rejeitados=falhas.length+resultados.reduce((total,item)=>total+Number(item.grupo.erros.length||0),0);
-      alert(`Importação concluída e auditada. Períodos encontrados: ${periodosImportados.length+ignorados.length}. Novos: ${novos}. Atualizados: ${atualizados}. Inalterados: ${ignorados.length}. Dias de operação importados: ${diasImportados}. Registros novos/atualizados: ${registrosImportados}. Rejeitados: ${rejeitados}.${resumoIgnorados}${resumoFalhas}`);
+      const novos=diagnosticoPeriodos.filter(item=>item.status==="novo").length,atualizados=diagnosticoPeriodos.length-novos,diasImportados=diagnosticoPeriodos.reduce((total,item)=>total+Number(item.dias_operacao||0),0),registrosNovos=resultados.filter(item=>!item.anterior).reduce((total,item)=>total+Number(item.grupo.operacoes.length||0),0),registrosAtualizados=resultados.filter(item=>item.anterior).reduce((total,item)=>total+Number(item.grupo.operacoes.length||0),0),rejeitados=falhas.length+resultados.reduce((total,item)=>total+Number(item.grupo.erros.length||0),0);
+      alert(`Importação concluída e auditada. Períodos encontrados: ${periodosImportados.length+ignorados.length}. Novos: ${novos}. Atualizados: ${atualizados}. Inalterados: ${ignorados.length}. Dias de operação importados: ${diasImportados}. Registros novos: ${registrosNovos}. Registros atualizados: ${registrosAtualizados}. Rejeitados: ${rejeitados}.${resumoIgnorados}${resumoFalhas}`);
       return true;
     } catch(error) {
       console.error("[IMPORTAÇÃO PRINCIPAL] falha",{message:error?.message,code:error?.code,details:error?.details,hint:error?.hint,error});
@@ -906,7 +906,7 @@
     const novo=antigo.cloneNode(true);antigo.replaceWith(novo);novo.dataset.importadorPrincipal=BUILD;novo.addEventListener("change",importarPlanilhas);
   }
 
-  window.CCOImportacaoPrincipal=Object.freeze({BUILD,PERIODOS_ALVO,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairPesoToneladasP4,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,obterQdtEquipeP9,obterDataP9,criarOperacaoP9Raw,prepararReprocessamentoP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,calcularReparosPrevisto,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
+  window.CCOImportacaoPrincipal=Object.freeze({BUILD,TAMANHO_LOTE_RAW,TAMANHO_LOTE_OPERACOES,TAMANHO_LOTE_ERROS,CAMPOS_PLANILHA_CCO,normalizarCabecalho,normalizarCabecalhoCCO,criarMapaCabecalhosUnicos,obterCampoLiteralCCO,obterCampoOperacionalCCO,preValidarCabecalhosCCO,indexarLinhaPorCabecalho,normalizarNumero,normalizarData,extrairPesoToneladasP4,extrairValorOperacionalP9,extrairValorP9,ehAbaP9CatacaoAreaVerde,ehRawP9,obterQdtEquipeP9,obterDataP9,criarOperacaoP9Raw,prepararReprocessamentoP9,analisarWorkbook,separarPorPeriodo,calcularAcumuladoPeriodo,gerarPainelExecutivoPeriodo,calcularReparosPrevisto,lotesAdaptativos,deduplicarDiasOperacao,detectarChaveUnicaDiasOperacao,gravarDiasOperacao,reprocessarP9Ativos,reprocessarP9Periodo,reprocessarKmTotalP1Ativo,importarArquivo,importarPlanilhas});
   window.reprocessarP9AtivosCCO=reprocessarP9Ativos;
   window.reprocessarP9Ativo=reprocessarP9Ativos;
   window.reprocessarP9Periodo=reprocessarP9Periodo;
