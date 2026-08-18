@@ -1,0 +1,24 @@
+const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict");
+const listeners={},elements=new Map(),makeElement=id=>({id,value:"",disabled:false,textContent:"",innerHTML:"",dataset:{},listeners:[],children:[],className:"",style:{},addEventListener(type,fn,options){this.listeners.push({type,fn,signal:options?.signal});},append(node){this.children.push(node);},setAttribute(){},focus(){},scrollIntoView(){},querySelector(){return{onclick:null};}});
+for(const id of["ccoAnalyticsForm","ccoAnalyticsPergunta","ccoAnalyticsEnviar","ccoAnalyticsSugestoes","ccoAnalyticsNova","ccoAnalyticsLimpar","ccoAIResumoExecutivo","ccoAnalyticsMensagens"])elements.set(id,makeElement(id));
+const document={readyState:"loading",visibilityState:"visible",getElementById:id=>elements.get(id)||null,createElement:()=>makeElement("created"),addEventListener:(type,fn)=>listeners[type]=fn};
+let falhar=false,execucoes=0,versao=0;
+const window={document,console,performance,AbortController,CCO_DEBUG_AI_BOOT:false,addEventListener:(type,fn)=>listeners[type]=fn,CCOAnalyticsFormatacao:{escapar:String},CCOSupabase:{exigirSessao:async()=>true},CCOAnalyticsConsultas:{buscarCatalogo:async()=>[{ano:2027,mes:1}]},CCOAnalyticsData:{initialize:async()=>`dataset-${++versao}`,getVersion:()=>`dataset-${versao}`,execute:async()=>{execucoes++;if(falhar)throw new Error("falha simulada");return{fontes:[],cacheHit:false};}},CCOAnalyticsContext:{get:()=>({}),update(){},reset(){}},CCOAnalyticsIntencoes:{estruturar:q=>({question:q,intent:"resumo",domain:"PAINEL",periods:[],filters:{services:[],ras:[],shifts:[]},metrics:[]})},CCOAnalyticsEngine:{calculate:()=>({values:{}})},CCOAnalyticsEvidence:{create:x=>({...x,evidenceId:`ev-${execucoes}`,digest:"d",insights:[],limitations:[]})},CCOAnalyticsResponse:{compose:e=>({text:"ok",domain:e.domain,evidenceId:e.evidenceId,level:"simple"})},CCOAnalyticsValidator:{validate:()=>({valid:true,errors:[]})},CCOAnalyticsGraficos:{destruir(){},destruirTodos(){},aPartirResposta(){}},supabaseClient:{functions:{invoke:async()=>({data:{fallbackUsed:true}})}}};window.window=window;
+const sandbox={window,document,console,performance,AbortController,setTimeout,clearTimeout,navigator:{clipboard:{writeText(){}}},Intl,Date};vm.createContext(sandbox);vm.runInContext(fs.readFileSync("js/cco-analytics-orchestrator.js","utf8"),sandbox);
+(async()=>{
+  listeners.DOMContentLoaded();await new Promise(resolve=>setTimeout(resolve,0));
+  for(let i=0;i<4;i++)await window.CCOAnalyticsOrchestrator.init();
+  assert.equal(window.CCOAnalyticsOrchestrator.getDiagnostics().bootCount,5);
+  assert.equal(window.CCOAnalyticsOrchestrator.getDiagnostics().listenersBound,true);
+  assert(elements.get("ccoAnalyticsForm").listeners.every(item=>item.signal),"listeners devem pertencer a um lifecycle abortável");
+  assert.equal(await window.CCOAnalyticsOrchestrator.submit("primeira"),true);
+  falhar=true;assert.equal(await window.CCOAnalyticsOrchestrator.submit("erro"),false);
+  assert.equal(window.CCOAnalyticsOrchestrator.getDiagnostics().requestInFlight,false);
+  assert.equal(elements.get("ccoAnalyticsEnviar").disabled,false);
+  falhar=false;assert.equal(await window.CCOAnalyticsOrchestrator.submit("segunda"),true);
+  listeners.pageshow({persisted:true});await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(window.CCOAnalyticsOrchestrator.getDiagnostics().requestInFlight,false);
+  assert.equal(await window.CCOAnalyticsOrchestrator.submit("terceira"),true);
+  assert.equal(window.CCOAnalyticsOrchestrator.getDiagnostics().requestCount,4);
+  console.log("CCO Analytics lifecycle: cinco boots, erro recuperável, BFCache e chamadas subsequentes aprovados.");
+})().catch(error=>{console.error(error);process.exitCode=1;});
