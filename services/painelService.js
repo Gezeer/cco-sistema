@@ -4,6 +4,7 @@
   const db = () => { const cliente=global.CCOSupabase?.getClient?.();if(!cliente)throw new Error("Supabase indisponível.");return cliente; };
   const validarId = id => { if (!id) throw new Error("importacao_id é obrigatório."); return String(id); };
   const diasOperacaoCache=new Map();
+  const diasOperacaoRegistros=new Map(),diasOperacaoPendentes=new Map();
   const contador=global.__CCO_CONTADOR_CATALOGO__=global.__CCO_CONTADOR_CATALOGO__||{consultasRPC:0,paginacaoCompleta:0,consumidores:0,promiseCompartilhada:false};
   if(!Number.isFinite(contador.chamadasLegado))contador.chamadasLegado=0;
 
@@ -83,7 +84,7 @@
     return global.__CCO_CATALOGO_PROMISE__;
   }
   const catalogo=()=>getCatalogoPeriodos();
-  function invalidarDiasOperacao(){global.CCOCache?.invalidar("dias-operacao-catalogo");diasOperacaoCache.clear();}
+  function invalidarDiasOperacao(){global.CCOCache?.invalidar("dias-operacao-catalogo");global.CCOCache?.invalidar("dias-operacao-periodo");diasOperacaoCache.clear();diasOperacaoRegistros.clear();diasOperacaoPendentes.clear();}
   function invalidarCatalogo(){global.CCOCache?.invalidar("periodos");invalidarDiasOperacao();global.__CCO_CATALOGO_PROMISE__=null;global.__CCO_CATALOGO_RESOLVIDO__=false;}
   async function recarregarCatalogo(){invalidarCatalogo();return getCatalogoPeriodos();}
   function obterDiasOperacao(ano,mes,importacaoId=null){
@@ -91,14 +92,18 @@
     return Number((importacaoId&&diasOperacaoCache.get(`${importacaoId}|${periodo}`))??diasOperacaoCache.get(periodo)??0);
   }
   async function diasOperacaoPorPeriodo(importacaoId,ano,mes){
-    const id=validarId(importacaoId),periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`,chave=global.CCOCache.chave("dias-operacao-periodo",[id,periodo]);
-    return global.CCOCache.lembrar(chave,async()=>{
-      const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias,dados").eq("ano",Number(ano)).eq("mes",Number(mes)).or(`importacao_id.eq.${id},importacao_id.is.null`);
+    const id=validarId(importacaoId),periodo=`${Number(ano)}-${String(Number(mes)).padStart(2,"0")}`,salvo=diasOperacaoRegistros.get(periodo);
+    if(salvo){if(global.CCO_DEBUG_PAINEL_DIAS===true)console.log("[PAINEL DIAS OPERACAO]",{fonte:"cache-memoria-valido",ano:Number(ano),mes:Number(mes),importacaoId:id,resultadoBanco:salvo.total_dias,cacheHit:true});return salvo;}
+    if(diasOperacaoPendentes.has(periodo))return diasOperacaoPendentes.get(periodo);
+    const promessa=(async()=>{
+      const usuario=await global.CCOSupabase?.exigirSessao?.({redirecionar:false});if(!usuario)throw new Error("Sessão autenticada obrigatória para consultar dias_operacao.");
+      const{data,error}=await db().from("dias_operacao").select("importacao_id,ano,mes,total_dias,dados").eq("ano",Number(ano)).eq("mes",Number(mes)).maybeSingle();
       if(error)throw error;
-      const oficial=(data||[]).find(item=>String(item.importacao_id)===id)||(data||[]).find(item=>item.importacao_id===null)||null;
-      if(oficial){diasOperacaoCache.set(`${id}|${periodo}`,Number(oficial.total_dias)||0);diasOperacaoCache.set(periodo,Number(oficial.total_dias)||0);global.CCO_REGRAS?.registrarDiasOperacao?.([oficial]);}
+      const total=Number(data?.total_dias),oficial=Number.isInteger(total)&&total>0?data:null;
+      if(oficial){diasOperacaoRegistros.set(periodo,oficial);diasOperacaoCache.set(`${id}|${periodo}`,total);diasOperacaoCache.set(periodo,total);global.CCO_REGRAS?.registrarDiasOperacao?.([oficial]);}
+      if(global.CCO_DEBUG_PAINEL_DIAS===true)console.log("[PAINEL DIAS OPERACAO]",{fonte:"public.dias_operacao por ano,mes",ano:Number(ano),mes:Number(mes),importacaoId:id,resultadoBanco:oficial?.total_dias??null,cacheHit:false});
       return oficial;
-    },TTL);
+    })();diasOperacaoPendentes.set(periodo,promessa);try{return await promessa;}finally{diasOperacaoPendentes.delete(periodo);}
   }
   async function ultimoPeriodo() { return (await catalogo())[0] || null; }
   async function porImportacao(importacaoId) {

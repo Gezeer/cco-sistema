@@ -67,8 +67,9 @@ assert.match(trechoReparo,/invalidarCachesPeriodo/,"cache com previsto zero deve
 assert.match(fonte,/\[REGRA PREVISTO 26 DIAS\]/);
 const fontePainel=fs.readFileSync("painel-geral.js","utf8"),fonteService=fs.readFileSync("services/painelService.js","utf8");
 assert.match(fontePainel,/diasOperacaoPorPeriodo\(importacao\.importacao_id,importacao\.ano,importacao\.mes\)/,"Painel deve carregar dias_operacao explicitamente para o período selecionado");
-assert.match(fontePainel,/total_dias_mes:diasOperacao\?\.total_dias\?\?null/,"diagnóstico deve expor o total oficial recebido");
-assert.match(fonteService,/from\("dias_operacao"\).*eq\("ano",Number\(ano\)\).*eq\("mes",Number\(mes\)\).*importacao_id\.eq\.\$\{id\},importacao_id\.is\.null/s,"consulta oficial deve ser vinculada à importação e ao período, aceitando configuração global");
+assert.match(fontePainel,/\[PAINEL PREVISTO\].*totalDiasMes/s,"diagnóstico deve expor o total oficial recebido");
+assert.match(fonteService,/from\("dias_operacao"\).*eq\("ano",Number\(ano\)\).*eq\("mes",Number\(mes\)\)\.maybeSingle\(\)/s,"consulta oficial deve usar a chave ano e mês");
+assert.doesNotMatch(fonteService,/importacao_id\.eq\.\$\{id\}/,"dias_operacao não pode depender de importacao_id incompatível");
 assert.doesNotMatch(fonteService,/MAX\(data_operacao\)|max\("data_operacao"\)|dias distintos/i);
 assert.doesNotMatch(fonte,/obterBasesOficiaisPrevisto|último período oficial|painel_executivo .* CCO_REGRAS\.calcularPrevisto/);
 assert.match(fonte,/20260811-previsto-regra-planilha-v3/);
