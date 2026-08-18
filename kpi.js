@@ -61,10 +61,8 @@
   const normalizarServico=servico=>String(servico||"").trim().toUpperCase();
   const chavePainel=(importacaoId,ano,mes,servico)=>[String(importacaoId||""),Number(ano)||0,Number(mes)||0,normalizarServico(servico)].join("|");
   function obterPrevistoMensalGraficoCCO(servico,linhaPainel,contexto={}){
-    const seguro=typeof window.numeroSeguroCCO==="function"?window.numeroSeguroCCO:n,previstoPainel=seguro(linhaPainel?.previsto);
-    if(previstoPainel>0)return previstoPainel;
-    const previstoRegra=window.obterPrevistoCCO?.({...linhaPainel,...contexto,servico});
-    return seguro(previstoRegra);
+    const totalDias=window.CCO_REGRAS?.obterDiasOperacao?.(contexto.ano,contexto.mes),previsto=totalDias>0?window.CCO_REGRAS.calcularPrevisto(servico,totalDias):null;
+    return Number.isFinite(previsto)?previsto:null;
   }
   window.obterPrevistoMensalGraficoCCO=obterPrevistoMensalGraficoCCO;
   function criarSerieEquipeContratualDiariaKPI(servico,ano,mes){
@@ -158,7 +156,6 @@
       logInitKPI("SERVIÇO OK",{servico});logInitKPI("ANO OK",{ano:Number(periodo.ano)});logInitKPI("MÊS OK",{mes:Number(periodo.mes)});logInitKPI("FILTROS OK",{servico,ano:Number(periodo.ano),mes:Number(periodo.mes)});logInitKPI("IMPORTAÇÃO OK",{importacaoId:periodo.importacao_id});
       if(typeof preencherTexto==="function")preencherTexto("nomeArquivo","🔄 Carregando dados do período do KPI...");
       try{
-        periodo.total_dias_mes=window.CCO_REGRAS.obterDiasOperacao(periodo.ano,periodo.mes);
         const contextoInicial=window.definirPeriodoKPIAtivo({ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});logInitKPI("PERÍODO SINCRONIZADO",{ano:contextoInicial.ano,mes:contextoInicial.mes,importacaoId:contextoInicial.importacaoId});
         if(typeof window.aplicarMesKPI!=="function")throw new Error("[KPI INIT] aplicarMesKPI indisponível");
         const sequencia=++sequenciaCargaKPI,token=[servico,contextoInicial.periodo,contextoInicial.importacaoId,sequencia].join("|");window.__CCO_KPI_RENDER_TOKEN__=token;logInitKPI("CONSULTA INÍCIO",{token,servico,ano:Number(periodo.ano),mes:Number(periodo.mes),importacaoId:periodo.importacao_id});

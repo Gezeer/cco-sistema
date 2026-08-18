@@ -147,6 +147,8 @@
       const porPeriodo=new Map(linhas.map(item=>[`${periodoChave(item.ano,item.mes)}|${String(item.importacao_id)}`,item]));
       linhas=catalogo.map(periodo=>{const importacaoId=periodo.importacao_id??periodo.id,base=porPeriodo.get(`${periodoChave(periodo.ano,periodo.mes)}|${String(importacaoId)}`)||{},equipe=window.CCOMetricas.calcularEquipeMensalServico({servico,registros:operacoes,ano:periodo.ano,mes:periodo.mes,importacaoId});return{...base,importacao_id:importacaoId,ano:Number(periodo.ano),mes:Number(periodo.mes),servico,previsto:equipe.previsto,acumulado:equipe.executado,unidade:equipe.unidade};});
     }
+    const diasPorPeriodo=await Promise.all(catalogo.map(async periodo=>{const registro=await window.CCOPainelService.diasOperacaoPorPeriodo(periodo.importacao_id,periodo.ano,periodo.mes),totalDias=Number(registro?.total_dias);if(!Number.isInteger(totalDias)||totalDias<=0)throw new Error(`Dias de operação indisponíveis para ${periodoChave(periodo.ano,periodo.mes)}.`);return[`${periodoChave(periodo.ano,periodo.mes)}|${String(periodo.importacao_id)}`,totalDias];}));
+    const mapaDias=new Map(diasPorPeriodo);linhas=linhas.map(linha=>{const totalDias=mapaDias.get(`${periodoChave(linha.ano,linha.mes)}|${String(linha.importacao_id)}`),previsto=window.CCO_REGRAS.calcularPrevisto(servico,totalDias);return{...linha,previsto,total_dias_mes:totalDias};});
     cacheEvolucaoExecucao.set(chaveCache,{linhas});return{catalogo,linhas};
   }
   async function renderizarEvolucaoHistoricaCCO(servicoSelecionado){

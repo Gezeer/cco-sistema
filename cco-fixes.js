@@ -136,7 +136,8 @@
       const item = metas.get(servico) || {};
       const registros = linhas.filter(linha => normalizarServico(linha.servico ?? linha.servico_p ?? linha.tipo_servico) === servico);
       if(servico==="P9"){window.CCODiagnosticoP9Etapa?.("cco-fixes.js:metas.get(P9) → painel_executivo",item.acumulado,"leitura de painel_executivo.acumulado",registros);console.log("[P9 EXECUÇÃO]",{registrosRecebidos:linhas.length,registrosFiltrados:registros.length,executadoCalculado:registros.reduce((t,x)=>t+numeroSeguro(x.executado),0),valorFinal:metricas.calcularAcumuladoServico("P9",registros)});}
-      const diasOperacao = window.CCO_REGRAS.obterDiasOperacao(periodo.ano,periodo.mes);
+      const diasOperacao = Number(diasOperacaoOficial);
+      const previstoOficial = window.CCO_REGRAS.calcularPrevisto(servico,diasOperacao);
       const valoresOficiais = window.CCO_VALORES_FIXOS || (typeof VALORES_FIXOS !== "undefined" ? VALORES_FIXOS : {});
       const valorUnitario = numeroSeguro(item.valor_unitario) || numeroSeguro(valoresOficiais[servico]);
       const campoMetrica = metricas.METRICA_POR_SERVICO[servico];
@@ -154,23 +155,26 @@
         const equipe=metricas.calcularEquipeMensalServico({servico,registros,ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
         linha={acumulado_mes:equipe.executado,metrica_disponivel:equipe.executado!==null,previsto_mes:equipe.previsto,previsto_acumulado:equipe.previsto,porcentagem_execucao:equipe.percentual,valor:null,status:equipe.executado===null?"Sem dados":"Com dados",fonte_metricas:"CCOMetricas.calcularEquipeMensalServico"};
       }else if(PAGINA==="execucao"&&servico==="P4"){
-        const acumulado=registros.length?metricas.calcularAcumuladoServico("P4",registros):numeroSeguro(item.acumulado),previsto=numeroSeguro(item.previsto),previstoAcumulado=metricas.calcularPrevistoAcumulado({previstoMensal:previsto,diasExecutados:diasAcumulados,diasOperacaoMes:diasOperacao});
+        const acumulado=registros.length?metricas.calcularAcumuladoServico("P4",registros):numeroSeguro(item.acumulado),previsto=previstoOficial,previstoAcumulado=metricas.calcularPrevistoAcumulado({previstoMensal:previsto,diasExecutados:diasAcumulados,diasOperacaoMes:diasOperacao});
         linha={acumulado_mes:acumulado,metrica_disponivel:registros.length>0||item.acumulado!=null,previsto_mes:previsto,previsto_acumulado:previstoAcumulado,porcentagem_execucao:metricas.calcularPercentualCumprimento({acumuladoReal:acumulado,previstoAcumulado}),valor:acumulado*valorUnitario,status:registros.length?"Com dados":"Fallback painel executivo",fonte_metricas:registros.length?"operacoes.peso_t + CCOMetricas.calcularAcumuladoServico":"painel_executivo.acumulado (fallback sem operações P4)"};
       }else if(servico==="P12"){
         diasAcumulados=diasAcumulados||metricas.calcularDiasExecutados(registros,"P12");
         const colunaExecutado=schemaOperacoes.opcionaisDisponiveis.includes("executado")||registros.some(r=>Object.prototype.hasOwnProperty.call(r,"executado"));
         const chaveExecutadoEncontrada=registros.some(r=>Object.prototype.hasOwnProperty.call(r,"executado"))?"executado":null;
-        const acumulado=calcularAcumuladoP12(registros),previsto=numeroSeguro(item.previsto),previstoAcumulado=metricas.calcularPrevistoAcumulado({previstoMensal:previsto,diasExecutados:diasAcumulados,diasOperacaoMes:diasOperacao});
+        const acumulado=calcularAcumuladoP12(registros),previsto=previstoOficial,previstoAcumulado=metricas.calcularPrevistoAcumulado({previstoMensal:previsto,diasExecutados:diasAcumulados,diasOperacaoMes:diasOperacao});
         const temExecutadoPreenchido=registros.some(r=>{const v=obterExecutadoBruto(r);return v!==null&&v!==undefined&&String(v).trim()!=="";});
         linha={acumulado_mes:colunaExecutado?acumulado:null,metrica_disponivel:colunaExecutado,previsto_mes:previsto,previsto_acumulado:previstoAcumulado,porcentagem_execucao:colunaExecutado?metricas.calcularPercentualCumprimento({acumuladoReal:acumulado,previstoAcumulado}):null,valor:colunaExecutado?acumulado*valorUnitario:null,status:!registros.length?"Sem dados":temExecutadoPreenchido?"Com dados":"Executado ausente",fonte_metricas:"operacoes.executado"};
         if(PAGINA==="painel"){console.log("[P12] registros encontrados:",registros.length);console.log("[P12][SUPABASE] chaves do registro:",Object.keys(registros[0]||{}));console.log("[P12][SUPABASE] amostra:",registros.slice(0,3));console.log("[P12] coluna Executado encontrada:",chaveExecutadoEncontrada);console.table(registros.slice(0,20).map(r=>({data:r.data_operacao??r.data??null,executadoBruto:obterExecutadoBruto(r)??null,executadoNormalizado:obterExecutado(r)})));console.log("[P12] soma final:",acumulado);}
       }else{
-        consolidado=metricas.consolidarServico({servico,registros,previstoMensal:item.previsto,diasOperacaoMes:diasOperacao,valorUnitario,nome:item.nome_servico||"",unidade:obterMedicaoOficial(servico),ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
+        consolidado=metricas.consolidarServico({servico,registros,previstoMensal:previstoOficial,diasOperacaoMes:diasOperacao,valorUnitario,nome:item.nome_servico||"",unidade:obterMedicaoOficial(servico),ano:periodo.ano,mes:periodo.mes,importacaoId:periodo.importacao_id});
         linha={acumulado_mes:metricaDisponivel?consolidado.acumuladoReal:null,metrica_disponivel:metricaDisponivel,previsto_mes:consolidado.previstoMensal,previsto_acumulado:metricaDisponivel?consolidado.previstoAcumulado:null,porcentagem_execucao:metricaDisponivel?consolidado.percentualCumprimento:null,valor:metricaDisponivel?consolidado.valorAcumulado:null,status:metricaDisponivel&&consolidado.status==="com_dados"?"Com dados":"Sem dados",fonte_metricas:"operacoes + painel_executivo + dias_operacao"};
       }
+      if((PAGINA==="execucao"||PAGINA==="kpi")&&linha?.metrica_disponivel&&numeroSeguro(linha.previsto_mes)>0)linha.porcentagem_execucao=numeroSeguro(linha.acumulado_mes)/numeroSeguro(linha.previsto_mes)*100;
       if(servico==="P9")window.CCODiagnosticoP9Etapa?.("cco-fixes.js:painelConvertido[P9].acumulado_mes",linha?.acumulado_mes,"atribuição final da linha consolidada antes de painelExecutivo",registros);
       if(PAGINA==="execucao"&&servico==="P3"&&Number(periodo.ano)===2026&&Number(periodo.mes)===4){const datas=registros.map(item=>String(item.data_operacao||"").slice(0,10)).filter(Boolean).sort(),valoresEquipe=registros.map(item=>metricas.obterValorEquipeValido(item)).filter(valor=>valor!==null);console.log("[EXECUÇÃO P3 ABRIL DIAGNÓSTICO]",{servico,ano:Number(periodo.ano),mes:Number(periodo.mes),importacaoId:periodo.importacao_id,quantidadeOperacoes:registros.length,primeiraData:datas[0]||null,ultimaData:datas.at(-1)||null,qtdEquipeValidas:valoresEquipe.length,somaEquipe:valoresEquipe.reduce((total,valor)=>total+valor,0),acumuladoEquipe:linha.acumulado_mes,previstoEquipe:linha.previsto_mes,peso:registros.reduce((total,item)=>total+numeroSeguro(item.peso_t),0),km:registros.reduce((total,item)=>total+numeroSeguro(item.km_total),0),viagens:registros.reduce((total,item)=>total+numeroSeguro(item.viagens),0)});}
       if(PAGINA==="execucao")console.log("[EXECUÇÃO CONSOLIDAÇÃO]",{periodo:periodo.periodo,servico,acumulado:linha?.acumulado_mes??null,previsto:linha?.previsto_mes??null,percentual:linha?.porcentagem_execucao??null,diasComDados:diasAcumulados,peso:registros.reduce((total,item)=>total+numeroSeguro(item.peso_t),0),viagens:registros.reduce((total,item)=>total+numeroSeguro(item.viagens),0),km:registros.reduce((total,item)=>total+numeroSeguro(item.km_total),0),equipes:registros.reduce((total,item)=>total+numeroSeguro(item.qtd_equipe??item.equipe),0)});
+      if(PAGINA==="execucao"&&window.CCO_DEBUG_PREVISTO_EXECUCAO===true)console.log("[EXECUCAO PREVISTO]",{servico,ano:Number(periodo.ano),mes:Number(periodo.mes),importacaoId:periodo.importacao_id,totalDiasMes:diasOperacao,previsto:linha?.previsto_mes??null,executado:linha?.acumulado_mes??null,percentual:linha?.porcentagem_execucao??null});
+      if(PAGINA==="kpi"&&window.CCO_DEBUG_PREVISTO_EXECUCAO===true)console.log("[KPI PREVISTO]",{servico,ano:Number(periodo.ano),mes:Number(periodo.mes),importacaoId:periodo.importacao_id,totalDiasMes:diasOperacao,previsto:linha?.previsto_mes??null,executado:linha?.acumulado_mes??null,percentual:linha?.porcentagem_execucao??null});
       return {servico,nome_servico:item.nome_servico||"",medicao:obterMedicaoOficial(servico),dias_acumulados:diasAcumulados,total_dias_mes:diasOperacao,quantidade_equipes:consolidado?.quantidadeEquipes??null,produtividade:consolidado?.produtividade??null,avisos_consistencia:consolidado?.avisos||[],...linha};
     });
     window.painelExecutivo = painelConvertido;
@@ -185,11 +189,13 @@
     const servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),chaveCompleta=[PAGINA,periodo.ano,periodo.mes,servico,periodo.importacao_id].join("|");
     if (cargaPromise?.chave === chaveCompleta) return cargaPromise.promise;
     const promise = (async () => {
-      const [linhas, painelLinhas, diasOperacao] = await Promise.all([
+      const [linhas, painelLinhas, registroDiasOperacao] = await Promise.all([
         buscarTodasOperacoes(periodo),
         buscarPainel(periodo),
-        Promise.resolve(window.CCO_REGRAS.obterDiasOperacao(periodo.ano, periodo.mes))
+        window.CCOPainelService.diasOperacaoPorPeriodo(periodo.importacao_id,periodo.ano,periodo.mes)
       ]);
+      const diasOperacao=Number(registroDiasOperacao?.total_dias);
+      if(!Number.isInteger(diasOperacao)||diasOperacao<=0)throw new Error(`Dias de operação indisponíveis para ${periodo.ano}-${pad(periodo.mes)}.`);
       if(PAGINA==="execucao"&&periodo.__ccoContextoExecucao&&!window.contextoExecucaoAtualCCO?.(periodo.__ccoContextoExecucao)){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,chave:periodo.__ccoChaveRequisicao});return false;}
       if(PAGINA==="kpi"&&tokenKpi!==window.__CCO_KPI_SEQUENCIA__){if(window.CCO_DEBUG_KPI_PERFORMANCE===true)console.warn("[KPI RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,tokenKpi});return false;}
       publicarPeriodo(linhas, painelLinhas, periodo, diasOperacao);
@@ -422,7 +428,7 @@
       peso_t:numeroSeguro(item.total_peso_t), viagens:numeroSeguro(item.total_viagens),
       km_total:numeroSeguro(item.total_km), equipes:0, tempo_produtivo:0,
       linhaPainel:mapaPainel.get(chavePainel(item))||null,
-      previsto:numeroSeguro(mapaPainel.get(chavePainel(item))?.previsto),
+      previsto:window.CCO_REGRAS.calcularPrevisto(String(item.servico||"").toUpperCase(),window.CCO_REGRAS.obterDiasOperacao(item.ano,item.mes)),
       executado:numeroSeguro(item.total_peso_t || item.total_km || item.total_viagens), valor:0
     }));
     window.kpiMensal=convertido;
