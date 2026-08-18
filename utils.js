@@ -10725,7 +10725,11 @@ function renderDetalheServicoMensal(codigo,contextoExecucao) {
   window.animarCardsExecucaoCCO?.({carregando:false});
 
   const labelsMes = mensal.map(i => i.mesBrasil);
-  ccoGraficoExecDetalheEvolucaoFinal = ccoFinalCriarBarra("graficoExecDetalheEvolucao", "Executado", labelsMes, mensal.map(i => i.executado));
+  /* Na página Execução este host pertence ao comparativo histórico assíncrono.
+     Renderizar `mensal` aqui exibe o mês corrente como se fosse o histórico completo. */
+  if(String(window.CCO_PAGE||"").toLowerCase()!=="execucao"){
+    ccoGraficoExecDetalheEvolucaoFinal = ccoFinalCriarBarra("graficoExecDetalheEvolucao", "Executado", labelsMes, mensal.map(i => i.executado));
+  }
 }
 
 /* Comparativo Mensal: serviço + ano, funcionando mesmo após filtros e recarregamentos. */

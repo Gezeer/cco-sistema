@@ -144,6 +144,20 @@ body.execution-page #detalheServico > .cards > .card > small {
   body.execution-page #graficoExecDetalheEvolucao { height: var(--cco-chart-mobile-height, 250px) !important; min-height: var(--cco-chart-mobile-height, 250px) !important; }
 }
 
+body.execution-page #secaoEvolucaoServico .cco-chart-wrapper { position:relative; min-height:390px; }
+body.execution-page #secaoEvolucaoServico #graficoExecDetalheEvolucao[hidden] { display:none !important; }
+body.execution-page #secaoEvolucaoServico .cco-chart-state.is-loading {
+  display:flex; min-height:390px; align-items:center; justify-content:center;
+  color:#a7f3d0; font-size:.92rem; letter-spacing:.01em;
+  border:1px solid rgba(167,243,208,.08); border-radius:11px;
+  background:linear-gradient(110deg,rgba(3,17,14,.42) 30%,rgba(16,185,129,.09) 45%,rgba(3,17,14,.42) 60%);
+  background-size:240% 100%; animation:ccoHistoricoLoading 1.6s ease-in-out infinite;
+}
+@keyframes ccoHistoricoLoading { to { background-position:-140% 0; } }
+@media (max-width:900px) { body.execution-page #secaoEvolucaoServico .cco-chart-wrapper,body.execution-page #secaoEvolucaoServico .cco-chart-state.is-loading { min-height:350px; } }
+@media (max-width:680px) { body.execution-page #secaoEvolucaoServico .cco-chart-wrapper,body.execution-page #secaoEvolucaoServico .cco-chart-state.is-loading { min-height:310px; } }
+@media (prefers-reduced-motion:reduce) { body.execution-page #secaoEvolucaoServico .cco-chart-state.is-loading { animation:none; } }
+
 @media (max-width: 767px) {
   body.execution-page #graficoExecDetalheEvolucao {
     width: 100% !important;
