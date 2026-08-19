@@ -36,7 +36,7 @@ assert.match(render,/token!==requisicaoEvolucaoExecucao/,"resposta antiga não p
 assert.match(render,/obterServicoAtivo/,"a resposta também deve confirmar o serviço ainda selecionado");
 assert.match(render,/destruirGrafico\?\.\(container\)/,"a segunda renderização deve destruir a instância anterior do mesmo container");
 assert.doesNotMatch(render,/IDS_GRAFICOS_EXECUCAO\.forEach/,"a atualização não pode destruir gráficos de outras seções");
-assert.match(fonteExecucao,/select\("importacao_id,ano,mes,servico,acumulado,previsto,valor_total"\)/);
+assert.match(fonteExecucao,/select\("importacao_id,ano,mes,servico,acumulado"\)/,"histórico deve buscar somente colunas agregadas necessárias");
 assert.match(fonteExecucao,/labels\.length!==catalogo\.length/);
 const graficos3d=fs.readFileSync("js/cco-graficos-3d.js","utf8");
 assert.match(render,/tipo:"barra3d",agrupado:true,preservarNulos:true/,"o comparativo deve usar barras 3D agrupadas preservando null");
@@ -51,6 +51,6 @@ assert.match(graficos3d,/prefers-reduced-motion: reduce/);
 assert.match(graficos3d,/movimentoReduzido\?0:cfg\.animacao/);
 assert.match(fonteHtml,/cco-execucao-comparativo\.js\?v=20260805-previsto-acumulado-v1/);
 assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260806-execucao-rotulos-legenda-espacamento-v1/);
-assert.match(fonteHtml,/execucao\.js\?v=20260811-catalogo-apos-importacao-v1/);
+assert.match(fonteHtml,/execucao\.js\?v=20260818-acumulado-historico-v3/);
 
 console.log("Execução comparativa: catálogo dinâmico, duas séries, isolamento por importação, null e corrida assíncrona aprovados.");

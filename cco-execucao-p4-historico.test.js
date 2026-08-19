@@ -3,7 +3,8 @@ const execucao=fs.readFileSync("execucao.js","utf8"),fixes=fs.readFileSync("cco-
 
 assert.match(execucao,/VERSAO_CACHE_EVOLUCAO_EXECUCAO="p4-operacoes-v2"/);
 assert.match(execucao,/chaveCache=`\$\{VERSAO_CACHE_EVOLUCAO_EXECUCAO\}\|evolucao\|\$\{servico\}\|\$\{assinatura\}`/);
-assert.match(execucao,/\.select\("id,importacao_id,servico,tipo_servico,data_operacao,peso_t"\)\.in\("importacao_id",\[\.\.\.idsAtivos\]\)\.eq\("servico","P4"\)/);
+assert.match(execucao,/colunasOperacoes=servico==="P4"\|\|servico==="P1"\?"id,importacao_id,servico,tipo_servico,data_operacao,peso_t"/);
+assert.match(execucao,/\.select\(colunasOperacoes\)\.in\("importacao_id",\[\.\.\.idsAtivos\]\)\.eq\("servico",servico\)/);
 assert.match(execucao,/CCOMetricas\.calcularAcumuladoServico\("P4",registros\)/);
 assert.match(execucao,/acumuladoOperacoes\?\?acumuladoPainel/);
 assert.match(execucao,/\[P4 EXECUÇÃO HISTÓRICO\]/);
