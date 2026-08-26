@@ -6,7 +6,8 @@ test("P1 agosto/2026 preserva 5.239,29 e nunca converte campo ausente em resulta
   const metricas=carregarMetricas(),registros=[5239,0.29].map((peso_t,indice)=>({importacao_id:"agosto",servico:"P1",data_operacao:`2026-08-${String(indice+1).padStart(2,"0")}`,peso_t}));
   assert.equal(metricas.calcularAcumuladoP1Periodo({ano:2026,mes:8,importacaoId:"agosto",registros}),5239.29);
   const fonte=fs.readFileSync("execucao.js","utf8");
-  assert.match(fonte,/servico==="P4"\|\|servico==="P1"\?"id,importacao_id,servico,tipo_servico,data_operacao,peso_t"/);
+  assert.match(fonte,/select\("importacao_id,servico,acumulado:peso_t\.sum\(\)"\)/);
+  assert.match(fonte,/item\.acumulado==null\?null:Number\(item\.acumulado\)/,"SUM nulo não pode virar zero");
 });
 
 test("P2.1 usa agregado normalizado e mantém acumulado 233",()=>{

@@ -1,10 +1,10 @@
 const assert=require("node:assert/strict"),fs=require("node:fs");
 const execucao=fs.readFileSync("execucao.js","utf8"),fixes=fs.readFileSync("cco-fixes.js","utf8");
 
-assert.match(execucao,/VERSAO_CACHE_EVOLUCAO_EXECUCAO="p4-operacoes-v2"/);
+assert.match(execucao,/VERSAO_CACHE_EVOLUCAO_EXECUCAO="agregado-operacoes-v3"/);
 assert.match(execucao,/chaveCache=`\$\{VERSAO_CACHE_EVOLUCAO_EXECUCAO\}\|evolucao\|\$\{servico\}\|\$\{assinatura\}`/);
-assert.match(execucao,/colunasOperacoes=servico==="P4"\|\|servico==="P1"\?"id,importacao_id,servico,tipo_servico,data_operacao,peso_t"/);
-assert.match(execucao,/\.select\(colunasOperacoes\)\.in\("importacao_id",\[\.\.\.idsAtivos\]\)\.eq\("servico",servico\)/);
+assert.match(execucao,/select\("importacao_id,servico,acumulado:peso_t\.sum\(\)"\)\.in\("importacao_id",\[\.\.\.idsAtivos\]\)\.eq\("servico",servico\)/);
+assert.doesNotMatch(execucao.slice(execucao.indexOf("async function buscarEvolucaoServicoCCO"),execucao.indexOf("async function renderizarEvolucaoHistoricaCCO")),/CCOSupabase\.paginar/);
 assert.match(execucao,/CCOMetricas\.calcularAcumuladoServico\("P4",registros\)/);
 assert.match(execucao,/acumuladoOperacoes\?\?acumuladoPainel/);
 assert.match(execucao,/\[P4 EXECUÇÃO HISTÓRICO\]/);

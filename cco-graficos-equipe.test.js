@@ -36,8 +36,8 @@ assert.deepEqual(diario,[
 assert.equal(api.obterValorEquipeValido({qtd_equipe:4.533333,equipe:0.466666,executado:0.533333}),null);
 
 const execucao=fs.readFileSync("execucao.js","utf8"),kpi=fs.readFileSync("kpi.js","utf8");
-assert.match(execucao,/calcularEquipeMensalServico/);
-assert.match(execucao,/select\("importacao_id,servico,tipo_servico,data_operacao,qtd_equipe,equipe,executado"\)/);
+assert.match(execucao,/fonteHistorico=base\?"painel_executivo\.acumulado":"indisponível"/);
+assert.doesNotMatch(execucao,/select\("importacao_id,servico,tipo_servico,data_operacao,qtd_equipe,equipe,executado"\)/,"histórico deve reutilizar o acumulado oficial de equipes já consolidado no painel");
 assert.match(kpi,/criarSerieEquipeContratualDiariaKPI/);
 assert.match(kpi,/nome:"Previsto"[\s\S]*nome:"Executado"/);
 assert.doesNotMatch(execucao.match(/if\(window\.CCOMetricas\?\.ehServicoEquipe[\s\S]*?\n    }/)?.[0]||"",/valor_unitario|valor_total|peso_t|km_total|viagens|R\$/);
