@@ -30,7 +30,7 @@ const p9=api.montar({catalogo,linhas:linhasP9});
 assert.notDeepEqual([...p9.previstos],[...p1.previstos],"trocar serviço deve atualizar a série Previsto");
 assert.notDeepEqual([...p9.acumulados],[...p1.acumulados],"trocar serviço deve atualizar a série Acumulado");
 
-const render=fonteExecucao.match(/async function renderizarEvolucaoHistoricaCCO[\s\S]*?(?=\n  window\.renderizarEvolucaoHistoricaCCO)/)?.[0]||"";
+const render=fonteExecucao.match(/async function executarEvolucaoHistoricaCCO[\s\S]*?(?=\n  function renderizarEvolucaoHistoricaCCO)/)?.[0]||"";
 assert.match(render,/series:\[\{nome:"Previsto"[\s\S]*\{nome:"Acumulado"/,"o gráfico deve possuir as duas séries");
 assert.match(render,/token!==requisicaoEvolucaoExecucao/,"resposta antiga não pode sobrescrever o serviço atual");
 assert.match(render,/obterServicoAtivo/,"a resposta também deve confirmar o serviço ainda selecionado");
@@ -51,6 +51,6 @@ assert.match(graficos3d,/prefers-reduced-motion: reduce/);
 assert.match(graficos3d,/movimentoReduzido\?0:cfg\.animacao/);
 assert.match(fonteHtml,/cco-execucao-comparativo\.js\?v=20260805-previsto-acumulado-v1/);
 assert.match(fonteHtml,/cco-graficos-3d\.js\?v=20260806-execucao-rotulos-legenda-espacamento-v1/);
-assert.match(fonteHtml,/execucao\.js\?v=20260826-execucao-historico-agregado-v3/);
+assert.match(fonteHtml,/execucao\.js\?v=20260826-execucao-historico-loader-v4/);
 
 console.log("Execução comparativa: catálogo dinâmico, duas séries, isolamento por importação, null e corrida assíncrona aprovados.");

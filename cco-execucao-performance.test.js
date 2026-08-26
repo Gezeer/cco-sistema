@@ -48,4 +48,14 @@ test("histórico possui timeout recuperável e nova tentativa",()=>{
   assert.match(fonte,/CCO_EXEC_HIST_TIMEOUT/);
   assert.match(fonte,/Histórico indisponível no momento/);
   assert.match(fonte,/data-cco-repetir-historico/);
+  assert.match(fonte,/\.finally\(\(\)=>\{historicosPendentes\.delete\(chave\)/,"loader deve ser encerrado mesmo após descarte ou falha posterior à rede");
+  assert.match(fonte,/if\(historicoLoading[\s\S]*atualizarEstadoEvolucaoHistoricaCCO\("erro"/);
+});
+
+test("histórico deduplica inicializações e registra todo o pipeline",()=>{
+  const fonte=fs.readFileSync("execucao.js","utf8");
+  assert.match(fonte,/historicosPendentes\.has\(chave\)/);
+  assert.match(fonte,/window\.__CCO_EXEC_HIST_CALLS__/);
+  for(const evento of ["START","CATALOGO","PERIODOS","IMPORTACOES","P1 START","P1 END","PAINEL START","PAINEL END","RENDER","ERROR","TIMEOUT","DONE"])assert.match(fonte,new RegExp(`\\[EXEC HIST ${evento}\\]`));
+  assert.match(fonte,/historicosPendentes\.delete\(chave\)/,"Promise concluída ou rejeitada não pode permanecer pendente");
 });
