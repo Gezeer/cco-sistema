@@ -192,7 +192,7 @@
       const medir=(campo,tarefa)=>PAGINA==="execucao"&&window.CCOExecucaoPerformance?.medir?window.CCOExecucaoPerformance.medir(campo,tarefa):tarefa();
       const [linhas, painelLinhas, registroDiasOperacao] = await Promise.all([
         medir("operacoesMs",()=>buscarTodasOperacoes(periodo)),
-        medir("painelMs",()=>buscarPainel(periodo)),
+        medir("painelExecutivoMs",()=>buscarPainel(periodo)),
         medir("diasOperacaoMs",()=>window.CCOPainelService.diasOperacaoPorPeriodo(periodo.importacao_id,periodo.ano,periodo.mes))
       ]);
       const diasOperacao=Number(registroDiasOperacao?.total_dias);

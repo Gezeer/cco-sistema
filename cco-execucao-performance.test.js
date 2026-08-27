@@ -39,7 +39,7 @@ test("dias_operacao do catálogo alimenta o cache reutilizado pelo histórico",(
 test("telemetria só publica com a flag explícita",()=>{
   const fonte=fs.readFileSync("execucao.js","utf8");
   assert.match(fonte,/CCO_DEBUG_EXECUCAO_PERFORMANCE===true/);
-  for(const campo of ["authMs","catalogoMs","resolverPeriodoMs","diasOperacaoMs","painelMs","operacoesMs","cardsMs","historicoMs","graficosMs","totalMs","requestsSupabase","cacheHits"])assert.match(fonte,new RegExp(campo));
+  for(const campo of ["catalogoMs","resolverImportacaoMs","diasOperacaoMs","painelExecutivoMs","historicoMs","renderMs","totalMs","quantidadeRequests","quantidadeRegistrosRecebidos","historicoCalls","cacheHits"])assert.match(fonte,new RegExp(campo));
 });
 
 test("histórico possui timeout recuperável e nova tentativa",()=>{
@@ -58,4 +58,21 @@ test("histórico deduplica inicializações e registra todo o pipeline",()=>{
   assert.match(fonte,/window\.__CCO_EXEC_HIST_CALLS__/);
   for(const evento of ["START","CATALOGO","PERIODOS","IMPORTACOES","P1 START","P1 END","PAINEL START","PAINEL END","RENDER","ERROR","TIMEOUT","DONE"])assert.match(fonte,new RegExp(`\\[EXEC HIST ${evento}\\]`));
   assert.match(fonte,/historicosPendentes\.delete\(chave\)/,"Promise concluída ou rejeitada não pode permanecer pendente");
+});
+
+test("detalhe prematuro não inicia histórico antes do contexto oficial",()=>{
+  const fonte=fs.readFileSync("execucao.js","utf8");
+  const inicio=fonte.indexOf("const renderDetalheServicoMensalOriginal");
+  const fim=fonte.indexOf("async function iniciarInterno",inicio);
+  const wrapper=fonte.slice(inicio,fim);
+  assert.match(wrapper,/contextoInformado\|\|null/);
+  assert.match(wrapper,/if\(contexto&&contextoExecucaoAtualCCO\(contexto\)\)renderizarEvolucaoHistoricaCCO/);
+  assert.doesNotMatch(wrapper,/posicionarSecoesDetalheExecucao\(\);renderizarEvolucaoHistoricaCCO/);
+});
+
+test("telemetria publica o contrato window.__CCO_PERF__ solicitado",()=>{
+  const fonte=fs.readFileSync("execucao.js","utf8");
+  for(const campo of ["resolverImportacaoMs","painelExecutivoMs","quantidadeRequests","quantidadeRegistrosRecebidos","historicoCalls","renderMs"])assert.match(fonte,new RegExp(campo));
+  assert.match(fonte,/window\.__CCO_PERF__\.execucao=relatorio/);
+  assert.match(fonte,/console\.log\("EXEC_START"\)/);
 });

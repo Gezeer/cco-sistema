@@ -178,7 +178,7 @@
 <script src="js/cco-regras-negocio.js?v=20260811-previsto-regra-planilha-v3"></script>
 <script src="js/regras-servicos.js?v=20260811-painel-catalogo-fallback-leve-v4"></script>
 <script src="services/cache.js?v=20260811-painel-catalogo-fallback-leve-v4"></script>
-	<script src="services/painelService.js?v=20260811-catalogo-apos-importacao-v1"></script>
+	<script src="services/painelService.js?v=20260826-painel-performance-v1"></script>
 <script src="services/kpiService.js?v=20260811-painel-catalogo-fallback-leve-v4"></script>
 <script src="services/execucaoService.js?v=20260811-painel-catalogo-fallback-leve-v4"></script>
 <script src="services/analyticsService.js?v=20260811-painel-catalogo-fallback-leve-v4"></script>
@@ -228,7 +228,7 @@
       await carregarScriptSequencial("cco-fixes.js?v=20260811-painel-catalogo-fallback-leve-v4");
       await carregarScriptSequencial("cco-importacao-principal.js", "20260811-previsto-regra-planilha-v3");
       await carregarScriptSequencial("painel.js");
-      await carregarScriptSequencial("painel-geral.js", "20260811-catalogo-apos-importacao-v1");
+      await carregarScriptSequencial("painel-geral.js", "20260827-painel-performance-v2");
       await window.carregarRegrasServicosCCO();
 
       console.log("⚡ CCO-Engine: scripts locais carregados em ordem segura.");
