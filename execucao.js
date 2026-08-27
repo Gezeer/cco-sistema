@@ -1,6 +1,11 @@
 /* Execução P1 a P12 - carregamento completo, sem corte e sem delay. */
 (function iniciarPaginaExecucao(){
   window.CCO_PAGE = "execucao";
+  if(sessionStorage.getItem("CCO_DEBUG_EXECUCAO_PERFORMANCE")==="1")window.CCO_DEBUG_EXECUCAO_PERFORMANCE=true;
+  window.__CCO_EXEC_BOOT_COUNT__=Number(window.__CCO_EXEC_BOOT_COUNT__)||0;
+  window.__CCO_EXEC_HIST_CALLS__=Number(window.__CCO_EXEC_HIST_CALLS__)||0;
+  window.__CCO_EXEC_DISCARDS__=Number(window.__CCO_EXEC_DISCARDS__)||0;
+  window.__CCO_EXEC_BOOT_EM_ANDAMENTO__=true;
   const n=valor=>{const numero=Number(valor);return Number.isFinite(numero)?numero:0;};
   const relogioExecucao=()=>globalThis.performance?.now?.()??Date.now();
   const performanceExecucao=window.CCOExecucaoPerformance=(()=>{let inicio=relogioExecucao(),dados={};const campos=["authMs","catalogoMs","resolverImportacaoMs","diasOperacaoMs","painelExecutivoMs","operacoesMs","cardsMs","historicoMs","renderMs","graficosMs"];const ativo=()=>window.CCO_DEBUG_EXECUCAO_PERFORMANCE===true;return{reiniciar(){inicio=relogioExecucao();dados=Object.fromEntries(campos.map(campo=>[campo,0]));Object.assign(dados,{quantidadeRequests:0,quantidadeRegistrosRecebidos:0,historicoCalls:0,cacheHits:0});if(ativo())console.log("EXEC_START");},async medir(campo,tarefa){if(!ativo())return tarefa();const t=relogioExecucao();try{return await tarefa();}finally{dados[campo]=(dados[campo]||0)+(relogioExecucao()-t);}},contar(campo,qtd=1){if(ativo())dados[campo]=(dados[campo]||0)+qtd;},relatar(){if(!ativo())return;const relatorio={...Object.fromEntries(campos.map(campo=>[campo,Number((dados[campo]||0).toFixed(2))])),totalMs:Number((relogioExecucao()-inicio).toFixed(2)),quantidadeRequests:dados.quantidadeRequests||0,quantidadeRegistrosRecebidos:dados.quantidadeRegistrosRecebidos||0,historicoCalls:dados.historicoCalls||0,cacheHits:dados.cacheHits||0};window.__CCO_PERF__=window.__CCO_PERF__||{};window.__CCO_PERF__.execucao=relatorio;console.log("[EXECUCAO PERFORMANCE]",relatorio);}};})();
@@ -55,20 +60,24 @@
     for(const mes of meses){const option=document.createElement("option");option.value=pad(mes);option.textContent=MESES[pad(mes)]||pad(mes);selectMes.appendChild(option);}
     if(meses.includes(preferido))selectMes.value=pad(preferido);else if(meses.length)selectMes.value=pad(Math.max(...meses));
   }
+  function selecionarP1InicialExecucaoCCO(){
+    const botoes=[...document.querySelectorAll("#tela-contrato .servico-btn")],botaoP1=botoes.find(botao=>/^P1\b/i.test(String(botao.innerText||botao.textContent||"").trim())),geral=document.getElementById("servico-geral"),detalhe=document.getElementById("servico-detalhe");
+    botoes.forEach(botao=>botao.classList.toggle("active",botao===botaoP1));geral?.classList.remove("ativa");detalhe?.classList.add("ativa");return botaoP1?"P1":"";
+  }
   async function renderizarPeriodoExecucaoInterno(periodo){
     if(!periodo){console.warn("[EXECUÇÃO] período solicitado não existe no catálogo oficial.");return false;}
     const servico=String(window.obterServicoAtivo?.()||"").toUpperCase(),normalizado={...periodo,ano:String(periodo.ano),mes:pad(periodo.mes),periodo:periodoChave(periodo.ano,periodo.mes),id:periodo.importacao_id},contexto=criarContextoExecucaoCCO({ano:periodo.ano,mes:periodo.mes,servico,importacaoId:periodo.importacao_id}),chaveRequisicao=contexto.chave;
     normalizado.__ccoChaveRequisicao=chaveRequisicao;normalizado.__ccoContextoExecucao=contexto;
     console.log("[EXECUÇÃO Períodos] carregando",{ano:Number(normalizado.ano),mes:Number(normalizado.mes),importacaoId:normalizado.importacao_id});
     window.animarCardsExecucaoCCO?.({carregando:true});
-    try{const publicada=await window.carregarPeriodoCCO(normalizado);if(publicada===false||!contextoExecucaoAtualCCO(contexto)){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{ano:normalizado.ano,mes:normalizado.mes,servico,importacaoId:normalizado.importacao_id,chave:chaveRequisicao});return false;}}catch(error){window.animarCardsExecucaoCCO?.({carregando:false,erro:error});throw error;}
+    try{const publicada=await window.carregarPeriodoCCO(normalizado);if(publicada===false||!contextoExecucaoAtualCCO(contexto)){window.__CCO_EXEC_DISCARDS__+=1;console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{ano:normalizado.ano,mes:normalizado.mes,servico,importacaoId:normalizado.importacao_id,chave:chaveRequisicao});return false;}}catch(error){window.animarCardsExecucaoCCO?.({carregando:false,erro:error});throw error;}
     if(typeof window.definirPeriodoExecucaoAtivoCCO==="function")window.definirPeriodoExecucaoAtivoCCO(normalizado.ano,normalizado.mes);else{window.filtroExecucaoAnoAtual=normalizado.ano;window.filtroExecucaoMesAtual=normalizado.mes;}
     localStorage.setItem("cco_execucao_periodo",JSON.stringify({ano:Number(normalizado.ano),mes:Number(normalizado.mes)}));
     const inicioCards=relogioExecucao();
     if(typeof carregarFiltroMesesComparativoExecucao==="function")carregarFiltroMesesComparativoExecucao();
     if(typeof renderTabelaContratualMensal==="function")renderTabelaContratualMensal();
     if(typeof renderComparativoMesesExecucao==="function")renderComparativoMesesExecucao();
-    const codigo=window.obterServicoAtivo?.();if(codigo&&codigo!=="geral"&&contextoExecucaoAtualCCO(contexto))window.renderDetalheServicoMensal?.(codigo,contexto);
+    const codigo=window.obterServicoAtivo?.();if(codigo&&codigo!=="geral"&&contextoExecucaoAtualCCO(contexto)){window.renderDetalheServicoMensal?.(codigo,contexto);await renderizarEvolucaoHistoricaCCO(codigo);}
     performanceExecucao.contar("cardsMs",relogioExecucao()-inicioCards);if(!codigo||codigo==="geral")performanceExecucao.relatar();
     return true;
   }
@@ -204,12 +213,13 @@
   window.renderizarEvolucaoHistoricaCCO=renderizarEvolucaoHistoricaCCO;
   const renderDetalheServicoMensalOriginal=window.renderDetalheServicoMensal;
   if(typeof renderDetalheServicoMensalOriginal==="function"){
-    const renderComEvolucao=function(codigo,contextoInformado){const resultado=renderDetalheServicoMensalOriginal.apply(this,arguments),contexto=contextoInformado||null;posicionarSecoesDetalheExecucao();if(contexto&&contextoExecucaoAtualCCO(contexto))renderizarEvolucaoHistoricaCCO(codigo).catch(error=>console.error("[EXECUÇÃO Evolução] falha",{servico:codigo,code:error?.code,message:error?.message}));return resultado;};
+    const renderComEvolucao=function(){const resultado=renderDetalheServicoMensalOriginal.apply(this,arguments);posicionarSecoesDetalheExecucao();return resultado;};
     window.renderDetalheServicoMensal=renderComEvolucao;try{renderDetalheServicoMensal=renderComEvolucao;}catch(_){}
   }
 
   async function iniciarInterno(){
     try {
+      window.__CCO_EXEC_BOOT_COUNT__+=1;
       performanceExecucao.reiniciar();
       if(!await performanceExecucao.medir("authMs",()=>window.CCOSupabase.exigirSessao()))return false;
       if(window.__CCO_EXECUCAO_PERIODOS_INICIADOS__)return true;
@@ -218,13 +228,15 @@
       if(!catalogo.length)throw new Error("Nenhum período ativo disponível para Execução.");
       let salvo=null;try{salvo=JSON.parse(localStorage.getItem("cco_execucao_periodo")||"null");}catch(_){salvo=null;}
       const ultimo=catalogo[0],preferido=localizarPeriodoExecucao(catalogo,salvo?.ano,salvo?.mes)||ultimo,selectAno=document.getElementById("filtroExecucaoAno"),selectMes=document.getElementById("filtroExecucaoMes"),anos=[...new Set(catalogo.map(item=>Number(item.ano)))].filter(Number.isFinite).sort((a,b)=>a-b);
-      preencherFiltroAnoExecucao(selectAno,anos,preferido.ano);preencherFiltroMesExecucao(selectMes,obterMesesDoAnoExecucao(catalogo,preferido.ano),preferido.mes);
+      preencherFiltroAnoExecucao(selectAno,anos,preferido.ano);preencherFiltroMesExecucao(selectMes,obterMesesDoAnoExecucao(catalogo,preferido.ano),preferido.mes);selecionarP1InicialExecucaoCCO();
       const tela=document.getElementById("tela-contrato");
-      if(tela&&!tela.dataset.ccoExecucaoServicoRace){tela.dataset.ccoExecucaoServicoRace="1";tela.addEventListener("click",evento=>{if(!evento.target.closest?.(".servico-btn"))return;queueMicrotask(()=>{const atual=localizarPeriodoExecucao(window.__CCO_CATALOGO_EXECUCAO__,selectAno?.value,selectMes?.value);renderizarPeriodoExecucao(atual).catch(erro=>console.error("[EXECUÇÃO] troca de serviço falhou",erro));});});}
+      if(tela&&!tela.dataset.ccoExecucaoServicoRace){tela.dataset.ccoExecucaoServicoRace="1";tela.addEventListener("click",evento=>{if(window.__CCO_EXEC_BOOT_EM_ANDAMENTO__||!evento.target.closest?.(".servico-btn"))return;queueMicrotask(()=>{const atual=localizarPeriodoExecucao(window.__CCO_CATALOGO_EXECUCAO__,selectAno?.value,selectMes?.value);renderizarPeriodoExecucao(atual).catch(erro=>console.error("[EXECUÇÃO] troca de serviço falhou",erro));});});}
       await renderizarPeriodoExecucao(preferido);
     } catch (erro) {
       window.__CCO_EXECUCAO_PERIODOS_INICIADOS__=false;
       console.error("Erro ao iniciar Execução P1 a P12:", erro);
+    } finally {
+      window.__CCO_EXEC_BOOT_EM_ANDAMENTO__=false;
     }
   }
   async function iniciar(){return window.CCOPageRuntime.inicializar("EXECUCAO",()=>window.CCOBootDiagnostics?window.CCOBootDiagnostics.medir("execucao.iniciar","execucao.js",iniciarInterno):iniciarInterno());}

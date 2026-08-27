@@ -60,14 +60,14 @@ test("histórico deduplica inicializações e registra todo o pipeline",()=>{
   assert.match(fonte,/historicosPendentes\.delete\(chave\)/,"Promise concluída ou rejeitada não pode permanecer pendente");
 });
 
-test("detalhe prematuro não inicia histórico antes do contexto oficial",()=>{
+test("detalhe não inicia histórico indiretamente",()=>{
   const fonte=fs.readFileSync("execucao.js","utf8");
   const inicio=fonte.indexOf("const renderDetalheServicoMensalOriginal");
   const fim=fonte.indexOf("async function iniciarInterno",inicio);
   const wrapper=fonte.slice(inicio,fim);
-  assert.match(wrapper,/contextoInformado\|\|null/);
-  assert.match(wrapper,/if\(contexto&&contextoExecucaoAtualCCO\(contexto\)\)renderizarEvolucaoHistoricaCCO/);
-  assert.doesNotMatch(wrapper,/posicionarSecoesDetalheExecucao\(\);renderizarEvolucaoHistoricaCCO/);
+  assert.match(wrapper,/const renderComEvolucao=function\(\)/);
+  assert.doesNotMatch(wrapper,/renderizarEvolucaoHistoricaCCO/);
+  assert.match(fonte,/renderDetalheServicoMensal\?\.\(codigo,contexto\);await renderizarEvolucaoHistoricaCCO\(codigo\)/);
 });
 
 test("telemetria publica o contrato window.__CCO_PERF__ solicitado",()=>{

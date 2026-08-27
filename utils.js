@@ -10574,7 +10574,7 @@ function ccoFinalCriarLinha(canvasId, label, labels, valores, beginZero = true) 
 /* Execução P1 a P12: recria a área do serviço apenas com gráficos que têm dados. */
 function renderDetalheServicoMensal(codigo,contextoExecucao) {
   const contexto=contextoExecucao||window.__CCO_EXECUCAO_CONTEXTO_ATUAL__;
-  if(String(window.CCO_PAGE||"").toLowerCase()==="execucao"&&contexto&&!window.contextoExecucaoAtualCCO?.(contexto)){console.warn("[EXECUÇÃO RENDER DESCARTADO]",{servico:codigo,chave:contexto.chave});return false;}
+  if(String(window.CCO_PAGE||"").toLowerCase()==="execucao"&&contexto&&!window.contextoExecucaoAtualCCO?.(contexto)){window.__CCO_EXEC_DISCARDS__=(Number(window.__CCO_EXEC_DISCARDS__)||0)+1;console.warn("[EXECUÇÃO RENDER DESCARTADO]",{servico:codigo,chave:contexto.chave});return false;}
   window.__CCO_RENDER_EXECUCAO_CONTADOR__=(window.__CCO_RENDER_EXECUCAO_CONTADOR__||0)+1;console.log("[RENDER EXECUÇÃO]",{contador:window.__CCO_RENDER_EXECUCAO_CONTADOR__,servico:codigo});
   const detalhe = document.getElementById("detalheServico");
   if (!detalhe) return;
@@ -12459,6 +12459,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   window.aplicarServicoPadraoP1 = function(disparar = false) {
+    if(String(window.CCO_PAGE||"").toLowerCase()==="execucao"&&window.__CCO_EXEC_BOOT_EM_ANDAMENTO__===true)return false;
     const idsPreferenciais = [
       "filtroKpiServico",
       "filtroComparativoServico",

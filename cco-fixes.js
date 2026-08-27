@@ -197,7 +197,7 @@
       ]);
       const diasOperacao=Number(registroDiasOperacao?.total_dias);
       if(!Number.isInteger(diasOperacao)||diasOperacao<=0)throw new Error(`Dias de operação indisponíveis para ${periodo.ano}-${pad(periodo.mes)}.`);
-      if(PAGINA==="execucao"&&periodo.__ccoContextoExecucao&&!window.contextoExecucaoAtualCCO?.(periodo.__ccoContextoExecucao)){console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,chave:periodo.__ccoChaveRequisicao});return false;}
+      if(PAGINA==="execucao"&&periodo.__ccoContextoExecucao&&!window.contextoExecucaoAtualCCO?.(periodo.__ccoContextoExecucao)){window.__CCO_EXEC_DISCARDS__=(Number(window.__CCO_EXEC_DISCARDS__)||0)+1;console.warn("[EXECUÇÃO RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,chave:periodo.__ccoChaveRequisicao});return false;}
       if(PAGINA==="kpi"&&tokenKpi!==window.__CCO_KPI_SEQUENCIA__){if(window.CCO_DEBUG_KPI_PERFORMANCE===true)console.warn("[KPI RESPOSTA DESCARTADA]",{periodo:periodo.periodo,servico,importacaoId:periodo.importacao_id,tokenKpi});return false;}
       publicarPeriodo(linhas, painelLinhas, periodo, diasOperacao);
       return true;
